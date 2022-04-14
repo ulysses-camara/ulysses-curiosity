@@ -3,6 +3,7 @@ import typing as t
 import collections
 import warnings
 
+import regex
 import torch
 import torch.nn
 import tqdm.auto
@@ -53,8 +54,12 @@ class Probers:
 
         pieces.append(f"(a): Base model: {self.base_model}")
         pieces.append(f"(b): Task name: {self.task.task_name}")
+        pieces.append(
+            f"(c): Probing dataset size: {len(self.task.probing_dataloader)} batches of "
+            f"size (at most) {self.task.probing_dataloader.batch_size}."
+        )
 
-        pieces.append(f"(c): Probed modules ({len(self.probers)} in total):")
+        pieces.append(f"(d): Probed modules ({len(self.probers)} in total):")
 
         for i, key in enumerate(self.probers.keys()):
             pieces.append(f"  ({i}): {key}")
@@ -71,49 +76,57 @@ class Probers:
     def __len__(self):
         return len(self.probers)
 
+    @staticmethod
+    def _skip_module(layers_to_attach: t.Union[regex.Pattern, t.FrozenSet[str]], module_name: str):
+        if isinstance(layers_to_attach, frozenset):
+            return module_name not in layers_to_attach
+
+        return layers_to_attach.search(module_name) is None
+
     def attach(
         self,
         base_model: torch.nn.Module,
         probing_model_fn: t.Callable[[int, ...], torch.nn.Module],
-        layers_to_attach: t.Sequence[str],
+        layers_to_attach: t.Union[regex.Pattern, str, t.Sequence[str]],
         probing_model_kwargs: t.Optional[dict[str, t.Any]] = None,
     ):
         self.base_model = base_model.to("cpu")
         self.probers = dict()
 
-        layers_to_attach = frozenset(layers_to_attach)
+        if isinstance(layers_to_attach, str):
+            layers_to_attach = regex.compile(layers_to_attach)
+
+        elif hasattr(layers_to_attach, "__len__"):
+            layers_to_attach = frozenset(layers_to_attach)
 
         probing_model_kwargs = probing_model_kwargs or {}
         probing_input_dim: int = 0
         count_attached_modules: int = 0
 
-        for param_key, param_val in self.base_model.named_modules():
-            if hasattr(param_val, "out_features"):
-                probing_input_dim = param_val.out_features
+        for module_name, module_weights in self.base_model.named_modules():
+            if hasattr(module_weights, "out_features"):
+                probing_input_dim = module_weights.out_features
 
-            if param_key not in layers_to_attach:
+            if self._skip_module(layers_to_attach=layers_to_attach, module_name=module_name):
                 continue
 
             module_probing_model = probing_model_fn(probing_input_dim, **probing_model_kwargs)
             module_probing_model = module_probing_model.to("cpu")
 
-            self.probers[param_key] = probers.ProbingModule(
+            self.probers[module_name] = probers.ProbingModule(
                 probing_model=module_probing_model,
                 task=self.task,
                 optim_fn=self.optim_fn,
-                source_layer=param_val,
+                source_layer=module_weights,
             )
 
             count_attached_modules += 1
 
         if count_attached_modules == 0:
-            base_model_named_modules = [name for name, _ in self.base_model.named_modules() if name]
-
             warnings.warn(
                 message=(
                     "No probing modules were attached. One probable cause is format mismatch of "
-                    f"values in the parameter 'layers_to_attach' ({', '.join(layers_to_attach)}) "
-                    f"and base model's named weights ({', '.join(base_model_named_modules)})."
+                    f"values in the parameter 'layers_to_attach' and base model's named weights."
                 ),
                 category=UserWarning,
             )
@@ -195,7 +208,7 @@ def attach_probers(
     base_model: torch.nn.Module,
     probing_model_fn: torch.nn.Module,
     task,
-    layers_to_attach: t.Sequence[str],
+    layers_to_attach: t.Union[regex.Pattern, str, t.Sequence[str]],
     optim_fn: t.Type[torch.optim.Optimizer] = torch.optim.Adam,
     device: t.Union[torch.device, str] = "cpu",
     probing_model_kwargs: t.Optional[dict[str, t.Any]] = None,

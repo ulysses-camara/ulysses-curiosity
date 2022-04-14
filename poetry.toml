@@ -1,4 +1,0 @@
-cache-dir = ".poetry_cache"
-[virtualenvs]
-path = "venvs"
-create = false

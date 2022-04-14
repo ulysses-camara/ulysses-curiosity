@@ -1,6 +1,7 @@
 import typing as t
 import copy
 import collections
+import warnings
 
 import torch
 import torch.nn
@@ -17,6 +18,7 @@ class Probers:
         self.optim_fn = optim_fn
         self.probers = dict()
         self.device = torch.device(device)
+        self.is_trained = False
 
     def __repr__(self):
         pieces: list[str] = ["ProberPack:"]
@@ -70,9 +72,31 @@ class Probers:
 
         return res
 
+    @staticmethod
+    def _flatten_results(res: dict[t.Any, dict[t.Any, list[t.Any]]]) -> dict[t.Any, list[t.Any]]:
+        flattened_res = collections.defaultdict(list)
+
+        for _, val_dict in res.items():
+            for key, vals in val_dict.items():
+                flattened_res[key].extend(vals)
+
+        return flattened_res
+
     def train(
-        self, num_epochs: int = 1, show_progress_bar: bool = False
+        self,
+        num_epochs: int = 1,
+        show_progress_bar: bool = False,
+        flatten_results: bool = True,
     ) -> dict[int, dict[str, list[float]]]:
+        if self.is_trained:
+            warnings.warn(
+                message=(
+                    "Probing weights are already pretrained from previous run. If this is not "
+                    "intended, attach probing models again."
+                ),
+                category=UserWarning,
+            )
+
         self.base_model.to(self.device)
         for probers in self.probers.values():
             probers.to(self.device)
@@ -85,6 +109,11 @@ class Probers:
         self.base_model.to("cpu")
         for probers in self.probers.values():
             probers.to("cpu")
+
+        if flatten_results:
+            res = self._flatten_results(res)
+
+        self.is_trained = True
 
         return res
 

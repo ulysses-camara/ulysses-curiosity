@@ -1,5 +1,6 @@
 # pylint: disable='missing-module-docstring'
-from .curiosity import *
+from .core import *
+from .tasks import *
 
 try:
     import importlib.metadata as importlib_metadata

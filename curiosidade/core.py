@@ -70,7 +70,9 @@ class Probers:
 
         return res
 
-    def train(self, num_epochs: int = 1, show_progress_bar: bool = False) -> dict[int, dict[str, list[float]]]:
+    def train(
+        self, num_epochs: int = 1, show_progress_bar: bool = False
+    ) -> dict[int, dict[str, list[float]]]:
         self.base_model.to(self.device)
         for probers in self.probers.values():
             probers.to(self.device)

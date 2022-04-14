@@ -8,7 +8,9 @@ from . import _base
 
 
 class ProbingModule(_base.BaseProber):
-    def __init__(self, probing_model: torch.nn.Module, task, optim_fn, source_layer: torch.nn.Module):
+    def __init__(
+        self, probing_model: torch.nn.Module, task, optim_fn, source_layer: torch.nn.Module
+    ):
         super().__init__(
             probing_model=probing_model,
             task=task,

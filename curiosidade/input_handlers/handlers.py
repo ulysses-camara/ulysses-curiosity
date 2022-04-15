@@ -1,4 +1,4 @@
-"""Handle appropriately user input."""
+"""Handle general user input appropriately."""
 import typing as t
 
 import regex

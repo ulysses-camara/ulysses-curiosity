@@ -3,9 +3,6 @@ import abc
 import torch
 
 
-CurrentBatchType = tuple[torch.Tensor, ...]
-
-
 class BaseProbingTask(abc.ABC):
     def __init__(
         self,

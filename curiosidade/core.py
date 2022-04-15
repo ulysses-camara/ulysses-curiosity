@@ -1,4 +1,4 @@
-"""Main entry point for probers and tasks."""
+"""Main entry point for probing models."""
 import typing as t
 import collections
 import warnings
@@ -9,7 +9,6 @@ import torch.nn
 import tqdm.auto
 
 from . import probers
-from . import tasks
 from . import adapters
 from . import input_handlers
 
@@ -22,17 +21,11 @@ except ImportError:
     BaseModelType = torch.nn.Module
 
 
-class Probers:
-    """Collection of probing models.
+class ProbingModelContainer:
+    """Container of probing models.
 
     Parameters
     ----------
-    task : tasks.base.BaseProbingTask
-        A Task object.
-
-    optim_fn : t.Type[torch.optim.Optimizer], default=torch.optim.Adam
-        PyTorch optimizer class or factory, used to train the probing models.
-
     device : {'cpu', 'cuda'}, default='cpu'
         Device type to train probing models.
 
@@ -43,30 +36,18 @@ class Probers:
 
     def __init__(
         self,
-        task: tasks.base.BaseProbingTask,
-        optim_fn: t.Type[torch.optim.Optimizer] = torch.optim.Adam,
         device: t.Union[torch.device, str] = "cpu",
         random_seed: t.Optional[int] = None,
     ):
-        if not hasattr(optim_fn, "__call__"):
-            raise TypeError(
-                "Expected a callable (factory) in 'optim_fn' parameter, but received "
-                f"'{type(optim_fn)}'. Please make sure to provide a optimizer type, not "
-                "an instantiated optimizer. If you need to custom any optimizer parameter, "
-                "you can provide it by using 'functools.partial(optim_fn, param1=value1, "
-                "param2=value2, ...)'."
-            )
-
-        self.base_model: adapters.base.BaseAdapter
-        self.task = task
-        self.optim_fn = optim_fn
-        self.probers: dict[str, probers.ProbingModule] = dict()
         self.device = torch.device(device)
-        self.is_trained = False
         self.random_seed = random_seed
 
+        self.base_model: adapters.base.BaseAdapter = None
+        self.probers: dict[str, probers.ProbingModule] = dict()
+        self.is_trained = False
+
     def __repr__(self):
-        pieces: list[str] = ["ProberPack:"]
+        pieces: list[str] = [f"{self.__class__.__name__}:"]
 
         pieces.append(f"(a): Base model: {self.base_model}")
         pieces.append(f"(b): Task name: {self.task.task_name}")
@@ -100,11 +81,10 @@ class Probers:
     def attach(
         self,
         base_model: BaseModelType,
-        probing_model_fn: t.Callable[[int, ...], torch.nn.Module],
+        probing_model_factory: t.Callable[[int, ...], torch.nn.Module],
         modules_to_attach: t.Union[regex.Pattern, str, t.Sequence[str]],
         modules_input_dim: input_handlers.ModuleInputDimType = None,
-        probing_model_kwargs: t.Optional[dict[str, t.Any]] = None,
-    ) -> "Probers":
+    ) -> "ProbingModelContainer":
         """Attach probing models to specificied `base_model` modules.
 
         Parameters
@@ -112,13 +92,10 @@ class Probers:
         base_model : torch.nn.Module
             Pretrained base model to attach probing models to.
 
-        probing_model_fn : torch.nn.Module
+        probing_model_factory : torch.nn.Module
             Probing model class or a instance factory, to instantiate each probing model. This
             callable must receive as the first argument its input dimension, which matches the
             output dimension of the correspondent probed module.
-
-        task : tasks.base.BaseProbingTask
-            A Task instance, to validate probing models against.
 
         modules_to_attach : regex.Pattern or str or t.Sequence[str]
             A list or regular expression pattern specifying which model modules should be probed.
@@ -133,9 +110,6 @@ class Probers:
             - If None, the input dimensions will be inferred from the output dimensions sequences
               in `base_model.named_modules()`.
 
-        probing_model_kwargs : dict[str, t.Any] or None, default=None
-            Additional arguments provided to `probing_model_fn`.
-
         Returns
         -------
         self
@@ -143,17 +117,17 @@ class Probers:
         base_model = base_model.to("cpu")
 
         self.base_model = adapters.get_model_adapter(base_model)
+        self.task = probing_model_factory.task
         self.probers = dict()
 
         fn_module_is_probed = input_handlers.get_fn_select_modules_to_probe(modules_to_attach)
 
-        probing_model_kwargs = probing_model_kwargs or {}
         prev_input_dim: int = 0
         count_attached_modules: int = 0
 
-        for module_name, module_weights in base_model.named_modules():
-            if hasattr(module_weights, "out_features"):
-                prev_input_dim = module_weights.out_features
+        for module_name, module in base_model.named_modules():
+            if hasattr(module, "out_features"):
+                prev_input_dim = module.out_features
 
             if not fn_module_is_probed(module_name):
                 continue
@@ -169,19 +143,10 @@ class Probers:
                 if self.random_seed is not None:
                     torch.random.manual_seed(self.random_seed)
 
-                module_probing_model = probing_model_fn(
-                    module_input_dim,
-                    **probing_model_kwargs,
+                self.probers[module_name] = probing_model_factory.create_and_attach(
+                    module=module,
+                    input_dim=module_input_dim,
                 )
-
-            module_probing_model = module_probing_model.to("cpu")
-
-            self.probers[module_name] = probers.ProbingModule(
-                probing_model=module_probing_model,
-                task=self.task,
-                optim_fn=self.optim_fn,
-                source_layer=module_weights,
-            )
 
             count_attached_modules += 1
 
@@ -311,15 +276,12 @@ class Probers:
 
 def attach_probers(
     base_model: torch.nn.Module,
-    probing_model_fn: t.Callable[[int, ...], torch.nn.Module],
-    task: tasks.base.BaseProbingTask,
+    probing_model_factory: probers.ProbingModelFactory,
     modules_to_attach: t.Union[regex.Pattern, str, t.Sequence[str]],
     modules_input_dim: input_handlers.ModuleInputDimType = None,
-    optim_fn: t.Type[torch.optim.Optimizer] = torch.optim.Adam,
     device: t.Union[torch.device, str] = "cpu",
-    probing_model_kwargs: t.Optional[dict[str, t.Any]] = None,
     random_seed: t.Optional[int] = None,
-) -> Probers:
+) -> ProbingModelContainer:
     """Attach probing models to specificied `base_model` modules.
 
     Parameters
@@ -327,13 +289,10 @@ def attach_probers(
     base_model : torch.nn.Module
         Pretrained base model to attach probing models to.
 
-    probing_model_fn : torch.nn.Module
+    probing_model_factory : torch.nn.Module
         Probing model class or a instance factory, to instantiate each probing model. This
         callable must receive as the first argument its input dimension, which matches the
         output dimension of the correspondent probed module.
-
-    task : tasks.base.BaseProbingTask
-        A Task instance, to validate probing models against.
 
     modules_to_attach : regex.Pattern or str or t.Sequence[str]
         A list or regular expression pattern specifying which model modules should be probed.
@@ -348,14 +307,8 @@ def attach_probers(
         - If None, the input dimensions will be inferred from the output dimensions sequences
           in `base_model.named_modules()`.
 
-    optim_fn : t.Type[torch.optim.Optimizer], default=torch.optim.Adam
-        PyTorch optimizer class or factory, used to train the probing models.
-
     device : {'cpu', 'cuda'}, default='cpu'
         Device used to train probing models.
-
-    probing_model_kwargs : dict[str, t.Any] or None, default=None
-        Additional arguments provided to `probing_model_fn`.
 
     random_seed : int or None, default=None
         If specified, this random seed will be used while instantiating the probing models and
@@ -363,27 +316,21 @@ def attach_probers(
 
     Returns
     -------
-    probers : Probers
+    probers : ProbingModelContainer
         Container with every instantiated probing model, prepared for training.
 
     See Also
     --------
-    Probers.train : train returned Probers instance.
+    ProbingModelContainer.train : train returned ProbingModelContainer instance.
     functools.partial : create a factory with preset named arguments.
     """
-    prober_pack = Probers(
-        optim_fn=optim_fn,
-        task=task,
-        device=device,
-        random_seed=random_seed,
-    )
+    prober_container = ProbingModelContainer(device=device, random_seed=random_seed)
 
-    prober_pack.attach(
+    prober_container.attach(
         base_model=base_model,
-        probing_model_fn=probing_model_fn,
+        probing_model_factory=probing_model_factory,
         modules_to_attach=modules_to_attach,
         modules_input_dim=modules_input_dim,
-        probing_model_kwargs=probing_model_kwargs,
     )
 
-    return prober_pack
+    return prober_container

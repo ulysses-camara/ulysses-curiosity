@@ -10,6 +10,7 @@ import tqdm.auto
 
 from . import probers
 from . import tasks
+from . import adapters
 
 
 class Probers:
@@ -131,16 +132,20 @@ class Probers:
                 category=UserWarning,
             )
 
+        self._base_model_adapter = adapters.get_model_adapter(self.base_model)
+
     def _run_epoch(self, show_progress_bar: bool = False) -> dict[str, list[float]]:
         self.base_model.eval()
 
         res: dict[str, list[float]] = collections.defaultdict(list)
 
-        for X, y, *_ in tqdm.auto.tqdm(self.task.probing_dataloader, disable=not show_progress_bar):
-            X = X.to(self.device)
-
+        for batch in tqdm.auto.tqdm(self.task.probing_dataloader, disable=not show_progress_bar):
             with torch.no_grad():
-                self.base_model(X)
+                *_, y = self._base_model_adapter(
+                    batch=batch,
+                    model=self.base_model,
+                    device=self.device,
+                )
 
             y = y.to(self.device)
 

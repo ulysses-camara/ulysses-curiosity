@@ -1,46 +1,58 @@
+"""Interfaces for inference with distinct model APIs."""
 import typing as t
 
-import transformers
 import torch
 import torch.nn
 
-from . import _base
+from . import base
 
 
-class HuggingfaceAdapter(_base.BaseAdapter):
-    def forward(
-        self, batch: dict[str, torch.Tensor], model: t.Any, device: t.Union[str, torch.device]
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+IS_TRANSFORMERS_AVAILABLE: t.Final[bool]
+
+try:
+    import transformers
+
+    IS_TRANSFORMERS_AVAILABLE = True
+
+except ImportError:
+    IS_TRANSFORMERS_AVAILABLE = False
+
+
+class HuggingfaceAdapter(base.BaseAdapter):
+    """Adapter for Huggingface (`transformers` package) models."""
+
+    def forward(self, batch: dict[str, torch.Tensor]) -> base.AdapterInferenceOutputType:
         y = batch.pop("labels")
 
         for key, val in batch.items():
-            batch[key] = val.to(device)
+            batch[key] = val.to(self.device)
 
         X = batch
-        out = model(**X)
+        out = self.model(**X)
 
         return out, X, y
 
 
-class TorchModuleAdapter(_base.BaseAdapter):
+class TorchModuleAdapter(base.BaseAdapter):
+    """Adapter for PyTorch (`torch` package) modules (`torch.nn.Module`)."""
+
     def forward(
-        self,
-        batch: tuple[torch.Tensor, torch.Tensor, ...],
-        model: t.Any,
-        device: t.Union[str, torch.device],
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        self, batch: tuple[torch.Tensor, torch.Tensor, ...]
+    ) -> base.AdapterInferenceOutputType:
+        """Inference with"""
         X, y, *_ = batch
-        X = X.to(device)
-        out = model(X)
+        X = X.to(self.device)
+        out = self.model(X)
         return out, X, y
 
 
-def get_model_adapter(model: t.Any) -> _base.BaseAdapter:
-    if isinstance(model, transformers.PreTrainedModel):
-        return HuggingfaceAdapter()
+def get_model_adapter(model: t.Any, *args: t.Any, **kwargs: t.Any) -> base.BaseAdapter:
+    """Factory function to deduce a model appropriate inference adapter."""
+    if IS_TRANSFORMERS_AVAILABLE and isinstance(model, transformers.PreTrainedModel):
+        return HuggingfaceAdapter(model, *args, **kwargs)
 
     if isinstance(model, torch.nn.Module):
-        return TorchModuleAdapter()
+        return TorchModuleAdapter(model, *args, **kwargs)
 
     raise TypeError(
         f"Unknown model type '{type(model)}'. Please provide a Huggingface transformer or "

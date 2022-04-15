@@ -6,7 +6,7 @@ import torch
 CurrentBatchType = tuple[torch.Tensor, ...]
 
 
-class BaseTask(abc.ABC):
+class BaseProbingTask(abc.ABC):
     def __init__(
         self,
         probing_dataloader: torch.utils.data.DataLoader,

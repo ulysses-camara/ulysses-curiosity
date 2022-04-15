@@ -3,47 +3,47 @@ import torch
 from . import base
 
 
-class TaskSentenceLength(base.BaseTask):
+class ProbingTaskSentenceLength(base.BaseProbingTask):
     pass
 
 
-class TaskWordContent(base.BaseTask):
+class ProbingTaskWordContent(base.BaseProbingTask):
     pass
 
 
-class TaskBigramShift(base.BaseTask):
+class ProbingTaskBigramShift(base.BaseProbingTask):
     pass
 
 
-class TaskTreeDepth(base.BaseTask):
+class ProbingTaskTreeDepth(base.BaseProbingTask):
     pass
 
 
-class TaskTopConstituent(base.BaseTask):
+class ProbingTaskTopConstituent(base.BaseProbingTask):
     pass
 
 
-class TaskTense(base.BaseTask):
+class ProbingTaskTense(base.BaseProbingTask):
     pass
 
 
-class TaskSubjectNumber(base.BaseTask):
+class ProbingTaskSubjectNumber(base.BaseProbingTask):
     pass
 
 
-class TaskObjectNumber(base.BaseTask):
+class ProbingTaskObjectNumber(base.BaseProbingTask):
     pass
 
 
-class TaskSOMO(base.BaseTask):
+class ProbingTaskSOMO(base.BaseProbingTask):
     pass
 
 
-class TaskCoordinationInversion(base.BaseTask):
+class ProbingTaskCoordinationInversion(base.BaseProbingTask):
     pass
 
 
-class TaskCustom(base.BaseTask):
+class ProbingTaskCustom(base.BaseProbingTask):
     def __init__(
         self,
         probing_dataloader: torch.utils.data.DataLoader,

@@ -1,3 +1,4 @@
+"""Probing task classes."""
 import torch
 
 from . import base
@@ -44,10 +45,24 @@ class ProbingTaskCoordinationInversion(base.BaseProbingTask):
 
 
 class ProbingTaskCustom(base.BaseProbingTask):
+    """Custom probing task.
+
+    Parameters
+    ----------
+    probing_dataloader : torch.utils.data.DataLoader
+        Train probing dataloader.
+
+    loss_fn : t.Callable[[torch.Tensor, torch.Tensor], torch.Tensor]
+        Loss function related to the probing task.
+
+    task_name : str, default="unnamed_task"
+        Probing task name.
+    """
+
     def __init__(
         self,
         probing_dataloader: torch.utils.data.DataLoader,
-        loss_fn,
+        loss_fn: base.LossFunctionType,
         task_name: str = "unnamed_task",
     ):
         super().__init__(

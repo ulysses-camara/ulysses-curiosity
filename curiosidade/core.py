@@ -81,7 +81,7 @@ class ProbingModelContainer:
     def attach(
         self,
         base_model: BaseModelType,
-        probing_model_factory: t.Callable[[int, ...], torch.nn.Module],
+        probing_model_factory: probers.ProbingModelFactory,
         modules_to_attach: t.Union[regex.Pattern, str, t.Sequence[str]],
         modules_input_dim: input_handlers.ModuleInputDimType = None,
     ) -> "ProbingModelContainer":
@@ -89,13 +89,11 @@ class ProbingModelContainer:
 
         Parameters
         ----------
-        base_model : torch.nn.Module
+        base_model : torch.nn.Module or transformers.PreTrainedModel
             Pretrained base model to attach probing models to.
 
-        probing_model_factory : torch.nn.Module
-            Probing model class or a instance factory, to instantiate each probing model. This
-            callable must receive as the first argument its input dimension, which matches the
-            output dimension of the correspondent probed module.
+        probing_model_factory : probers.ProbingModelFactory
+            Probing model factory object.
 
         modules_to_attach : regex.Pattern or str or t.Sequence[str]
             A list or regular expression pattern specifying which model modules should be probed.
@@ -122,33 +120,29 @@ class ProbingModelContainer:
 
         fn_module_is_probed = input_handlers.get_fn_select_modules_to_probe(modules_to_attach)
 
-        prev_input_dim: int = 0
-        count_attached_modules: int = 0
+        prev_output_dim: int = 0
 
         for module_name, module in base_model.named_modules():
             if hasattr(module, "out_features"):
-                prev_input_dim = module.out_features
+                prev_output_dim = module.out_features
 
             if not fn_module_is_probed(module_name):
                 continue
 
-            module_input_dim = input_handlers.get_module_input_dim(
-                modules_input_dim=modules_input_dim,
-                default_dim=prev_input_dim,
+            module_output_dim = input_handlers.get_probing_model_input_dim(
+                modules_output_dim=modules_output_dim,
+                default_dim=prev_output_dim,
                 module_name=module_name,
                 module_index=count_attached_modules,
             )
 
-            with torch.random.fork_rng(enabled=self.random_seed is not None):
-                if self.random_seed is not None:
-                    torch.random.manual_seed(self.random_seed)
+            self.probers[module_name] = probing_model_factory.create_and_attach(
+                module=module,
+                probing_input_dim=module_output_dim,
+                random_seed=self.random_seed,
+            )
 
-                self.probers[module_name] = probing_model_factory.create_and_attach(
-                    module=module,
-                    input_dim=module_input_dim,
-                )
-
-            count_attached_modules += 1
+        count_attached_modules = len(self.probers)
 
         if count_attached_modules == 0:
             warnings.warn(
@@ -289,10 +283,8 @@ def attach_probers(
     base_model : torch.nn.Module
         Pretrained base model to attach probing models to.
 
-    probing_model_factory : torch.nn.Module
-        Probing model class or a instance factory, to instantiate each probing model. This
-        callable must receive as the first argument its input dimension, which matches the
-        output dimension of the correspondent probed module.
+    probing_model_factory : probers.ProbingModelFactory
+        Probing model factory object.
 
     modules_to_attach : regex.Pattern or str or t.Sequence[str]
         A list or regular expression pattern specifying which model modules should be probed.

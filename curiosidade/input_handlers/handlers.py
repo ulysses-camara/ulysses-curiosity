@@ -19,7 +19,7 @@ def get_fn_select_modules_to_probe(
     return lambda module_name: module_name in modules_to_attach
 
 
-def get_module_input_dim(
+def get_probing_model_input_dim(
     modules_input_dim: ModuleInputDimType, default_dim: int, module_name: str, module_index: int
 ) -> int:
     """Return module input dimension."""

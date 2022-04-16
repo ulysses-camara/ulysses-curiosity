@@ -300,17 +300,13 @@ class ProbingModelContainer:
                 if self.task.has_eval:
                     metrics_eval[epoch] = self._run_epoch(
                         dataloader=self.task.probing_dataloader_eval,
-                        gradient_accumulation_steps=gradient_accumulation_steps,
                         is_test=True,
-                        show_progress_bar=False,
                     )
 
             if self.task.has_test:
-                metrics_test[epoch] = self._run_epoch(
+                metrics_test[0] = self._run_epoch(
                     dataloader=self.task.probing_dataloader_test,
-                    gradient_accumulation_steps=gradient_accumulation_steps,
                     is_test=True,
-                    show_progress_bar=False,
                 )
 
         self.base_model.to("cpu")

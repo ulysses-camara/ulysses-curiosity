@@ -3,6 +3,7 @@ import typing as t
 import abc
 
 import torch
+import torch.nn
 
 
 LossFunctionType = t.Callable[[torch.Tensor, torch.Tensor], torch.Tensor]
@@ -32,3 +33,14 @@ class BaseProbingTask(abc.ABC):
         self.task_name = task_name
         self.probing_dataloader = probing_dataloader
         self.loss_fn = loss_fn
+
+
+class DummyProbingTask(BaseProbingTask):
+    """Dummy probing task used as placeholder."""
+
+    def __init__(self, *args: t.Any, **kwargs: t.Any):
+        # pylint: disable='unused-argument'
+        super().__init__(
+            probing_dataloader=torch.utils.data.DataLoader([0]),
+            loss_fn=torch.nn.CrossEntropyLoss(),
+        )

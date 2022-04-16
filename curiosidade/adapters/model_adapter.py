@@ -18,6 +18,9 @@ except ImportError:
     IS_TRANSFORMERS_AVAILABLE = False
 
 
+# pylint: disable='invalid-name'
+
+
 class HuggingfaceAdapter(base.BaseAdapter):
     """Adapter for Huggingface (`transformers` package) models."""
 

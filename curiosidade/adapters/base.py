@@ -24,6 +24,7 @@ class BaseAdapter(abc.ABC):
 
     def to(self, device: t.Union[str, torch.device]) -> "BaseAdapter":
         """Move model to `device`."""
+        # pylint: disable='invalid-name'
         self.device = torch.device(device)
         self.model.to(self.device)
         return self
@@ -61,11 +62,12 @@ class BaseAdapter(abc.ABC):
 
 
 class DummyAdapter(BaseAdapter):
-    def __init__(self, *args, **kwargs):
+    """Dummy adapter used as placeholder."""
+
+    def __init__(self, *args: t.Any, **kwargs: t.Any):
+        # pylint: disable='unused-argument'
         dummy = torch.Parameter(torch.empty(0), requires_grad=False)
         super().__init__(model=dummy, device="cpu")
-
-    """Dummy adapter used as placeholder."""
 
     def forward(self, batch: t.Any) -> AdapterInferenceOutputType:
         return None, None, torch.empty(0)

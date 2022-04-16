@@ -35,7 +35,8 @@ class ProbingModelContainer:
         self.random_seed = random_seed
 
         self.base_model: adapters.base.BaseAdapter = adapters.base.DummyAdapter()
-        self.probers: dict[str, probers.ProbingModelWrapper] = dict()
+        self.task = probers.tasks.base.DummyProbingTask()
+        self.probers: dict[str, probers.ProbingModelWrapper] = {}
         self.is_trained = False
 
     def __repr__(self) -> str:
@@ -62,6 +63,7 @@ class ProbingModelContainer:
 
     @property
     def probed_modules(self) -> tuple[str, ...]:
+        """Return names of all probed modules."""
         return tuple(self.probers.keys())
 
     def __iter__(self) -> t.Iterator[tuple[str, probers.ProbingModelWrapper]]:
@@ -108,7 +110,7 @@ class ProbingModelContainer:
 
         self.base_model = adapters.get_model_adapter(base_model)
         self.task = probing_model_factory.task
-        self.probers = dict()
+        self.probers = {}
 
         fn_module_is_probed = input_handlers.get_fn_select_modules_to_probe(modules_to_attach)
 
@@ -140,7 +142,7 @@ class ProbingModelContainer:
             warnings.warn(
                 message=(
                     "No probing modules were attached. One probable cause is format mismatch of "
-                    f"values in the parameter 'modules_to_attach' and base model's named weights."
+                    "values in the parameter 'modules_to_attach' and base model's named weights."
                 ),
                 category=UserWarning,
             )
@@ -166,6 +168,7 @@ class ProbingModelContainer:
 
     def _run_epoch(self, show_progress_bar: bool = False) -> dict[str, list[float]]:
         """Run a full training epoch."""
+        # pylint: disable='invalid-name'
         self.base_model.eval()
 
         res: dict[str, list[float]] = collections.defaultdict(list)
@@ -236,8 +239,8 @@ class ProbingModelContainer:
             )
 
         self.base_model.to(self.device)
-        for probers in self.probers.values():
-            probers.to(self.device)
+        for prober in self.probers.values():
+            prober.to(self.device)
 
         res: dict[t.Union[int, str], t.Any] = {}
 
@@ -249,8 +252,8 @@ class ProbingModelContainer:
                 res[epoch] = self._run_epoch(show_progress_bar=show_progress_bar)
 
         self.base_model.to("cpu")
-        for probers in self.probers.values():
-            probers.to("cpu")
+        for prober in self.probers.values():
+            prober.to("cpu")
 
         if flatten_results:
             res = self._flatten_results(res)

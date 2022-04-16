@@ -1,6 +1,5 @@
 """Probing model wrappers."""
 import typing as t
-import functools
 
 import torch
 import torch.nn
@@ -35,6 +34,7 @@ class ProbingModelWrapper:
         self.optim = optim
         self.probing_model = probing_model
         self.task = task
+        self.loss = torch.empty(0)
 
     def attach(self, module: torch.nn.Module) -> "ProbingModelWrapper":
         """Attach probing model to `module`."""
@@ -42,6 +42,7 @@ class ProbingModelWrapper:
         def fn_hook_forward(
             layer: torch.nn.Module, l_input: torch.Tensor, l_output: torch.Tensor
         ) -> None:
+            # pylint: disable='unused-argument'
             self.input_tensor = l_output.detach()
 
         self.input_source_hook = module.register_forward_hook(fn_hook_forward)
@@ -50,6 +51,7 @@ class ProbingModelWrapper:
 
     def to(self, device: t.Union[torch.device, str]) -> "ProbingModelWrapper":
         """Move probing model to `device`."""
+        # pylint: disable='invalid-name'
         self.probing_model.to(device)
         return self
 

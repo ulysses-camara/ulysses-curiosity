@@ -4,6 +4,7 @@ import collections
 import warnings
 
 import regex
+import numpy as np
 import torch
 import torch.nn
 import tqdm.auto
@@ -222,6 +223,7 @@ class ProbingModelContainer:
         num_epochs: int = 1,
         gradient_accumulation_steps: int = 1,
         show_progress_bar: bool = False,
+        agg_epoch_metrics_fn: t.Optional[t.Callable[[t.Sequence[float]], float]] = None,
         flatten_results: bool = True,
     ) -> output_handlers.ProbingResults:
         """Train probing models.
@@ -236,6 +238,10 @@ class ProbingModelContainer:
 
         show_progress_bar : bool, default=False
             If True, display a progress bar for each epoch.
+
+        agg_epoch_metrics_fn : t.Callable[[t.Sequence[float]], float] or None, default=None
+            Function to aggregate values of a same epoch. If None, will return all metrics from
+            every evaluation done.
 
         flatten_result : bool, default=True
             If True, results from every training epoch will be merged into a single list per
@@ -311,11 +317,15 @@ class ProbingModelContainer:
         for prober in self.probers.values():
             prober.to("cpu")
 
-        if flatten_results:
-            metrics_train = output_handlers.flatten_results(metrics_train)
-            metrics_eval = output_handlers.flatten_results(metrics_eval)
+        if agg_epoch_metrics_fn is not None:
+            metrics_train = output_handlers.aggregate(metrics_train, agg_fn=agg_epoch_metrics_fn)
+            metrics_eval = output_handlers.aggregate(metrics_eval, agg_fn=agg_epoch_metrics_fn)
 
-        metrics_test = output_handlers.flatten_results(metrics_test)
+        if flatten_results:
+            metrics_train = output_handlers.flatten(metrics_train)
+            metrics_eval = output_handlers.flatten(metrics_eval)
+
+        metrics_test = output_handlers.flatten(metrics_test)
 
         ret = output_handlers.ProbingResults(
             train=metrics_train,

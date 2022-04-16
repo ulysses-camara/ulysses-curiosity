@@ -39,12 +39,28 @@ class ProbingResults(t.NamedTuple):
         return "\n".join(pieces)
 
 
-def flatten_results(res: dict[t.Any, dict[t.Any, list[t.Any]]]) -> dict[t.Any, list[t.Any]]:
+def flatten(res: dict[t.Any, dict[t.Any, list[t.Any]]]) -> dict[t.Any, list[t.Any]]:
     """Merge results from all training epochs into a single list per module."""
-    flattened_res = collections.defaultdict(list)
+    flat_res = collections.defaultdict(list)
 
     for _, val_dict in res.items():
         for key, vals in val_dict.items():
-            flattened_res[key].extend(vals)
+            if hasattr(vals, "__len__"):
+                flat_res[key].extend(vals)
+            else:
+                flat_res[key].append(vals)
 
-    return flattened_res
+    return flat_res
+
+
+def aggregate(
+    res: dict[t.Any, dict[t.Any, list[t.Any]]], agg_fn: t.Callable[[t.Sequence[float]], float]
+) -> dict[t.Any, float]:
+    """Aggregate results into a single value, for every epoch, using `agg_fn`."""
+    agg_res = collections.defaultdict(dict)
+
+    for key_a, val_dict in res.items():
+        for key_b, vals in val_dict.items():
+            agg_res[key_a][key_b] = agg_fn(vals)
+
+    return agg_res

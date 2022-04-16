@@ -1,6 +1,4 @@
 """Probing task classes."""
-import torch
-
 from . import base
 
 
@@ -49,8 +47,14 @@ class ProbingTaskCustom(base.BaseProbingTask):
 
     Parameters
     ----------
-    probing_dataloader : torch.utils.data.DataLoader
+    probing_dataloader_train : torch.utils.data.DataLoader
         Train probing dataloader.
+
+    probing_dataloader_eval : torch.utils.data.DataLoader or None, default=None
+        Evaluation probing dataloader.
+
+    probing_dataloader_test : torch.utils.data.DataLoader or None, default=None
+        Test probing dataloader.
 
     loss_fn : t.Callable[[torch.Tensor, torch.Tensor], torch.Tensor]
         Loss function related to the probing task.
@@ -58,15 +62,3 @@ class ProbingTaskCustom(base.BaseProbingTask):
     task_name : str, default="unnamed_task"
         Probing task name.
     """
-
-    def __init__(
-        self,
-        probing_dataloader: torch.utils.data.DataLoader,
-        loss_fn: base.LossFunctionType,
-        task_name: str = "unnamed_task",
-    ):
-        super().__init__(
-            probing_dataloader=probing_dataloader,
-            loss_fn=loss_fn,
-            task_name=task_name,
-        )

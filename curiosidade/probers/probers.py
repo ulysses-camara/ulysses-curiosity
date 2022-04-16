@@ -55,17 +55,55 @@ class ProbingModelWrapper:
         self.probing_model.to(device)
         return self
 
-    def step(self, input_labels: torch.Tensor) -> float:
-        """Perform a single optimization step with `input_labels` as target reference."""
-        self.optim.zero_grad()
+    def step(
+        self, input_labels: torch.Tensor, accumulate_grad: bool = False, is_test: bool = False
+    ) -> float:
+        """Perform a single optimization step with `input_labels` as target reference.
+
+        Parameters
+        ----------
+        input_labels : torch.Tensor
+            Ground truth labels for current batch.
+
+        accumulate_grad : bool, default=False
+            If True, will not perform gradient cleaning, adding the current backward computation
+            to the pre-existing gradient. This also prevent updates to model weights.
+
+        is_test : bool, default=False
+            If True, does not compute backward gradients is this run. Also prevent weight
+            update, gradient accumulation, and gradient cleaning.
+
+        Returns
+        -------
+        loss : float
+            Loss value related to the current batch.
+        """
+        should_backward = not is_test
+        should_optim_step = not accumulate_grad and not is_test
+
         self.output_tensor = self.probing_model(self.input_tensor)
         self.loss = self.task.loss_fn(self.output_tensor, input_labels)
-        self.loss.backward()
-        self.optim.step()
+
+        if should_backward:
+            self.loss.backward()
+
+        if should_optim_step:
+            self.optim.step()
+            self.optim.zero_grad()
 
         loss_val = float(self.loss.cpu().detach().item())
 
         return loss_val
+
+    def train(self) -> "ProbingModelWrapper":
+        """Set model to train mode."""
+        self.probing_model.train()
+        return self
+
+    def eval(self) -> "ProbingModelWrapper":
+        """Set model to evaluation mode."""
+        self.probing_model.eval()
+        return self
 
 
 class ProbingModelFactory:

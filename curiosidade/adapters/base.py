@@ -66,7 +66,7 @@ class DummyAdapter(BaseAdapter):
 
     def __init__(self, *args: t.Any, **kwargs: t.Any):
         # pylint: disable='unused-argument'
-        dummy = torch.Parameter(torch.empty(0), requires_grad=False)
+        dummy = torch.nn.Parameter(torch.empty(0), requires_grad=False)
         super().__init__(model=dummy, device="cpu")
 
     def forward(self, batch: t.Any) -> AdapterInferenceOutputType:

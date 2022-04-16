@@ -11,6 +11,7 @@ import tqdm.auto
 from . import probers
 from . import adapters
 from . import input_handlers
+from . import output_handlers
 
 
 class ProbingModelContainer:
@@ -35,7 +36,7 @@ class ProbingModelContainer:
         self.random_seed = random_seed
 
         self.base_model: adapters.base.BaseAdapter = adapters.base.DummyAdapter()
-        self.task = probers.tasks.base.DummyProbingTask()
+        self.task: probers.tasks.base.BaseProbingTask = probers.tasks.base.DummyProbingTask()
         self.probers: dict[str, probers.ProbingModelWrapper] = {}
         self.is_trained = False
 
@@ -44,10 +45,22 @@ class ProbingModelContainer:
 
         pieces.append(f"(a): Base model: {self.base_model}")
         pieces.append(f"(b): Task name: {self.task.task_name}")
-        pieces.append(
-            f"(c): Probing dataset size: {len(self.task.probing_dataloader)} batches of "
-            f"size (at most) {self.task.probing_dataloader.batch_size}."
-        )
+        pieces.append("(c): Probing datasets:")
+
+        def format_dl_info(split_name: str, dataloader: torch.utils.data.DataLoader) -> str:
+            split_name = f"({split_name})"
+            return (
+                f"  {split_name:<7}: {len(dataloader):4} batches of size (at most) "
+                f"{dataloader.batch_size}."
+            )
+
+        pieces.append(format_dl_info("train", self.task.probing_dataloader_train))
+
+        if self.task.has_eval:
+            pieces.append(format_dl_info("eval", self.task.probing_dataloader_eval))
+
+        if self.task.has_test:
+            pieces.append(format_dl_info("test", self.task.probing_dataloader_test))
 
         pieces.append(f"(d): Probed modules ({len(self.probers)} in total):")
 
@@ -166,48 +179,60 @@ class ProbingModelContainer:
 
         return self
 
-    def _run_epoch(self, show_progress_bar: bool = False) -> dict[str, list[float]]:
+    def _run_epoch(
+        self,
+        dataloader: torch.utils.data.DataLoader,
+        gradient_accumulation_steps: int,
+        is_test: bool = False,
+        show_progress_bar: bool = False,
+    ) -> dict[str, list[float]]:
         """Run a full training epoch."""
         # pylint: disable='invalid-name'
         self.base_model.eval()
 
         res: dict[str, list[float]] = collections.defaultdict(list)
+        pbar = tqdm.auto.tqdm(dataloader, disable=not show_progress_bar)
 
-        for batch in tqdm.auto.tqdm(self.task.probing_dataloader, disable=not show_progress_bar):
+        for prober in self.probers.values():
+            if is_test:
+                prober.eval()
+            else:
+                prober.train()
+
+        for i, batch in enumerate(pbar, 1):
             with torch.no_grad():
                 *_, y = self.base_model(batch=batch)
 
             y = y.to(self.device)
+            accumulate_grad = i % gradient_accumulation_steps != 0
 
-            for prober_name, prober in self.probers.items():
-                loss = prober.step(y)
-                res[prober_name].append(loss)
+            with torch.set_grad_enabled(not is_test):
+                for prober_name, prober in self.probers.items():
+                    loss = prober.step(
+                        input_labels=y,
+                        accumulate_grad=accumulate_grad,
+                        is_test=is_test,
+                    )
+                    res[prober_name].append(loss)
 
         return res
-
-    @staticmethod
-    def _flatten_results(res: dict[t.Any, dict[t.Any, list[t.Any]]]) -> dict[t.Any, list[t.Any]]:
-        """Merge results from all training epochs into a single list per module."""
-        flattened_res = collections.defaultdict(list)
-
-        for _, val_dict in res.items():
-            for key, vals in val_dict.items():
-                flattened_res[key].extend(vals)
-
-        return flattened_res
 
     def train(
         self,
         num_epochs: int = 1,
+        gradient_accumulation_steps: int = 1,
         show_progress_bar: bool = False,
         flatten_results: bool = True,
-    ) -> dict[t.Union[str, int], t.Any]:
+    ) -> output_handlers.ProbingResults:
         """Train probing models.
 
         Parameters
         ----------
         num_epochs : int, default=1
             Number of training epochs.
+
+        gradient_accumulation_steps : int, default=1
+            Number of batches before one weight update.
 
         show_progress_bar : bool, default=False
             If True, display a progress bar for each epoch.
@@ -219,7 +244,8 @@ class ProbingModelContainer:
 
         Returns
         -------
-        train_results : dict
+        results : output_handlers.ProbingResults
+            Probing results, separated per split (train, eval, and test).
         """
         if self.is_trained:
             warnings.warn(
@@ -238,29 +264,66 @@ class ProbingModelContainer:
                 "first before training the probing models."
             )
 
+        if gradient_accumulation_steps <= 0:
+            raise ValueError(
+                "'gradient_accumulation_steps' must be >= 1 "
+                f"(got {gradient_accumulation_steps = })."
+            )
+
         self.base_model.to(self.device)
         for prober in self.probers.values():
             prober.to(self.device)
 
-        res: dict[t.Union[int, str], t.Any] = {}
+        metrics_train: output_handlers.MetricDictType = {}
+        metrics_eval: output_handlers.MetricDictType = {}
+        metrics_test: output_handlers.MetricDictType = {}
+
+        self.is_trained = True
 
         with torch.random.fork_rng(enabled=self.random_seed is not None):
             if self.random_seed is not None:
                 torch.random.manual_seed(self.random_seed)
 
             for epoch in range(num_epochs):
-                res[epoch] = self._run_epoch(show_progress_bar=show_progress_bar)
+                metrics_train[epoch] = self._run_epoch(
+                    dataloader=self.task.probing_dataloader_train,
+                    gradient_accumulation_steps=gradient_accumulation_steps,
+                    show_progress_bar=show_progress_bar,
+                )
+
+                if self.task.has_eval:
+                    metrics_eval[epoch] = self._run_epoch(
+                        dataloader=self.task.probing_dataloader_eval,
+                        gradient_accumulation_steps=gradient_accumulation_steps,
+                        is_test=True,
+                        show_progress_bar=False,
+                    )
+
+            if self.task.has_test:
+                metrics_test[epoch] = self._run_epoch(
+                    dataloader=self.task.probing_dataloader_test,
+                    gradient_accumulation_steps=gradient_accumulation_steps,
+                    is_test=True,
+                    show_progress_bar=False,
+                )
 
         self.base_model.to("cpu")
         for prober in self.probers.values():
             prober.to("cpu")
 
         if flatten_results:
-            res = self._flatten_results(res)
+            metrics_train = output_handlers.flatten_results(metrics_train)
+            metrics_eval = output_handlers.flatten_results(metrics_eval)
 
-        self.is_trained = True
+        metrics_test = output_handlers.flatten_results(metrics_test)
 
-        return res
+        ret = output_handlers.ProbingResults(
+            train=metrics_train,
+            eval=metrics_eval or None,
+            test=metrics_test or None,
+        )
+
+        return ret
 
 
 def attach_probers(

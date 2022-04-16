@@ -128,7 +128,9 @@ class ProbingModelFactory:
 
     Examples
     --------
+    >>> import curiosidade
     >>> import functools
+    ... 
     >>> class ProbingModel(torch.nn.Module):
     ...     def __init__(self, input_dim: int, output_dim: int):
     ...         super().__init__()
@@ -141,16 +143,16 @@ class ProbingModelFactory:
     ...     def forward(self, X):
     ...         return self.params(X)
     ...
-    >>> task = curiosidade.ProbingTaskSentenceLength()
+    >>> task = curiosidade.base.DummyProbingTask()
     >>> ProbingModelFactory(
     ...     probing_model_fn=ProbingModel,  # Note: do not instantiate.
     ...     optim_fn=functools.partial(torch.optim.Adam, lr=0.01),  # Note: do not instantiate.
     ...     task=task,
     ... )
     ProbingModelFactory
-      (a): probing model generator : <class 'ProbingModel'>
+      (a): probing model generator : <class 'curiosidade.probers.probers.ProbingModel'>
       (b): optimizer generator : functools.partial(<class 'torch.optim.adam.Adam'>, lr=0.01)
-      (c): task : 'sentence length (sentlen)' (classification)
+      (c): task : 'unnamed_task' (classification)
     """
 
     def __init__(
@@ -199,6 +201,11 @@ class ProbingModelFactory:
         random_seed : int or None, default=None
             Random seed to instantiate the probing model, controlling for random weight
             initialization, and any other non-deterministic behaviours.
+
+        Returns
+        -------
+        probing_model : ProbingModelWrapper
+            Probing model created and attached to `module`.
         """
         probing_output_dim = self.task.output_dim
 

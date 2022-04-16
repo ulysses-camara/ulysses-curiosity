@@ -29,9 +29,9 @@ class ProbingTaskSentenceLength(base.BaseProbingTask):
         super().__init__(
             loss_fn=torch.nn.CrossEntropyLoss(),
             output_dim=6,
-            dataset_uri_train=dataset_uri_train,
-            dataset_uri_eval=dataset_uri_eval,
-            dataset_uri_test=dataset_uri_test,
+            dataset_uri_or_dataloader_train=dataset_uri_train,
+            dataset_uri_or_dataloader_eval=dataset_uri_eval,
+            dataset_uri_or_dataloader_test=dataset_uri_test,
             task_type="classification",
             task_name="sentence length (sentlen)",
         )

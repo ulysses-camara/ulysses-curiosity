@@ -112,9 +112,10 @@ class ProbingModelFactory:
     Parameters
     ----------
     probing_model_fn : t.Callable[[int], torch.nn.Module]
-        Probing model factory function, or class derived from torch.nn.Module.
-        Must receive its input dimension (an integer) as its first positional
-        argument. Extra arguments can be handled via `extra_kwargs` parameter.
+        Probing model factory function, or class derived from torch.nn.Module. Must receive its
+        input dimension (an integer) as its first positional argument, and its output dimension
+        (also an integer) as its second positional argument. Extra arguments can be handled via
+        `extra_kwargs` parameter.
 
     task : task.base.BaseProbingTask
         Probing task related to the probing models.
@@ -124,6 +125,23 @@ class ProbingModelFactory:
 
     extra_kwargs : dict[str, t.Any] or None, default=None
         Extra arguments to provide to `probing_model_fn`.
+
+    Examples
+    --------
+    >>> class ProbingModel(torch.nn.Module):
+    ...     def __init__(self, input_dim: int, output_dim: int):
+    ...         super().__init__()
+    ...         self.params = torch.nn.Sequential(
+    ...             torch.nn.Linear(input_dim, 20, bias=True),
+    ...             torch.nn.ReLU(inplace=True),
+    ...             torch.nn.Linear(20, output_dim, bias=True),
+    ...         )
+    ...
+    ...     def forward(self, X):
+    ...         return self.params(X)
+    ...
+    >>> task = curiosidade.ProbingTaskSentenceLength()
+    >>>
     """
 
     def __init__(
@@ -164,11 +182,17 @@ class ProbingModelFactory:
             Random seed to instantiate the probing model, controlling for random weight
             initialization, and any other non-deterministic behaviours.
         """
+        probing_output_dim = self.task.output_dim
+
         with torch.random.fork_rng(enabled=random_seed is not None):
             if random_seed is not None:
                 torch.random.manual_seed(random_seed)
 
-            probing_model = self.probing_model_fn(probing_input_dim, **self.extra_kwargs)
+            probing_model = self.probing_model_fn(
+                probing_input_dim,
+                probing_output_dim,
+                **self.extra_kwargs,
+            )
 
         optim = self.optim_fn(probing_model.parameters())
 

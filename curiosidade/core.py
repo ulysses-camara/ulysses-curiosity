@@ -183,7 +183,7 @@ class ProbingModelContainer:
     def _run_epoch(
         self,
         dataloader: torch.utils.data.DataLoader,
-        gradient_accumulation_steps: int,
+        gradient_accumulation_steps: int = 1,
         is_test: bool = False,
         show_progress_bar: bool = False,
     ) -> dict[str, list[float]]:

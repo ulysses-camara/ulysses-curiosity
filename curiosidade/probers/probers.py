@@ -128,20 +128,29 @@ class ProbingModelFactory:
 
     Examples
     --------
+    >>> import functools
     >>> class ProbingModel(torch.nn.Module):
     ...     def __init__(self, input_dim: int, output_dim: int):
     ...         super().__init__()
     ...         self.params = torch.nn.Sequential(
-    ...             torch.nn.Linear(input_dim, 20, bias=True),
+    ...             torch.nn.Linear(input_dim, 20),
     ...             torch.nn.ReLU(inplace=True),
-    ...             torch.nn.Linear(20, output_dim, bias=True),
+    ...             torch.nn.Linear(20, output_dim),
     ...         )
     ...
     ...     def forward(self, X):
     ...         return self.params(X)
     ...
     >>> task = curiosidade.ProbingTaskSentenceLength()
-    >>>
+    >>> ProbingModelFactory(
+    ...     probing_model_fn=ProbingModel,  # Note: do not instantiate.
+    ...     optim_fn=functools.partial(torch.optim.Adam, lr=0.01),  # Note: do not instantiate.
+    ...     task=task,
+    ... )
+    ProbingModelFactory
+      (a): probing model generator : <class 'ProbingModel'>
+      (b): optimizer generator : functools.partial(<class 'torch.optim.adam.Adam'>, lr=0.01)
+      (c): task : 'sentence length (sentlen)' (classification)
     """
 
     def __init__(
@@ -164,6 +173,15 @@ class ProbingModelFactory:
         self.task = task
         self.optim_fn = optim_fn
         self.extra_kwargs = extra_kwargs or {}
+
+    def __repr__(self) -> str:
+        pieces: list[str] = [f"{self.__class__.__name__}"]
+
+        pieces.append(f"  (a): probing model generator : {self.probing_model_fn}")
+        pieces.append(f"  (b): optimizer generator : {self.optim_fn}")
+        pieces.append(f"  (c): task : '{self.task.task_name}' ({self.task.task_type})")
+
+        return "\n".join(pieces)
 
     def create_and_attach(
         self, module: torch.nn.Module, probing_input_dim: int, random_seed: t.Optional[int] = None

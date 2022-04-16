@@ -56,8 +56,12 @@ class ProbingModelWrapper:
         return self
 
     def step(
-        self, input_labels: torch.Tensor, accumulate_grad: bool = False, is_test: bool = False
-    ) -> float:
+        self,
+        input_labels: torch.Tensor,
+        accumulate_grad: bool = False,
+        is_test: bool = False,
+        compute_metrics: bool = True,
+    ) -> dict[str, float]:
         """Perform a single optimization step with `input_labels` as target reference.
 
         Parameters
@@ -73,10 +77,13 @@ class ProbingModelWrapper:
             If True, does not compute backward gradients is this run. Also prevent weight
             update, gradient accumulation, and gradient cleaning.
 
+        compute_metrics : bool, default=True
+            If True, compute metrics related to the task for the current batch.
+
         Returns
         -------
-        loss : float
-            Loss value related to the current batch.
+        metrics : dict[str float]
+            Metrics related to the current batch.
         """
         should_backward = not is_test
         should_optim_step = not accumulate_grad and not is_test
@@ -91,9 +98,15 @@ class ProbingModelWrapper:
             self.optim.step()
             self.optim.zero_grad()
 
+        self.output_tensor = self.output_tensor.detach()
         loss_val = float(self.loss.cpu().detach().item())
 
-        return loss_val
+        metrics = dict(loss=loss_val)
+
+        if compute_metrics and self.task.has_metrics:
+            metrics.update(self.task.metrics_fn(self.output_tensor, input_labels))
+
+        return metrics
 
     def train(self) -> "ProbingModelWrapper":
         """Set model to train mode."""
@@ -130,7 +143,7 @@ class ProbingModelFactory:
     --------
     >>> import curiosidade
     >>> import functools
-    ... 
+    ...
     >>> class ProbingModel(torch.nn.Module):
     ...     def __init__(self, input_dim: int, output_dim: int):
     ...         super().__init__()

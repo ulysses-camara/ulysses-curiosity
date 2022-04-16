@@ -95,6 +95,16 @@ class ProbingTaskCustom(base.BaseProbingTask):
     probing_dataloader_test : torch.utils.data.DataLoader or None, default=None
         Test probing dataloader.
 
+    metrics_fn : t.Callable[[torch.Tensor, torch.Tensor], dict[str, float]] or None,\
+            default=None
+        Validation function to compute extra scores from training, validation and test batches.
+        As the first argument, it must receive a logit tensor of shape (batch_size, output_dim),
+        and  a ground-truth label tensor os shape (batch_size,) as the second argument.
+        The return value must always be a dictionary (or any other valid mapping) mapping the
+        metric name and its computed value.
+        If None, no extra validation metrics will be computed, and only the loss values will
+        be returned as result.
+
     task_name : str, default="unnamed_task"
         Probing task name.
 
@@ -110,6 +120,7 @@ class ProbingTaskCustom(base.BaseProbingTask):
         probing_dataloader_train: torch.utils.data.DataLoader,
         probing_dataloader_eval: t.Optional[str] = None,
         probing_dataloader_test: t.Optional[str] = None,
+        metrics_fn: t.Optional[base.ValidationFunctionType] = None,
         task_name: str = "unnamed_task",
         task_type: t.Literal["classification", "regression", "mixed"] = "classification",
     ):
@@ -118,6 +129,7 @@ class ProbingTaskCustom(base.BaseProbingTask):
             dataset_uri_or_dataloader_eval=probing_dataloader_eval,
             dataset_uri_or_dataloader_test=probing_dataloader_test,
             loss_fn=loss_fn,
+            metrics_fn=metrics_fn,
             output_dim=output_dim,
             task_name=task_name,
             task_type=task_type,

@@ -7,6 +7,7 @@ import torch.nn
 
 
 LossFunctionType = t.Callable[[torch.Tensor, torch.Tensor], torch.Tensor]
+ValidationFunctionType = t.Callable[[torch.Tensor, torch.Tensor], dict[str, float]]
 
 
 class BaseProbingTask(abc.ABC):
@@ -31,6 +32,16 @@ class BaseProbingTask(abc.ABC):
     dataset_uri_or_dataloader_test : str or torch.utils.data.DataLoader or None, default=None
         Optional test probing dataset URI or DataLoader.
 
+    metrics_fn : t.Callable[[torch.Tensor, torch.Tensor], dict[str, float]] or None,\
+            default=None
+        Validation function to compute extra scores from training, validation and test batches.
+        As the first argument, it must receive a logit tensor of shape (batch_size, output_dim),
+        and  a ground-truth label tensor os shape (batch_size,) as the second argument.
+        The return value must always be a dictionary (or any other valid mapping) mapping the
+        metric name and its computed value.
+        If None, no extra validation metrics will be computed, and only the loss values will
+        be returned as result.
+
     task_name : str, default="unnamed_task"
         Probing task name.
 
@@ -50,6 +61,7 @@ class BaseProbingTask(abc.ABC):
         dataset_uri_or_dataloader_test: t.Optional[
             t.Union[torch.utils.data.DataLoader, str]
         ] = None,
+        metrics_fn: t.Optional[ValidationFunctionType] = None,
         task_name: str = "unnamed_task",
         task_type: t.Literal["classification", "regression", "mixed"] = "classification",
     ):
@@ -65,6 +77,7 @@ class BaseProbingTask(abc.ABC):
             raise ValueError(f"Invalid 'output_dim' ({output_dim}), must be >= 1.")
 
         self.task_name = task_name
+        self.metrics_fn = metrics_fn
         self.loss_fn = loss_fn
         self.task_type = task_type
         self.output_dim = output_dim
@@ -116,6 +129,11 @@ class BaseProbingTask(abc.ABC):
     def has_test(self) -> bool:
         """Check whether task has test dataset associated with it."""
         return self.probing_dataloader_test is not None
+
+    @property
+    def has_metrics(self) -> bool:
+        """Check whether task has metric functions."""
+        return self.metrics_fn is not None
 
     @staticmethod
     def _load_dataset(dataset_uri: str) -> torch.utils.data.TensorDataset:

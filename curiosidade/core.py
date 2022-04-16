@@ -186,11 +186,11 @@ class ProbingModelContainer:
         gradient_accumulation_steps: int = 1,
         is_test: bool = False,
         show_progress_bar: bool = False,
-    ) -> dict[str, list[float]]:
+    ) -> output_handlers.MetricPack:
         """Run a full training epoch."""
         self.base_model.eval()
 
-        res: dict[str, list[float]] = collections.defaultdict(list)
+        res = output_handlers.MetricPack()
         pbar = tqdm.auto.tqdm(dataloader, disable=not show_progress_bar)
 
         for prober in self.probers.values():
@@ -207,13 +207,13 @@ class ProbingModelContainer:
             accumulate_grad = i % gradient_accumulation_steps != 0
 
             with torch.set_grad_enabled(not is_test):
-                for prober_name, prober in self.probers.items():
-                    loss = prober.step(
+                for module_name, prober in self.probers.items():
+                    metrics = prober.step(
                         input_labels=batch_input_labels,
                         accumulate_grad=accumulate_grad,
                         is_test=is_test,
                     )
-                    res[prober_name].append(loss)
+                    res.append(metrics, module_name, i)
 
         return res
 
@@ -222,8 +222,6 @@ class ProbingModelContainer:
         num_epochs: int = 1,
         gradient_accumulation_steps: int = 1,
         show_progress_bar: bool = False,
-        agg_epoch_metrics_fn: t.Optional[t.Callable[[t.Sequence[float]], float]] = None,
-        flatten_results: bool = True,
     ) -> output_handlers.ProbingResults:
         """Train probing models.
 
@@ -237,15 +235,6 @@ class ProbingModelContainer:
 
         show_progress_bar : bool, default=False
             If True, display a progress bar for each epoch.
-
-        agg_epoch_metrics_fn : t.Callable[[t.Sequence[float]], float] or None, default=None
-            Function to aggregate values of a same epoch. If None, will return all metrics from
-            every evaluation done.
-
-        flatten_result : bool, default=True
-            If True, results from every training epoch will be merged into a single list per
-            probed module. If False, return results separed hierarchically; first by epoch, then
-            by probed module.
 
         Returns
         -------
@@ -279,9 +268,9 @@ class ProbingModelContainer:
         for prober in self.probers.values():
             prober.to(self.device)
 
-        metrics_train: output_handlers.MetricDictType = {}
-        metrics_eval: output_handlers.MetricDictType = {}
-        metrics_test: output_handlers.MetricDictType = {}
+        metrics_train = output_handlers.MetricPack()
+        metrics_eval = output_handlers.MetricPack()
+        metrics_test = output_handlers.MetricPack()
 
         self.is_trained = True
 
@@ -290,37 +279,33 @@ class ProbingModelContainer:
                 torch.random.manual_seed(self.random_seed)
 
             for epoch in range(num_epochs):
-                metrics_train[epoch] = self._run_epoch(
-                    dataloader=self.task.probing_dataloader_train,
-                    gradient_accumulation_steps=gradient_accumulation_steps,
-                    show_progress_bar=show_progress_bar,
+                metrics_train.combine(
+                    self._run_epoch(
+                        dataloader=self.task.probing_dataloader_train,
+                        gradient_accumulation_steps=gradient_accumulation_steps,
+                        show_progress_bar=show_progress_bar,
+                    ).expand_key_dim(epoch)
                 )
 
                 if self.task.has_eval:
-                    metrics_eval[epoch] = self._run_epoch(
-                        dataloader=self.task.probing_dataloader_eval,
-                        is_test=True,
+                    metrics_eval.combine(
+                        self._run_epoch(
+                            dataloader=self.task.probing_dataloader_eval,
+                            is_test=True,
+                        ).expand_key_dim(epoch)
                     )
 
             if self.task.has_test:
-                metrics_test[0] = self._run_epoch(
-                    dataloader=self.task.probing_dataloader_test,
-                    is_test=True,
+                metrics_test.combine(
+                    self._run_epoch(
+                        dataloader=self.task.probing_dataloader_test,
+                        is_test=True,
+                    ).expand_key_dim(-1)
                 )
 
         self.base_model.to("cpu")
         for prober in self.probers.values():
             prober.to("cpu")
-
-        if agg_epoch_metrics_fn is not None:
-            metrics_train = output_handlers.aggregate(metrics_train, agg_fn=agg_epoch_metrics_fn)
-            metrics_eval = output_handlers.aggregate(metrics_eval, agg_fn=agg_epoch_metrics_fn)
-
-        if flatten_results:
-            metrics_train = output_handlers.flatten(metrics_train)
-            metrics_eval = output_handlers.flatten(metrics_eval)
-
-        metrics_test = output_handlers.flatten(metrics_test)
 
         ret = output_handlers.ProbingResults(
             train=metrics_train,

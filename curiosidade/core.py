@@ -188,7 +188,6 @@ class ProbingModelContainer:
         show_progress_bar: bool = False,
     ) -> dict[str, list[float]]:
         """Run a full training epoch."""
-        # pylint: disable='invalid-name'
         self.base_model.eval()
 
         res: dict[str, list[float]] = collections.defaultdict(list)
@@ -202,15 +201,15 @@ class ProbingModelContainer:
 
         for i, batch in enumerate(pbar, 1):
             with torch.no_grad():
-                *_, y = self.base_model(batch=batch)
+                *_, batch_input_labels = self.base_model(batch=batch)
 
-            y = y.to(self.device)
+            batch_input_labels = batch_input_labels.to(self.device)
             accumulate_grad = i % gradient_accumulation_steps != 0
 
             with torch.set_grad_enabled(not is_test):
                 for prober_name, prober in self.probers.items():
                     loss = prober.step(
-                        input_labels=y,
+                        input_labels=batch_input_labels,
                         accumulate_grad=accumulate_grad,
                         is_test=is_test,
                     )

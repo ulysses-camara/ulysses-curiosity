@@ -31,7 +31,7 @@ class ProbingModelWrapper:
     ):
         self.input_tensor = torch.empty(0, dtype=torch.float64)
         self.output_tensor = torch.empty(0, dtype=torch.float64)
-        self.input_source_hook = None
+        self.input_source_hook: t.Optional[torch.utils.hooks.RemovableHandle] = None
         self.optim = optim
         self.probing_model = probing_model
         self.task = task
@@ -57,7 +57,7 @@ class ProbingModelWrapper:
         """Perform a single optimization step with `input_labels` as target reference."""
         self.optim.zero_grad()
         self.output_tensor = self.probing_model(self.input_tensor)
-        self.loss = self.task.loss_fn(input=self.output_tensor, target=input_labels)
+        self.loss = self.task.loss_fn(self.output_tensor, input_labels)
         self.loss.backward()
         self.optim.step()
 
@@ -71,7 +71,7 @@ class ProbingModelFactory:
 
     Parameters
     ----------
-    probing_model_fn : t.Callable[[int, ...], torch.nn.Module]
+    probing_model_fn : t.Callable[[int], torch.nn.Module]
         Probing model factory function, or class derived from torch.nn.Module.
         Must receive its input dimension (an integer) as its first positional
         argument. Extra arguments can be handled via `extra_kwargs` parameter.
@@ -88,7 +88,7 @@ class ProbingModelFactory:
 
     def __init__(
         self,
-        probing_model_fn: t.Callable[[int, ...], torch.nn.Module],
+        probing_model_fn: t.Callable[[int], torch.nn.Module],
         task: tasks.base.BaseProbingTask,
         optim_fn: t.Type[torch.optim.Optimizer] = torch.optim.Adam,
         extra_kwargs: t.Optional[dict[str, t.Any]] = None,
@@ -128,7 +128,7 @@ class ProbingModelFactory:
             if random_seed is not None:
                 torch.random.manual_seed(random_seed)
 
-            probing_model = self.probing_model_fn(input_dim, **self.extra_kwargs)
+            probing_model = self.probing_model_fn(probing_input_dim, **self.extra_kwargs)
 
         optim = self.optim_fn(probing_model.parameters())
 

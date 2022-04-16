@@ -19,7 +19,7 @@ class BaseAdapter(abc.ABC):
         self.device = torch.device(device)
         self.model = model.to(self.device)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return str(self.model)
 
     def to(self, device: t.Union[str, torch.device]) -> "BaseAdapter":
@@ -58,3 +58,14 @@ class BaseAdapter(abc.ABC):
         self, *args: t.Any, **kwargs: t.Any
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         return self.forward(*args, **kwargs)
+
+
+class DummyAdapter(BaseAdapter):
+    def __init__(self, *args, **kwargs):
+        dummy = torch.Parameter(torch.empty(0), requires_grad=False)
+        super().__init__(model=dummy, device="cpu")
+
+    """Dummy adapter used as placeholder."""
+
+    def forward(self, batch: t.Any) -> AdapterInferenceOutputType:
+        return None, None, torch.empty(0)

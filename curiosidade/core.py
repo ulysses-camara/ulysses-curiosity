@@ -12,14 +12,6 @@ from . import probers
 from . import adapters
 from . import input_handlers
 
-try:
-    import transformers
-
-    BaseModelType = t.Union[torch.nn.Module, transformers.PreTrainedModel]
-
-except ImportError:
-    BaseModelType = torch.nn.Module
-
 
 class ProbingModelContainer:
     """Container of probing models.
@@ -42,11 +34,11 @@ class ProbingModelContainer:
         self.device = torch.device(device)
         self.random_seed = random_seed
 
-        self.base_model: adapters.base.BaseAdapter = None
-        self.probers: dict[str, probers.ProbingModule] = dict()
+        self.base_model: adapters.base.BaseAdapter = adapters.base.DummyAdapter()
+        self.probers: dict[str, probers.ProbingModelWrapper] = dict()
         self.is_trained = False
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         pieces: list[str] = [f"{self.__class__.__name__}:"]
 
         pieces.append(f"(a): Base model: {self.base_model}")
@@ -72,15 +64,15 @@ class ProbingModelContainer:
     def probed_modules(self) -> tuple[str, ...]:
         return tuple(self.probers.keys())
 
-    def __iter__(self):
-        return iter(self.probers)
+    def __iter__(self) -> t.Iterator[tuple[str, probers.ProbingModelWrapper]]:
+        return iter(self.probers.items())
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.probers)
 
     def attach(
         self,
-        base_model: BaseModelType,
+        base_model: torch.nn.Module,
         probing_model_factory: probers.ProbingModelFactory,
         modules_to_attach: t.Union[regex.Pattern, str, t.Sequence[str]],
         modules_input_dim: input_handlers.ModuleInputDimType = None,
@@ -130,10 +122,10 @@ class ProbingModelContainer:
                 continue
 
             module_output_dim = input_handlers.get_probing_model_input_dim(
-                modules_output_dim=modules_output_dim,
+                modules_input_dim=modules_input_dim,
                 default_dim=prev_output_dim,
                 module_name=module_name,
-                module_index=count_attached_modules,
+                module_index=len(self.probers),
             )
 
             self.probers[module_name] = probing_model_factory.create_and_attach(
@@ -159,8 +151,8 @@ class ProbingModelContainer:
 
         if is_container and count_attached_modules < len(modules_to_attach):
             probed_modules = set(self.probers.keys())
-            not_attached_modules = sorted(set(modules_to_attach) - probed_modules)
-            not_attached_modules = map(lambda item: f" - {item}", not_attached_modules)
+            not_attached_modules: list[str] = sorted(set(modules_to_attach) - probed_modules)
+            not_attached_modules = list(map(lambda item: f" - {item}", not_attached_modules))
             warnings.warn(
                 message=(
                     "Some of the provided modules were not effectively attached:\n"
@@ -206,7 +198,7 @@ class ProbingModelContainer:
         num_epochs: int = 1,
         show_progress_bar: bool = False,
         flatten_results: bool = True,
-    ) -> dict[t.Union[str, int], t.Union[list[float], dict[str, list[float]]]]:
+    ) -> dict[t.Union[str, int], t.Any]:
         """Train probing models.
 
         Parameters
@@ -247,7 +239,7 @@ class ProbingModelContainer:
         for probers in self.probers.values():
             probers.to(self.device)
 
-        res: dict[int, dict[str, list[float]]] = {}
+        res: dict[t.Union[int, str], t.Any] = {}
 
         with torch.random.fork_rng(enabled=self.random_seed is not None):
             if self.random_seed is not None:

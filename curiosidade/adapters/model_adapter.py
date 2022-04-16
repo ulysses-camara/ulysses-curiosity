@@ -7,7 +7,7 @@ import torch.nn
 from . import base
 
 
-IS_TRANSFORMERS_AVAILABLE: t.Final[bool]
+IS_TRANSFORMERS_AVAILABLE: bool
 
 try:
     import transformers
@@ -56,9 +56,7 @@ class HuggingfaceAdapter(base.BaseAdapter):
 class TorchModuleAdapter(base.BaseAdapter):
     """Adapter for PyTorch (`torch` package) modules (`torch.nn.Module`)."""
 
-    def forward(
-        self, batch: tuple[torch.Tensor, torch.Tensor, ...]
-    ) -> base.AdapterInferenceOutputType:
+    def forward(self, batch: tuple[torch.Tensor, ...]) -> base.AdapterInferenceOutputType:
         """Model forward pass.
 
         Parameters

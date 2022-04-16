@@ -1,4 +1,5 @@
 """Base class for a probing task."""
+import typing as t
 import abc
 
 import torch

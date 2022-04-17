@@ -10,6 +10,7 @@ Probing task framework for Ulysses project.
 3. [Usage examples](#usage-examples)
     1. [Step-by-step example](#step-by-step-example)
     2. [Huggingface transformers example](#huggingface-transformers-example)
+4. [Preconfigured probing tasks](#preconfigured-probing-tasks)
 4. [References](#references)
 5. [License](#license)
 6. [Citation](#citation)
@@ -122,13 +123,19 @@ class ProbingModel(torch.nn.Module):
     def __init__(self, input_dim: int, output_dim: int):
         super().__init__()
         self.params = torch.nn.Sequential(
-            torch.nn.Linear(input_dim, 20, bias=True),
+            torch.nn.Linear(input_dim, 20),
             torch.nn.ReLU(inplace=True),
-            torch.nn.Linear(20, output_dim, bias=True),
+            torch.nn.Linear(20, output_dim),
         )
     
     def forward(self, X):
         return self.params(X)
+```
+
+For convenience, the probing model shown above can be created with a utility function available in this package:
+
+```python
+ProbingModel = curiosidade.probers.utils.get_probing_model_feedforward(hidden_layer_dims=[20])
 ```
 
 The next step is to create a probing task instance. In this step, you must set up important aspects of the training phase, such as the train, evaluation, and test dataloaders, the loss function, the expected output dimension, and the validation metrics that should be collected during training (from every provided dataloader). Note that *evaluation and test dataloaders are optional, but recommended*. The example below show a simple set up for a probing task with 3 classes, with loss function being the Cross Entropy, and collecting the Accuracy and F1 Scores per batch. The loss function value related to every batch is collected automatically by default.
@@ -179,7 +186,7 @@ probing_factory = curiosidade.ProbingModelFactory(
 )
 
 # (6): attach the probing models to the pretrained model layers.
-prober_container = curiosidade.core.attach_probers(
+prober_container = curiosidade.attach_probers(
     base_model=pretrained_model,
     probing_model_factory=probing_factory,
     modules_to_attach="relu\d+",  # or a container like ["name_a", "name_b", ...]
@@ -189,6 +196,17 @@ prober_container = curiosidade.core.attach_probers(
 
 print(f"{prober_container = }")  # Summarize every configutation done so far.
 print(f"{prober_container.probed_modules = }")  # Lists every probed module in 'pretrained_model'.
+```
+
+By default, during attachment the input dimension of each probing model will be inferred by keeping the last output dimension before the attachment. This strategy should work in most of the cases based on current deep learning model architectures, but may fail if there is some sort of bifurcation (like a siamese architecture) or a non-deterministic activation flow. If this heuristic is not working in your model, you can specify the input dimension explicitly using the argument `curiosidade.attach_probers(..., modules_input_dim=dict())`, as shown below. Any input dimenion not explicitly provided will still be inferred, so you can list only modules that are causing you trouble.
+```python
+prober_container = curiosidade.attach_probers(
+    ...,
+    modules_input_dim={
+      "params.relu1": 25,
+      "params.relu2": 35,
+    },
+)
 ```
 
 Now we are set up, so we can train our attached probing models:
@@ -261,6 +279,14 @@ class ProbingModel(torch.nn.Module):
         return out
 
 
+# Or, using an available utility function:
+ProbingModel = curiosidade.probers.utils.get_probing_model_for_sequences(
+    hidden_layer_dims=[128],
+    pooling_strategy="max",
+    pooling_axis=1,
+)
+
+
 def accuracy_fn(logits, target):
     _, cls_ids = logits.max(axis=-1)
     return {"accuracy": (cls_ids == target).float().mean().item()}
@@ -291,7 +317,7 @@ probing_factory = curiosidade.ProbingModelFactory(
 )
 
 # (6): attach the probing models to the pretrained model layers.
-prober_container = curiosidade.core.attach_probers(
+prober_container = curiosidade.attach_probers(
     base_model=bert,
     probing_model_factory=probing_factory,
     modules_to_attach="bert.encoder.layer.\d+.output.dense",
@@ -308,6 +334,22 @@ agg_fns = [np.mean, np.std]
 df_train = probing_results.train.to_pandas(aggregate_by=agg_cols, aggregate_fn=agg_fns)
 df_eval = probing_results.eval.to_pandas(aggregate_by=agg_cols, aggregate_fn=agg_fns)
 df_test = probing_results.test.to_pandas(aggregate_by=agg_cols, aggregate_fn=agg_fns)
+```
+
+### Preconfigured probing tasks
+This package will provide a collection of preconfigured probing tasks for portuguese language, based on tasks proposed in [(Conneau et. al, 2018)](https://aclanthology.org/P18-1198/). There are basic setups for these tasks already available in this package, as shown below, but they are all work in progress. So far, you can use `ProbingTaskCustom` to set up your own probing tasks.
+
+```python
+curiosidade.ProbingTaskSentenceLength
+curiosidade.ProbingTaskWordContent
+curiosidade.ProbingTaskBigramShift
+curiosidade.ProbingTaskTreeDepth
+curiosidade.ProbingTaskTopConstituent
+curiosidade.ProbingTaskTense
+curiosidade.ProbingTaskSubjectNumber
+curiosidade.ProbingTaskObjectNumber
+curiosidade.ProbingTaskSOMO
+curiosidade.ProbingTaskCoordinationInversion
 ```
 
 ### References

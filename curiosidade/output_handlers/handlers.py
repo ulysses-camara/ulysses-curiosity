@@ -6,6 +6,8 @@ import numpy as np
 
 
 class MetricPack:
+    """Store and aggregate metrics from probe model training."""
+
     def __init__(self):
         self.stored_values: dict[tuple[t.Any, ...], float] = {}
 
@@ -31,6 +33,25 @@ class MetricPack:
     def append(
         self, metrics: dict[t.Any, float], *args: t.Any, merge_keys: bool = True
     ) -> "MetricPack":
+        """Append extra metrics in stored items.
+
+        Parameters
+        ----------
+        metrics : dict[t.Any, float]
+            Metrics to store.
+
+        *args : tuple[t.Any]
+            Extra arguments to build the keys.
+
+        merge_keys : bool, default=True
+            If True, colapse containers within existing keys in `metrics` to merge with
+            provided *args (if any). If False, the new keys will be a 2-tuple in the
+            format (previous_key, *args).
+
+        Returns
+        -------
+        self
+        """
         for key, val in metrics.items():
             do_merge = merge_keys and hasattr(key, "__len__") and not isinstance(key, str)
             new_key = (*key, *args) if do_merge else (key, *args)
@@ -39,6 +60,7 @@ class MetricPack:
         return self
 
     def expand_key_dim(self, *args: t.Any) -> "MetricPack":
+        """Add a new value at the start of every stored key."""
         new_stored_values: dict[tuple[t.Any, ...], float] = {}
 
         for key, val in self.stored_values.items():
@@ -50,6 +72,7 @@ class MetricPack:
         return self
 
     def combine(self, metrics: "MetricPack") -> "MetricPack":
+        """Combine stored items with items in `metrics`."""
         self.stored_values.update(metrics.stored_values)
         return self
 
@@ -58,6 +81,55 @@ class MetricPack:
         aggregate_by: t.Optional[t.Sequence[str]] = None,
         aggregate_fn: t.Callable[[t.Sequence[float]], float] = np.mean,
     ) -> pd.DataFrame:
+        """Build a pandas DataFrame with stored values.
+
+        Parameters
+        ----------
+        aggregate_by : t.Sequence[str] or None, default=None
+            If given, aggregate results by the provided keys. It must be a sequence of strings
+            contained a subset of {'epoch', 'metric_name', 'module', 'batch_index'}. The function
+            used to aggregate values that fall in the same bucket is `aggregate_fn`.
+
+        aggregate_fn : callable or sequence of callables, default=numpy.mean
+            Function, or sequence of callables used to aggregate values in a same bucket. Also
+            accept values supported by pandas Aggregate function. Must receive a sequence of
+            values, and return a single number. Ignored if `aggregate_by=None`.
+
+        Returns
+        -------
+        dataframe : pandas.DataFrame
+            Stored values in the form of a pandas dataframe.
+
+        Examples
+        --------
+        >>> import curiosidade
+        ...
+        >>> metrics = curiosidade.output_handlers.MetricPack()
+        >>> metrics.append({
+        ...     (0, 'loss', 'relu1', 0): 1.50,
+        ...     (0,  'acc', 'relu1', 0): 0.10,
+        ...     (0, 'loss', 'relu1', 1): 1.40,
+        ...     (0,  'acc', 'relu1', 1): 0.20,
+        ...     (1, 'loss', 'relu1', 0): 1.15,
+        ...     (1,  'acc', 'relu1', 0): 0.33,
+        ...     (1, 'loss', 'relu1', 1): 0.85,
+        ...     (1,  'acc', 'relu1', 1): 0.43,
+        ... })
+        MetricPack with 8 values stored in:
+          (0, 'loss', 'relu1', 0): 1.5
+          (0, 'acc', 'relu1', 0): 0.1
+          (0, 'loss', 'relu1', 1): 1.4
+          (0, 'acc', 'relu1', 1): 0.2
+          ...
+        >>> metrics.to_pandas(
+        ...     aggregate_by=['epoch', 'metric_name', 'module'],
+        ...     aggregate_fn=[np.max, np.min],
+        ... ).values
+        array([[0, 'acc', 'relu1', 0.2, 0.1],
+               [0, 'loss', 'relu1', 1.5, 1.4],
+               [1, 'acc', 'relu1', 0.43, 0.33],
+               [1, 'loss', 'relu1', 1.15, 0.85]], dtype=object)
+        """
         df = pd.DataFrame(
             [[*keys, val] for keys, val in self.stored_values.items()],
             columns=["epoch", "metric_name", "module", "batch_index", "metric"],

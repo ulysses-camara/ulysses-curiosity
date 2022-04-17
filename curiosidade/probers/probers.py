@@ -28,13 +28,33 @@ class ProbingModelWrapper:
         task: tasks.base.BaseProbingTask,
         optim: torch.optim.Optimizer,
     ):
-        self.input_tensor = torch.empty(0, dtype=torch.float64)
-        self.output_tensor = torch.empty(0, dtype=torch.float64)
-        self.input_source_hook: t.Optional[torch.utils.hooks.RemovableHandle] = None
         self.optim = optim
         self.probing_model = probing_model
         self.task = task
+
+        self.input_tensor = torch.empty(0, dtype=torch.float64)
+        self.output_tensor = torch.empty(0, dtype=torch.float64)
         self.loss = torch.empty(0)
+
+        self.input_source_hook: t.Optional[torch.utils.hooks.RemovableHandle] = None
+        self.attached_module: t.Optional[torch.nn.Module] = None
+
+    def __repr__(self) -> str:
+        pieces: list[str] = [f"{self.__class__.__name__}"]
+
+        pieces.append("  (a): Probing model:")
+        pieces.append("    " + str(self.probing_model).replace("\n", "\n    "))
+
+        pieces.append(f"  (b): Optimizer: {self.optim.__class__.__name__}")
+        pieces.append(f"  (c): Task: {self.task.task_name}")
+        pieces.append(f"  (d): Attached: {self.is_attached}")
+
+        return "\n".join(pieces)
+
+    @property
+    def is_attached(self):
+        """Check whether the current probing model is attached to a pretrained module."""
+        return self.attached_module is not None
 
     def attach(self, module: torch.nn.Module) -> "ProbingModelWrapper":
         """Attach probing model to `module`."""
@@ -45,6 +65,7 @@ class ProbingModelWrapper:
             # pylint: disable='unused-argument'
             self.input_tensor = l_output.detach()
 
+        self.attached_module = module
         self.input_source_hook = module.register_forward_hook(fn_hook_forward)
 
         return self

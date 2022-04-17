@@ -60,10 +60,14 @@ class ProbingModelContainer:
         if self.task.has_test:
             pieces.append(format_dl_info("test", self.task.probing_dataloader_test))
 
-        pieces.append(f"(d): Probed modules ({len(self.probers)} in total):")
+        if self.probers:
+            pieces.append(f"(d): Probed modules ({len(self.probers)} in total):")
 
-        for i, key in enumerate(self.probers.keys()):
-            pieces.append(f"  ({i}): {key}")
+            for i, key in enumerate(self.probers.keys()):
+                pieces.append(f"  ({i}): {key}")
+
+        else:
+            pieces.append(f"(d): No attached probing models.")
 
         return "\n".join(pieces)
 
@@ -76,6 +80,9 @@ class ProbingModelContainer:
     def probed_modules(self) -> tuple[str, ...]:
         """Return names of all probed modules."""
         return tuple(self.probers.keys())
+
+    def __getitem__(self, key: str) -> probers.ProbingModelWrapper:
+        return self.probers[key]
 
     def __iter__(self) -> t.Iterator[tuple[str, probers.ProbingModelWrapper]]:
         return iter(self.probers.items())

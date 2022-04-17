@@ -76,7 +76,8 @@ disable = """
 	too-many-arguments,
 	too-many-statements,
 	too-many-branches,
-	import-outside-toplevel
+	import-outside-toplevel,
+	too-many-instance-attributes
 """
 min-similarity-lines=10
 

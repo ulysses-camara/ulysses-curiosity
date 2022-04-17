@@ -49,6 +49,51 @@ classDef clsProber fill:#A1425B,stroke:#AC6C7D,stroke-width:2px;
 class P1,P2,P3 clsProber;
 ```
 
+```mermaid
+flowchart TB
+
+L2{{"Pretrained frozen module"}}
+
+subgraph PMF["ProbingTaskFactory"]
+    direction LR
+    
+    subgraph TASK["Probing Task"]
+        D1["Probing DataLoader: train"]
+        D2["Probing DataLoader: eval"]
+        D3["Probing DataLoader: test"]
+        LF["Loss function"]
+        MT["Validation metrics"]
+    end
+
+    P1(["Probing Model"])
+    TASK(["Task"])
+    OPT(["Optimizer"])
+
+    P1 o==o TASK o==o OPT o==o P1
+end
+
+P1 --> Metrics["Validation metric scores"];
+
+L2 -.-> P1;
+
+style OPT fill:#376E56;
+style LF fill:#7F4B52;
+style MT fill:#5E6B3D;
+style Metrics fill:#5B5531;
+
+classDef clsDataloader fill:#4D2E4C,stroke:#BBB;
+class D1,D2,D3 clsDataloader;
+
+classDef clsContainer fill:#111,stroke:#BBB;
+class PMF,TASK clsContainer;
+
+classDef clsProbed fill:#354675,stroke:#103A83,stroke-width:2px;
+class L2,L3,L6 clsProbed;
+
+classDef clsProber fill:#A1425B,stroke:#AC6C7D,stroke-width:2px;
+class P1,P2,P3 clsProber;
+```
+
 ### Installation
 ```shell
 python -m pip install "git+https://github.com/FelSiq/ulysses-curiosity"

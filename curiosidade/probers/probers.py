@@ -104,7 +104,7 @@ class ProbingModelWrapper:
         metrics = dict(loss=loss_val)
 
         if compute_metrics and self.task.has_metrics:
-            metrics.update(self.task.metrics_fn(self.output_tensor, input_labels))
+            metrics.update(self.task.metrics_fn(self.output_tensor, input_labels))  # type:ignore
 
         return metrics
 
@@ -124,7 +124,7 @@ class ProbingModelFactory:
 
     Parameters
     ----------
-    probing_model_fn : t.Callable[[int], torch.nn.Module]
+    probing_model_fn : t.Callable[[int, int], torch.nn.Module]
         Probing model factory function, or class derived from torch.nn.Module. Must receive its
         input dimension (an integer) as its first positional argument, and its output dimension
         (also an integer) as its second positional argument. Extra arguments can be handled via
@@ -170,7 +170,7 @@ class ProbingModelFactory:
 
     def __init__(
         self,
-        probing_model_fn: t.Callable[[int], torch.nn.Module],
+        probing_model_fn: t.Callable[[int, int], torch.nn.Module],
         task: tasks.base.BaseProbingTask,
         optim_fn: t.Type[torch.optim.Optimizer] = torch.optim.Adam,
         extra_kwargs: t.Optional[dict[str, t.Any]] = None,

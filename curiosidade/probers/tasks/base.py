@@ -1,6 +1,7 @@
 """Base class for a probing task."""
 import typing as t
 import abc
+import pathlib
 
 import torch
 import torch.nn
@@ -8,6 +9,7 @@ import torch.nn
 
 LossFunctionType = t.Callable[[torch.Tensor, torch.Tensor], torch.Tensor]
 ValidationFunctionType = t.Callable[[torch.Tensor, torch.Tensor], dict[str, float]]
+DataLoaderType = t.Union[str, pathlib.Path, torch.utils.data.DataLoader]
 
 
 class BaseProbingTask(abc.ABC):
@@ -23,13 +25,15 @@ class BaseProbingTask(abc.ABC):
     loss_fn : t.Callable[[torch.Tensor, torch.Tensor], torch.Tensor]
         Loss function related to the probing task.
 
-    dataset_uri_or_dataloader_train : str or torch.utils.data.DataLoader
+    dataset_uri_or_dataloader_train : str or pathlib.Path or torch.utils.data.DataLoader
         Train probing dataset URI or DataLoader.
 
-    dataset_uri_or_dataloader_eval : str or torch.utils.data.DataLoader or None, default=None
+    dataset_uri_or_dataloader_eval : str or pathlib.Path or torch.utils.data.DataLoader or None,\
+            default=None
         Optional evaluation probing dataset URI or DataLoader.
 
-    dataset_uri_or_dataloader_test : str or torch.utils.data.DataLoader or None, default=None
+    dataset_uri_or_dataloader_test : str or pathlib.Path or torch.utils.data.DataLoader or None,\
+            default=None
         Optional test probing dataset URI or DataLoader.
 
     metrics_fn : t.Callable[[torch.Tensor, torch.Tensor], dict[str, float]] or None,\
@@ -54,16 +58,14 @@ class BaseProbingTask(abc.ABC):
         self,
         output_dim: int,
         loss_fn: LossFunctionType,
-        dataset_uri_or_dataloader_train: t.Union[str, torch.utils.data.DataLoader],
-        dataset_uri_or_dataloader_eval: t.Optional[
-            t.Union[torch.utils.data.DataLoader, str]
-        ] = None,
-        dataset_uri_or_dataloader_test: t.Optional[
-            t.Union[torch.utils.data.DataLoader, str]
-        ] = None,
+        dataset_uri_or_dataloader_train: DataLoaderType,
+        dataset_uri_or_dataloader_eval: t.Optional[DataLoaderType] = None,
+        dataset_uri_or_dataloader_test: t.Optional[DataLoaderType] = None,
         metrics_fn: t.Optional[ValidationFunctionType] = None,
         task_name: str = "unnamed_task",
         task_type: t.Literal["classification", "regression", "mixed"] = "classification",
+        batch_size_train: t.Optional[int] = None,
+        batch_size_eval: t.Optional[int] = None,
     ):
         if task_type not in {"classification", "regression", "mixed"}:
             raise ValueError(
@@ -86,27 +88,27 @@ class BaseProbingTask(abc.ABC):
         dl_eval: t.Optional[torch.utils.data.DataLoader]
         dl_test: t.Optional[torch.utils.data.DataLoader]
 
-        if isinstance(dataset_uri_or_dataloader_train, str):
+        if isinstance(dataset_uri_or_dataloader_train, (str, pathlib.Path)):
             dl_train = torch.utils.data.DataLoader(
                 self._load_dataset(dataset_uri_or_dataloader_train),
-                batch_size=batch_size_train,
+                batch_size=batch_size_train or 16,
                 shuffle=True,
             )
 
         else:
             dl_train = dataset_uri_or_dataloader_train
 
-        if isinstance(dataset_uri_or_dataloader_eval, str):
+        if isinstance(dataset_uri_or_dataloader_eval, (str, pathlib.Path)):
             dl_eval = torch.utils.data.DataLoader(
                 self._load_dataset(dataset_uri_or_dataloader_eval),
-                batch_size=batch_size_eval,
+                batch_size=batch_size_eval or 32,
                 shuffle=False,
             )
 
         else:
             dl_eval = dataset_uri_or_dataloader_eval
 
-        if isinstance(dataset_uri_or_dataloader_test, str):
+        if isinstance(dataset_uri_or_dataloader_test, (str, pathlib.Path)):
             dl_test = torch.utils.data.DataLoader(
                 self._load_dataset(dataset_uri_or_dataloader_test),
                 batch_size=batch_size_eval,
@@ -136,7 +138,7 @@ class BaseProbingTask(abc.ABC):
         return self.metrics_fn is not None
 
     @staticmethod
-    def _load_dataset(dataset_uri: str) -> torch.utils.data.TensorDataset:
+    def _load_dataset(dataset_uri: t.Union[pathlib.Path, str]) -> torch.utils.data.TensorDataset:
         """Load a prepared dataset."""
         raise NotImplementedError
 

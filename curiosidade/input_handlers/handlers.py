@@ -1,5 +1,6 @@
 """Handle general user input appropriately."""
 import typing as t
+import re
 
 import regex
 
@@ -8,17 +9,20 @@ ModuleInputDimType = t.Optional[t.Union[dict[str, int], t.Sequence[int]]]
 
 
 def get_fn_select_modules_to_probe(
-    modules_to_attach: t.Union[str, regex.Pattern, t.Sequence[str]]
+    modules_to_attach: t.Union[str, t.Pattern[str], t.Sequence[str]]
 ) -> t.Callable[[str], bool]:
     """Return a boolean function that checks if a given module should be probed."""
-    if isinstance(modules_to_attach, (str, regex.Pattern)):
-        if isinstance(modules_to_attach, str):
-            modules_to_attach = regex.compile(modules_to_attach)
+    if isinstance(modules_to_attach, (str, regex.Pattern, re.Pattern)):
+        compiled_regex: t.Pattern[str] = (
+            regex.compile(modules_to_attach)
+            if isinstance(modules_to_attach, str)
+            else modules_to_attach
+        )
 
-        return lambda module_name: modules_to_attach.search(module_name) is not None
+        return lambda module_name: compiled_regex.search(module_name) is not None
 
-    modules_to_attach = frozenset(modules_to_attach)
-    return lambda module_name: module_name in modules_to_attach
+    modules_to_attach_set = frozenset(modules_to_attach)
+    return lambda module_name: module_name in modules_to_attach_set
 
 
 def get_probing_model_input_dim(

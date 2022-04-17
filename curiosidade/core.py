@@ -1,10 +1,7 @@
 """Main entry point for probing models."""
 import typing as t
-import collections
 import warnings
 
-import regex
-import numpy as np
 import torch
 import torch.nn
 import tqdm.auto
@@ -90,7 +87,7 @@ class ProbingModelContainer:
         self,
         base_model: torch.nn.Module,
         probing_model_factory: probers.ProbingModelFactory,
-        modules_to_attach: t.Union[regex.Pattern, str, t.Sequence[str]],
+        modules_to_attach: t.Union[t.Pattern[str], str, t.Sequence[str]],
         modules_input_dim: input_handlers.ModuleInputDimType = None,
     ) -> "ProbingModelContainer":
         """Attach probing models to specificied `base_model` modules.
@@ -103,7 +100,7 @@ class ProbingModelContainer:
         probing_model_factory : probers.ProbingModelFactory
             Probing model factory object.
 
-        modules_to_attach : regex.Pattern or str or t.Sequence[str]
+        modules_to_attach : t.Pattern[str] or str or t.Sequence[str]
             A list or regular expression pattern specifying which model modules should be probed.
             Use `base_model.named_modules()` to check available model modules for probing.
 
@@ -319,7 +316,7 @@ class ProbingModelContainer:
 def attach_probers(
     base_model: torch.nn.Module,
     probing_model_factory: probers.ProbingModelFactory,
-    modules_to_attach: t.Union[regex.Pattern, str, t.Sequence[str]],
+    modules_to_attach: t.Union[t.Pattern[str], str, t.Sequence[str]],
     modules_input_dim: input_handlers.ModuleInputDimType = None,
     device: t.Union[torch.device, str] = "cpu",
     random_seed: t.Optional[int] = None,
@@ -334,7 +331,7 @@ def attach_probers(
     probing_model_factory : probers.ProbingModelFactory
         Probing model factory object.
 
-    modules_to_attach : regex.Pattern or str or t.Sequence[str]
+    modules_to_attach : t.Pattern[str] or str or t.Sequence[str]
         A list or regular expression pattern specifying which model modules should be probed.
         Use `base_model.named_modules()` to check available model modules for probing.
 

@@ -8,10 +8,10 @@ import numpy as np
 class MetricPack:
     """Store and aggregate metrics from probe model training."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.stored_values: dict[tuple[t.Any, ...], float] = {}
 
-    def __getitem__(self, key) -> float:
+    def __getitem__(self, key: tuple[t.Any, ...]) -> float:
         return self.stored_values[key]
 
     def __iter__(self) -> t.Iterator[tuple[tuple[t.Any, ...], float]]:
@@ -64,7 +64,7 @@ class MetricPack:
         new_stored_values: dict[tuple[t.Any, ...], float] = {}
 
         for key, val in self.stored_values.items():
-            new_key = (*args, *key) if not isinstance(key, str) else (*args, key)
+            new_key = (*args, *key)
             new_stored_values[new_key] = val
 
         self.stored_values = new_stored_values
@@ -130,7 +130,7 @@ class MetricPack:
                [1, 'acc', 'relu1', 0.43, 0.33],
                [1, 'loss', 'relu1', 1.15, 0.85]], dtype=object)
         """
-        df = pd.DataFrame(
+        dataframe = pd.DataFrame(
             [[*keys, val] for keys, val in self.stored_values.items()],
             columns=["epoch", "metric_name", "module", "batch_index", "metric"],
         )
@@ -141,8 +141,8 @@ class MetricPack:
             if "metric" in aggregate_by_set:
                 raise ValueError("Can not aggregate by 'metric'.")
 
-            if not aggregate_by_set.issubset(df.columns):
-                df_columns_set = set(df.columns)
+            if not aggregate_by_set.issubset(dataframe.columns):
+                df_columns_set = set(dataframe.columns)
                 df_columns_set.remove("metric")
 
                 unknown_cols = tuple(sorted(aggregate_by_set - df_columns_set))
@@ -152,10 +152,10 @@ class MetricPack:
                     f"following: {sorted(tuple(df_columns_set))}."
                 )
 
-            df = df.groupby(aggregate_by).agg(dict(metric=aggregate_fn))
-            df.reset_index(inplace=True)
+            dataframe = dataframe.groupby(aggregate_by).agg(dict(metric=aggregate_fn))
+            dataframe.reset_index(inplace=True)
 
-        return df
+        return dataframe
 
 
 class ProbingResults(t.NamedTuple):

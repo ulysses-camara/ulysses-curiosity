@@ -34,6 +34,8 @@ class ProbingTaskSentenceLength(base.BaseProbingTask):
             dataset_uri_or_dataloader_test=dataset_uri_test,
             task_type="classification",
             task_name="sentence length (sentlen)",
+            batch_size_train=batch_size_train,
+            batch_size_eval=batch_size_eval,
         )
 
 

@@ -38,6 +38,7 @@ dev = [
 
 notebook = [
 	"notebook == 6.4.10",
+	"torchmetrics-0.8.0",
 ]
 
 [tool.mypy]

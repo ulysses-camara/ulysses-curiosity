@@ -174,7 +174,7 @@ task = curiosidade.ProbingTaskCustom(
 )
 ```
 
-Now, we need to attach the probing models to the pretrained model modules. This is easily achieved by creating a `ProbingModelFactory`, and calling `attach_probers` function. In this step you also need to provide the optimizer, used to update the probing model weights. Both the probing model and the optimizer *should not be instantiated* when provided to the ProbingModelFactory, as they will be instantiated automatically potentially many times as required to probe all pretrained model modules. The modules that should be effectively be probed are specified by their names, or a regular expression pattern that is used to match against the module names. To check the module names of your model use PyTorch's module built-in `pretrained_model.named_modules()`:
+Now, we need to attach the probing models to the pretrained model modules. This is achieved by creating a `ProbingModelFactory`, and calling `attach_probers` method. In this step you also need to provide the optimizer responsible to updating the probing model weights. Both the probing model and the optimizer *should not be instantiated* when provided to the ProbingModelFactory, as they will be instantiated automatically many times as required to probe every pretrained modules. The modules to be probed are specified by their names in a list, or by regular expression patterns that matches their names. To check the module names of your model use PyTorch's module built-in `pretrained_model.named_modules()`:
 
 ```python
 pretrained_modules_available_for_probing = [
@@ -197,7 +197,7 @@ probing_factory = curiosidade.ProbingModelFactory(
 prober_container = curiosidade.attach_probers(
     base_model=pretrained_model,
     probing_model_factory=probing_factory,
-    modules_to_attach="relu\d+",  # or a container like ["name_a", "name_b", ...]
+    modules_to_attach="params.relu\d+",  # or a container like ["name_a", "name_b", ...]
     random_seed=16,
     device="cpu",
 )
@@ -228,12 +228,10 @@ Finally, the results can be aggregated to better analysis and visualization:
 
 ```python
 # (8): aggregate results.
-agg_cols = ["batch_index"]
-agg_fns = [np.mean, np.std]
-
-df_train = probing_results.train.to_pandas(aggregate_by=agg_cols, aggregate_fn=agg_fns)
-df_eval = probing_results.eval.to_pandas(aggregate_by=agg_cols, aggregate_fn=agg_fns)
-df_test = probing_results.test.to_pandas(aggregate_by=agg_cols, aggregate_fn=agg_fns)
+df_train, df_eval, df_test = probing_results.to_pandas(
+    aggregate_by=["batch_index"],
+    aggregate_fn=[np.mean, np.std],
+)
 
 print(df_train)
 #    epoch        module metric_name    metric          
@@ -336,12 +334,10 @@ prober_container = curiosidade.attach_probers(
 probing_results = prober_container.train(num_epochs=10, show_progress_bar="epoch")
 
 # (8): aggregate results.
-agg_cols = ["batch_index"]
-agg_fns = [np.mean, np.std]
-
-df_train = probing_results.train.to_pandas(aggregate_by=agg_cols, aggregate_fn=agg_fns)
-df_eval = probing_results.eval.to_pandas(aggregate_by=agg_cols, aggregate_fn=agg_fns)
-df_test = probing_results.test.to_pandas(aggregate_by=agg_cols, aggregate_fn=agg_fns)
+df_train, df_eval, df_test = probing_results.to_pandas(
+    aggregate_by=["batch_index"],
+    aggregate_fn=[np.mean, np.std],
+)
 ```
 
 ### Optimizing training with pruning

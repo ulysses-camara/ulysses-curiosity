@@ -169,15 +169,16 @@ class MetricPack:
 class ProbingResults(t.NamedTuple):
     """Class to store probing results per split."""
 
-    train: MetricPack
-    eval: t.Optional[MetricPack] = None
-    test: t.Optional[MetricPack] = None
+    train: t.Union[pd.DataFrame, MetricPack]
+    eval: t.Optional[t.Union[pd.DataFrame, MetricPack]] = None
+    test: t.Optional[t.Union[pd.DataFrame, MetricPack]] = None
 
     def _format_split(self, split_name: str) -> str:
         split = getattr(self, split_name)
         prefix = f"{split_name:}"
         prefix = f"    {prefix:<5} = "
-        return f"{prefix}{str(split).replace('  ', '      ')},"
+        split_str = str(split).replace("\n", "\n  ")
+        return f"{prefix}{split_str},"
 
     def __repr__(self) -> str:
         pieces: list[str] = []
@@ -189,3 +190,40 @@ class ProbingResults(t.NamedTuple):
         pieces.append(")")
 
         return "\n".join(pieces)
+
+    def to_pandas(
+        self,
+        aggregate_by: t.Optional[t.Sequence[str]] = None,
+        aggregate_fn: t.Callable[[t.Sequence[float]], float] = np.mean,
+    ) -> ProbingResults:
+        """Build a pandas DataFrame with stored values.
+
+        Parameters
+        ----------
+        aggregate_by : t.Sequence[str] or None, default=None
+            If given, aggregate results by the provided keys. It must be a sequence of strings
+            contained a subset of {'epoch', 'metric_name', 'module', 'batch_index'}. The function
+            used to aggregate values that fall in the same bucket is `aggregate_fn`.
+
+        aggregate_fn : callable or sequence of callables, default=numpy.mean
+            Function, or sequence of callables used to aggregate values in a same bucket. Also
+            accept values supported by pandas Aggregate function. Must receive a sequence of
+            values, and return a single number. Ignored if `aggregate_by=None`.
+
+        Returns
+        -------
+        dataframes : ProbingResults
+            Results casted to pandas DataFrames.
+        """
+
+        common_kwargs = dict(aggregate_by=aggregate_by, aggregate_fn=aggregate_fn)
+
+        ret: list[pd.DataFrame] = [self.train.to_pandas(**common_kwargs)]
+
+        if self.eval:
+            ret.append(self.eval.to_pandas(**common_kwargs))
+
+        if self.test:
+            ret.append(self.test.to_pandas(**common_kwargs))
+
+        return ProbingResults(*ret)

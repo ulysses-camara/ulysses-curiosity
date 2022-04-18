@@ -333,7 +333,7 @@ prober_container = curiosidade.attach_probers(
 )
 
 # (7): train probing models.
-probing_results = prober_container.train(num_epochs=10)
+probing_results = prober_container.train(num_epochs=10, show_progress_bar="epoch")
 
 # (8): aggregate results.
 agg_cols = ["batch_index"]

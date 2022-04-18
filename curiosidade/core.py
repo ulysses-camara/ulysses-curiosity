@@ -273,7 +273,7 @@ class ProbingModelContainer:
         self,
         num_epochs: int = 1,
         gradient_accumulation_steps: int = 1,
-        show_progress_bar: bool = False,
+        show_progress_bar: t.Literal["epoch", True, None] = None,
     ) -> output_handlers.ProbingResults:
         """Train probing models.
 
@@ -285,8 +285,10 @@ class ProbingModelContainer:
         gradient_accumulation_steps : int, default=1
             Number of batches before one weight update.
 
-        show_progress_bar : bool, default=False
-            If True, display a progress bar for each epoch.
+        show_progress_bar : {'epoch', True, None}, default=None
+            If 'epoch', display a progress bar for each epoch.
+            If True, display a single progress bar for the entire training procedure.
+            If None, progress bar is omitted.
 
         Returns
         -------
@@ -316,6 +318,11 @@ class ProbingModelContainer:
                 f"(got {gradient_accumulation_steps = })."
             )
 
+        if show_progress_bar not in {True, None, "epoch"}:
+            raise ValueError(
+                f"'show_progress_bar' must be True, None, or 'epoch' (got '{show_progress_bar}')."
+            )
+
         self.base_model.to(self.device)
         for prober in self.probers.values():
             prober.to(self.device)
@@ -326,16 +333,19 @@ class ProbingModelContainer:
 
         self.is_trained = True
 
+        pbar = tqdm.auto.tqdm(range(num_epochs), disable=show_progress_bar != True)
+        show_progress_bar_per_epoch = show_progress_bar == "epoch"
+
         with torch.random.fork_rng(enabled=self.random_seed is not None):
             if self.random_seed is not None:
                 torch.random.manual_seed(self.random_seed)
 
-            for epoch in range(num_epochs):
+            for epoch in pbar:
                 metrics_train.combine(
                     self._run_epoch(
                         dataloader=self.task.probing_dataloader_train,
                         gradient_accumulation_steps=gradient_accumulation_steps,
-                        show_progress_bar=show_progress_bar,
+                        show_progress_bar=show_progress_bar_per_epoch,
                     ).expand_key_dim(epoch)
                 )
 

@@ -21,7 +21,8 @@ class BaseAdapter(abc.ABC):
         self.model = model.to(self.device)
 
     def __repr__(self) -> str:
-        return str(self.model)
+        model_str = str(self.model).replace("\n", "\n |")
+        return str(f"{self.__class__.__name__}({model_str})")
 
     def to(self, device: t.Union[str, torch.device]) -> "BaseAdapter":
         """Move model to `device`."""

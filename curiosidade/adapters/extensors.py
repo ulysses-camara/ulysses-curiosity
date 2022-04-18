@@ -37,6 +37,21 @@ class InferencePrunerExtensor(base.BaseExtensor):
         super().__init__(model=model)
         self._pruned_modules: dict[str, torch.nn.Module] = {}
 
+    def __repr__(self) -> str:
+        pieces: list[str] = [f"{self.__class__.__name__}({self.model})"]
+
+        if self.has_pruned_modules:
+            pruned_module_names = self.pruned_module_names
+            pieces.append(f"(a): Pruned module(s) ({len(pruned_module_names)} in total):")
+
+            for i, pruned_modules_name in enumerate(pruned_module_names):
+                pieces.append(f"  ({i}): {pruned_modules_name}")
+
+        else:
+            pieces.append("(a): No pruned modules.")
+
+        return "\n".join(pieces)
+
     def register_pruned_modules(
         self, pruned_modules: dict[str, torch.nn.Module]
     ) -> "InferencePrunerAdapter":

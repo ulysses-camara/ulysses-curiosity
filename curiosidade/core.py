@@ -41,14 +41,19 @@ class ProbingModelContainer:
     def __repr__(self) -> str:
         pieces: list[str] = [f"{self.__class__.__name__}:"]
 
-        pieces.append(f"(a): Base model: {self.base_model}")
+        model_str = str(self.base_model).replace("\n", "\n | ")
+
+        pieces.append(f"(a): Base model: {model_str}")
+
+        pieces.append(" |")
+
         pieces.append(f"(b): Task name: {self.task.task_name}")
         pieces.append("(c): Probing dataset(s):")
 
         def format_dl_info(split_name: str, dataloader: torch.utils.data.DataLoader) -> str:
             split_name = f"({split_name})"
             return (
-                f"  {split_name:<7}: {len(dataloader):4} batches of size (at most) "
+                f" | {split_name:<7}: {len(dataloader):4} batches of size (at most) "
                 f"{dataloader.batch_size}."
             )
 
@@ -64,21 +69,10 @@ class ProbingModelContainer:
             pieces.append(f"(d): Probed module(s) ({len(self.probers)} in total):")
 
             for i, probed_modules_name in enumerate(self.probers.keys()):
-                pieces.append(f"  ({i}): {probed_modules_name}")
+                pieces.append(f" | ({i}): {probed_modules_name}")
 
         else:
             pieces.append("(d): No attached probing models.")
-
-        if self.base_model.has_pruned_modules:
-            pieces.append(
-                f"(e): Pruned module(s) ({len(self.base_model.pruned_module_names)} in total):"
-            )
-
-            for i, pruned_modules_name in enumerate(self.base_model.pruned_module_names):
-                pieces.append(f"  ({i}): {pruned_modules_name}")
-
-        else:
-            pieces.append("(e): No pruned modules.")
 
         return "\n".join(pieces)
 

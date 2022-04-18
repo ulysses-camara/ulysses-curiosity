@@ -5,9 +5,6 @@ import abc
 import torch
 
 
-# pylint: disable='invalid-name'
-
-
 class BaseAdapter(abc.ABC):
     """Base class for model adapters.
 
@@ -15,25 +12,16 @@ class BaseAdapter(abc.ABC):
     formats (such as PyTorch modules and Huggingface transformers).
     """
 
-    def __init__(self, model: torch.nn.Module, device: t.Union[str, torch.device] = "cpu"):
+    def __init__(
+        self,
+        model: t.Union[torch.nn.Module, "BaseAdapter"],
+        device: t.Union[str, torch.device] = "cpu",
+    ):
         self.device = torch.device(device)
         self.model = model.to(self.device)
-        self._pruned_modules: dict[str, torch.nn.Module] = {}
 
     def __repr__(self) -> str:
         return str(self.model)
-
-    @property
-    def pruned_modules_names(self):
-        return tuple(self._pruned_modules.keys())
-
-    @property
-    def pruned_modules(self):
-        return tuple(self._pruned_modules.values())
-
-    @property
-    def has_pruned_modules(self) -> bool:
-        return len(self._pruned_modules) > 0
 
     def to(self, device: t.Union[str, torch.device]) -> "BaseAdapter":
         """Move model to `device`."""
@@ -56,22 +44,22 @@ class BaseAdapter(abc.ABC):
     def named_modules(self) -> t.Iterator[tuple[str, torch.nn.Module]]:
         """Return Torch module .named_modules() iterator."""
 
-    @staticmethod
+    @classmethod
     @abc.abstractmethod
-    def break_batch(batch: t.Any) -> tuple[t.Any, torch.Tensor]:
-        """Break batch in inputs `X` and input labels `y` appropriately.
+    def break_batch(cls, batch: t.Any) -> tuple[t.Any, torch.Tensor]:
+        """Break batch in inputs `input_feats` and input labels `input_labels` appropriately.
 
         Returns
         -------
-        X : t.Any
+        input_feats : t.Any
             Input features (batch without `labels`).
 
-        y : torch.Tensor
+        input_labels : torch.Tensor
             Label features.
         """
 
     @abc.abstractmethod
-    def forward(self, X: t.Any) -> t.Any:
+    def forward(self, input_feats: t.Any) -> t.Any:
         """Model forward pass.
 
         Returns
@@ -91,15 +79,34 @@ class DummyAdapter(BaseAdapter):
         # pylint: disable='unused-argument'
         super().__init__(model=torch.nn.Identity(), device="cpu")
 
-    @staticmethod
-    def break_batch(batch: t.Any) -> tuple[t.Any, torch.Tensor]:
+    @classmethod
+    def break_batch(cls, batch: t.Any) -> tuple[t.Any, torch.Tensor]:
         """Dummy no-op."""
         return None, torch.empty(0)
 
-    def forward(self, X: t.Any) -> t.Any:
+    def forward(self, input_feats: t.Any) -> t.Any:
         """Dummy no-op."""
         return None
 
     def named_modules(self) -> t.Iterator[tuple[str, torch.nn.Module]]:
         """Dummy no-op."""
         return iter(tuple())
+
+
+class BaseExtensor(BaseAdapter):
+    """Base extensor to expand adapter capabilities."""
+
+    def __init__(self, model: BaseAdapter):
+        super().__init__(model=model, device=model.device)
+
+    def named_modules(self) -> t.Iterator[tuple[str, torch.nn.Module]]:
+        """Return Torch module .named_modules() iterator."""
+        return self.model.named_modules()
+
+    def break_batch(self, batch: t.Any) -> t.Any:
+        """Break batch into proper input `input_feats` and labels `input_labels`."""
+        # pylint: disable='arguments-differ'
+        return self.model.break_batch(batch)
+
+    def forward(self, input_feats: t.Any) -> t.Any:
+        return self.model(input_feats)

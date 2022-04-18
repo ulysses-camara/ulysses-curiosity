@@ -33,7 +33,7 @@ class ProbingModelContainer:
         self.device = torch.device(device)
         self.random_seed = random_seed
 
-        self.base_model: adapters.base.BaseAdapter = adapters.base.DummyAdapter()
+        self.base_model: adapters.extensors.InferencePrunerExtensor(adapters.base.DummyAdapter())
         self.task: probers.tasks.base.BaseProbingTask = probers.tasks.base.DummyProbingTask()
         self.probers: dict[str, probers.ProbingModelWrapper] = {}
         self.is_trained = False
@@ -140,9 +140,8 @@ class ProbingModelContainer:
         self
         """
         base_model = base_model.to("cpu")
-
-        self.base_model = adapters.get_model_adapter(base_model)
-        self.base_model = adapters.pruners.InferencePrunerAdapter(self.base_model)
+        adapted_base_model = adapters.get_model_adapter(base_model)
+        self.base_model = adapters.extensors.InferencePrunerExtensor(adapted_base_model)
 
         self.task = probing_model_factory.task
         self.probers = {}

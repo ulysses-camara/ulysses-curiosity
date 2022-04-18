@@ -18,15 +18,14 @@ except ImportError:
     IS_TRANSFORMERS_AVAILABLE = False
 
 
-# pylint: disable='invalid-name'
-
-
 class HuggingfaceAdapter(base.BaseAdapter):
     """Adapter for Huggingface (`transformers` package) models."""
 
-    @staticmethod
-    def break_batch(batch: dict[str, torch.Tensor]) -> tuple[dict[str, torch.Tensor], torch.Tensor]:
-        """Break batch in inputs `X` and input labels `y` appropriately.
+    @classmethod
+    def break_batch(
+        cls, batch: dict[str, torch.Tensor]
+    ) -> tuple[dict[str, torch.Tensor], torch.Tensor]:
+        """Break batch in inputs `input_feats` and input labels `input_labels` appropriately.
 
         Parameters
         ----------
@@ -37,22 +36,22 @@ class HuggingfaceAdapter(base.BaseAdapter):
 
         Returns
         -------
-        X : dict[str, torch.Tensor]
+        input_feats : dict[str, torch.Tensor]
             Input features (batch without `labels`).
 
-        y : torch.Tensor
+        input_labels : torch.Tensor
             Label features.
         """
-        y = batch.pop("labels")
-        X = batch
-        return X, y
+        input_labels = batch.pop("labels")
+        input_feats = batch
+        return input_feats, input_labels
 
-    def forward(self, X: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
+    def forward(self, input_feats: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
         """Model forward pass.
 
         Parameters
         ----------
-        X : dict[str, torch.Tensor]
+        input_feats : dict[str, torch.Tensor]
             Input pack for transformer model.
 
         Returns
@@ -60,10 +59,10 @@ class HuggingfaceAdapter(base.BaseAdapter):
         out : dict[str, torch.Tensor]
             Forward pass output.
         """
-        for key, val in X.items():
-            X[key] = val.to(self.device)
+        for key, val in input_feats.items():
+            input_feats[key] = val.to(self.device)
 
-        out = self.model(**X)
+        out = self.model(**input_feats)
 
         return out
 
@@ -75,33 +74,33 @@ class HuggingfaceAdapter(base.BaseAdapter):
 class TorchModuleAdapter(base.BaseAdapter):
     """Adapter for PyTorch (`torch` package) modules (`torch.nn.Module`)."""
 
-    @staticmethod
-    def break_batch(batch: t.Any) -> tuple[torch.Tensor, torch.Tensor]:
-        """Break batch in inputs `X` and input labels `y` appropriately.
+    @classmethod
+    def break_batch(cls, batch: t.Any) -> tuple[torch.Tensor, torch.Tensor]:
+        """Break batch in inputs `input_feats` and input labels `input_labels` appropriately.
 
         Parameters
         ----------
         batch : tuple[torch.Tensor, ...]
-            Tuple in (X, y, *args) format, where `X` is the input features, `y` is the
-            corresponding labels, and *args are ignored (if any).
+            Tuple in (input_feats, input_labels, *args) format, where `input_feats` is the input
+            features, `input_labels` is the corresponding labels, and *args are ignored (if any).
 
         Returns
         -------
-        X : torch.Tensor
+        input_feats : torch.Tensor
             Input features (batch without `labels`).
 
-        y : torch.Tensor
+        input_labels : torch.Tensor
             Label features.
         """
-        X, y, *_ = batch
-        return X, y
+        input_feats, input_labels, *_ = batch
+        return input_feats, input_labels
 
-    def forward(self, X: torch.Tensor) -> torch.Tensor:
+    def forward(self, input_feats: torch.Tensor) -> torch.Tensor:
         """Model forward pass.
 
         Parameters
         ----------
-        X : torch.Tensor
+        input_feats : torch.Tensor
             Input tensor for model.
 
         Returns
@@ -109,8 +108,8 @@ class TorchModuleAdapter(base.BaseAdapter):
         out : torch.Tensor
             Forward pass output.
         """
-        X = X.to(self.device)
-        out = self.model(X)
+        input_feats = input_feats.to(self.device)
+        out = self.model(input_feats)
         return out
 
     def named_modules(self) -> t.Iterator[tuple[str, torch.nn.Module]]:

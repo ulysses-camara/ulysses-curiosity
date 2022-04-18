@@ -44,6 +44,26 @@ def find_modules_to_prune(
     named_modules: t.Sequence[tuple[str, torch.nn.Module]],
     probed_module_names: t.Collection[str],
 ) -> dict[str, torch.nn.Module]:
+    """Collect modules that must be pruned during inference.
+
+    Parameters
+    ----------
+    modules_names_to_prune : t.Collection[str] or 'infer'
+        Collection with module names to prune, or 'infer'. If 'infer', the first non-probed
+        module after every probed module is assumed to be the only pruned module. This
+        heuristic only works properly in 'one-dimensional' models with deterministic flows.
+
+    named_modules : t.Sequence[tuple[str, torch.nn.Module]]
+        All pairs of pretrained module names and its references.
+
+    probed_module_names : t.Collection[str]
+        All pretrained modules that will be probed.
+
+    Returns
+    -------
+    modules_to_prune : dict[str, torch.nn.Module]
+        Dictionary mapping module to prune names to its reference.
+    """
     if not module_names_to_prune or not probed_module_names or not named_modules:
         return {}
 
@@ -57,6 +77,8 @@ def find_modules_to_prune(
 
         if not 0 <= last_probed_ind < len(named_modules) - 1:
             return {}
+
+        named_modules = tuple(named_modules)
 
         module_name, module_to_prune = named_modules[last_probed_ind + 1]
         return {module_name: module_to_prune}

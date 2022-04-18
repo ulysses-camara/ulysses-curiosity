@@ -36,7 +36,7 @@ dev = [
 	"seaborn == 0.11.2",
 ]
 
-notebook = [
+examples = [
 	"notebook == 6.4.10",
 	"torchmetrics-0.8.0",
 ]

@@ -134,8 +134,8 @@ class ProbingModelContainer:
             further activations are required to train the probing models.
             - If 'infer', will attemp to find the first module such that no probing model depends on
               any further module outputs. This heuristics only works properly if the model forward
-              flow is deterministic and 'one-dimensional' (no bifurcations). This strategy is expected
-              to work most of the time for any regular pretrained model.
+              flow is deterministic and 'one-dimensional' (no bifurcations). This strategy is
+              expected to work most of the time for any regular pretrained model.
             - If list, must contain the module names to prune.
             - If None, no module will be pruned, and the pretrained forward flow will be computed on
               its entirety.
@@ -333,7 +333,7 @@ class ProbingModelContainer:
 
         self.is_trained = True
 
-        pbar = tqdm.auto.tqdm(range(num_epochs), disable=show_progress_bar != True)
+        pbar = tqdm.auto.tqdm(range(num_epochs), disable=show_progress_bar is not True)
         show_progress_bar_per_epoch = show_progress_bar == "epoch"
 
         with torch.random.fork_rng(enabled=self.random_seed is not None):

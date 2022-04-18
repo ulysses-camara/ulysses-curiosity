@@ -54,7 +54,7 @@ class InferencePrunerExtensor(base.BaseExtensor):
 
     def register_pruned_modules(
         self, pruned_modules: dict[str, torch.nn.Module]
-    ) -> "InferencePrunerAdapter":
+    ) -> "InferencePrunerExtensor":
         """Updated in-place pruned modules with all values in `pruned_modules`."""
         self._pruned_modules.update(pruned_modules)
         return self
@@ -74,7 +74,7 @@ class InferencePrunerExtensor(base.BaseExtensor):
         """Check whether adapter has pruned modules."""
         return len(self._pruned_modules) > 0
 
-    def clear_pruned_modules(self) -> "InferencePrunerAdapter":
+    def clear_pruned_modules(self) -> "InferencePrunerExtensor":
         """Clear in-place all pruned modules."""
         self._pruned_modules.clear()
         return self

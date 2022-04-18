@@ -104,10 +104,10 @@ class BaseExtensor(BaseAdapter):
         """Return Torch module .named_modules() iterator."""
         return self.model.named_modules()
 
-    def break_batch(self, batch: t.Any) -> t.Any:
+    def break_batch(self, batch: t.Any) -> t.Any:  # type: ignore
         """Break batch into proper input `input_feats` and labels `input_labels`."""
         # pylint: disable='arguments-differ'
-        return self.model.break_batch(batch)
+        return self.model.break_batch(batch)  # type: ignore
 
     def forward(self, input_feats: t.Any) -> t.Any:
         return self.model(input_feats)

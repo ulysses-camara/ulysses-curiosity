@@ -34,7 +34,7 @@ class ProbingModelWrapper:
         self.probing_model = probing_model
         self.task = task
 
-        self.input_tensors: tuple[torch.nn.Module, ...] = (torch.empty(0, dtype=torch.float64),)
+        self.input_tensors: tuple[torch.Tensor, ...] = (torch.empty(0, dtype=torch.float64),)
         self.output_tensor = torch.empty(0, dtype=torch.float64)
         self.loss = torch.empty(0)
 
@@ -65,7 +65,7 @@ class ProbingModelWrapper:
     @property
     def has_lr_scheduler(self) -> bool:
         """Check whether the probing model has a learning rate scheduler."""
-        return lr_scheduler is not None
+        return self.lr_scheduler is not None
 
     def attach(self, module: torch.nn.Module) -> "ProbingModelWrapper":
         """Attach probing model to `module`."""
@@ -77,7 +77,7 @@ class ProbingModelWrapper:
         ) -> None:
             # pylint: disable='unused-argument'
             if torch.is_tensor(l_output):
-                self.input_tensors = (l_output.detach(),)
+                self.input_tensors = (l_output.detach(),)  # type: ignore
             else:
                 self.input_tensors = tuple(tensor.detach() for tensor in l_output)
 

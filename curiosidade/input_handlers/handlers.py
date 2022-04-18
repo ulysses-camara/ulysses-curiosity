@@ -18,7 +18,8 @@ def get_fn_select_modules_to_probe(
         return lambda module_name: module_name in modules_to_attach_set
 
     if isinstance(modules_to_attach, str):
-        modules_to_attach = regex.compile(f"\s*{modules_to_attach}\s*$")
+        modules_to_attach = r"\s*" + modules_to_attach + r"\s*$"
+        modules_to_attach = regex.compile(modules_to_attach)
 
     compiled_regex: t.Pattern[str] = modules_to_attach
 

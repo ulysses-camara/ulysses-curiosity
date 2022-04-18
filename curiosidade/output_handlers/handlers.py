@@ -216,7 +216,10 @@ class ProbingResults(t.NamedTuple):
             Results casted to pandas DataFrames.
         """
 
-        common_kwargs = dict(aggregate_by=aggregate_by, aggregate_fn=aggregate_fn)
+        common_kwargs: dict[str, t.Any] = dict(
+            aggregate_by=aggregate_by,
+            aggregate_fn=aggregate_fn,
+        )
 
         ret: list[pd.DataFrame] = [self.train.to_pandas(**common_kwargs)]
 

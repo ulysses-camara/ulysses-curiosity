@@ -3,7 +3,6 @@ import typing as t
 
 import torch
 import torch.nn
-import numpy as np
 
 from . import base
 

@@ -133,7 +133,18 @@ class ProbingModelContainer:
               in `base_model.named_modules()`.
 
         prune_unrelated_modules : t.Sequence[str] or 'infer' or None, default=None
-            TODO.
+            Whether or not to prune pretrained modules unrelated to any probing model. This avoids
+            unnecessary computations, speeding up the training procedure substantially if no probing
+            model depends on final pretrained modules. Attempting to forward through pruned modules
+            will interrupt immediately the forward flow, therefore saving computations since no
+            further activations are required to train the probing models.
+            - If 'infer', will attemp to find the first module such that no probing model depends on
+              any further module outputs. This heuristics only works properly if the model forward
+              flow is deterministic and 'one-dimensional' (no bifurcations). This strategy is expected
+              to work most of the time for any regular pretrained model.
+            - If list, must contain the module names to prune.
+            - If None, no module will be pruned, and the pretrained forward flow will be computed on
+              its entirety.
 
         Returns
         -------
@@ -388,7 +399,7 @@ def attach_probers(
 
     modules_input_dim : t.Sequence[int] or dict[str, int] or None, default=None
         Input dimension of each probing model.
-        - If list, the dimension in the i-th index should correspond to the input dimension of
+        - If sequence, the dimension in the i-th index should correspond to the input dimension of
           the i-th probing model.
         - If mapping (dict), should map the module name to its corresponding input dimension.
           Input dimension of modules not present in this mapping will be inferred.
@@ -396,7 +407,18 @@ def attach_probers(
           in `base_model.named_modules()`.
 
     prune_unrelated_modules : t.Sequence[str] or 'infer' or None, default=None
-        TODO.
+        Whether or not to prune pretrained modules unrelated to any probing model. This avoids
+        unnecessary computations, speeding up the training procedure substantially if no probing
+        model depends on final pretrained modules. Attempting to forward through pruned modules
+        will interrupt immediately the forward flow, therefore saving computations since no
+        further activations are required to train the probing models.
+        - If 'infer', will attemp to find the first module such that no probing model depends on
+          any further module outputs. This heuristics only works properly if the model forward
+          flow is deterministic and 'one-dimensional' (no bifurcations). This strategy is expected
+          to work most of the time for any regular pretrained model.
+        - If list, must contain the module names to prune.
+        - If None, no module will be pruned, and the pretrained forward flow will be computed on
+          its entirety.
 
     device : {'cpu', 'cuda'}, default='cpu'
         Device used to train probing models.

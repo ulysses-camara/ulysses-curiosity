@@ -3,6 +3,7 @@ import typing as t
 
 import torch
 import torch.nn
+import numpy as np
 
 from . import base
 
@@ -42,7 +43,7 @@ class HuggingfaceAdapter(base.BaseAdapter):
         input_labels : torch.Tensor
             Label features.
         """
-        input_labels = batch.pop("labels")
+        input_labels = batch.pop("labels" if "labels" in batch.keys() else "label")
         input_feats = batch
         return input_feats, input_labels
 
@@ -59,8 +60,15 @@ class HuggingfaceAdapter(base.BaseAdapter):
         out : dict[str, torch.Tensor]
             Forward pass output.
         """
-        for key, val in input_feats.items():
-            input_feats[key] = val.to(self.device)
+        try:
+            for key, val in input_feats.items():
+                input_feats[key] = val.to(self.device)
+
+        except AttributeError as err:
+            raise TypeError(
+                f"Input is not a torch.Tensor (got {type(val)}). Maybe you forgot to cast "
+                "your dataset to tensors after text tokenization?"
+            ) from err
 
         out = self.model(**input_feats)
 

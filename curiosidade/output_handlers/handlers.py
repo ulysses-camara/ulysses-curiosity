@@ -18,15 +18,19 @@ class MetricPack:
         return iter(self.stored_values.items())
 
     def __repr__(self) -> str:
-        pieces: list[str] = [f"MetricPack with {len(self.stored_values)} values stored in:"]
+        stored_val_count = len(self.stored_values)
+        num_print_each_half = 3
+
+        pieces: list[str] = [f"MetricPack with {stored_val_count} values stored in:"]
+
         for i, (key, val) in enumerate(self.stored_values.items()):
-            if i > 3:
-                break
+            if num_print_each_half <= i < stored_val_count - num_print_each_half:
+                continue
 
             pieces.append(f"  {key}: {val}")
 
-        if len(self.stored_values) > 3:
-            pieces.append("  ...")
+            if i == num_print_each_half - 1 and len(self.stored_values) > 2 * num_print_each_half:
+                pieces.append("  ...")
 
         return "\n".join(pieces)
 

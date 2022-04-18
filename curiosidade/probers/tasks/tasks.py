@@ -21,10 +21,18 @@ class ProbingTaskSentenceLength(base.BaseProbingTask):
        Association for Computational Linguistics.
     """
 
-    def __init__(self, batch_size_train: int = 16, batch_size_eval: int = 32):
-        dataset_uri_train = "todo"
-        dataset_uri_eval = "todo"
-        dataset_uri_test = "todo"
+    def __init__(
+        self,
+        batch_size_train: int = 16,
+        batch_size_eval: int = 32,
+        data_domain: str = "legal-pt-br",
+    ):
+        self.check_if_domain_is_valid(data_domain)
+
+        if data_domain == "legal-pt-br":
+            dataset_uri_train = "todo"
+            dataset_uri_eval = "todo"
+            dataset_uri_test = "todo"
 
         super().__init__(
             loss_fn=torch.nn.CrossEntropyLoss(),

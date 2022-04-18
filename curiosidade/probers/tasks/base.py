@@ -54,6 +54,8 @@ class BaseProbingTask(abc.ABC):
         how exactly the labels must be formatted.
     """
 
+    VALID_DATA_DOMAINS: t.Final[tuple[str, ...]] = ("legal-pt-br",)
+
     def __init__(
         self,
         output_dim: int,
@@ -121,6 +123,14 @@ class BaseProbingTask(abc.ABC):
         self.probing_dataloader_train = dl_train
         self.probing_dataloader_eval = dl_eval
         self.probing_dataloader_test = dl_test
+
+    @classmethod
+    def check_if_domain_is_valid(cls, data_domain: str) -> None:
+        """Check whether a given `data_domain` is currently supported."""
+        if data_domain in cls.VALID_DATA_DOMAINS:
+            return
+
+        raise ValueError(f"Invalid '{data_domain=}'. Must be in {cls.VALID_DATA_DOMAINS}.")
 
     @property
     def has_eval(self) -> bool:

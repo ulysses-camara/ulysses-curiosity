@@ -10,10 +10,11 @@ Probing task framework for Ulysses project.
 3. [Usage examples](#usage-examples)
     1. [Step-by-step example](#step-by-step-example)
     2. [Huggingface transformers example](#huggingface-transformers-example)
-4. [Preconfigured probing tasks](#preconfigured-probing-tasks)
-4. [References](#references)
-5. [License](#license)
-6. [Citation](#citation)
+4. [Optimizing training with pruning](#optimizing-training-with-pruning)
+5. [Preconfigured probing tasks](#preconfigured-probing-tasks)
+6. [References](#references)
+7. [License](#license)
+8. [Citation](#citation)
 
 ---
 
@@ -173,7 +174,14 @@ task = curiosidade.ProbingTaskCustom(
 )
 ```
 
-Now, we need to attach the probing models to the pretrained model modules. This is easily achieved by creating a `ProbingModelFactory`, and calling `attach_probers` function. In this step you also need to provide the optimizer, used to update the probing model weights. Both the probing model and the optimizer *should not be instantiated* when provided to the ProbingModelFactory, as they will be instantiated automatically potentially many times as required to probe all pretrained model modules. The modules that should be effectively be probed are specified by their names, or a regular expression pattern that is used to match against the module names. To check the module names of your model use PyTorch's module built-in `pretrained_model.named_modules()`: `[name for name, _ in pretrained_model.named_modules() if name]`.
+Now, we need to attach the probing models to the pretrained model modules. This is easily achieved by creating a `ProbingModelFactory`, and calling `attach_probers` function. In this step you also need to provide the optimizer, used to update the probing model weights. Both the probing model and the optimizer *should not be instantiated* when provided to the ProbingModelFactory, as they will be instantiated automatically potentially many times as required to probe all pretrained model modules. The modules that should be effectively be probed are specified by their names, or a regular expression pattern that is used to match against the module names. To check the module names of your model use PyTorch's module built-in `pretrained_model.named_modules()`:
+
+```python
+pretrained_modules_available_for_probing = [
+    name for name, _ in pretrained_model.named_modules() if name
+]
+print(pretrained_modules_available_for_probing)
+```
 
 ```python
 import functools
@@ -198,7 +206,7 @@ print(f"{prober_container = }")  # Summarize every configutation done so far.
 print(f"{prober_container.probed_modules = }")  # Lists every probed module in 'pretrained_model'.
 ```
 
-By default, during attachment the input dimension of each probing model will be inferred by keeping the last output dimension before the attachment. This strategy should work in most of the cases based on current deep learning model architectures, but may fail if there is some sort of bifurcation (like a siamese architecture) or a non-deterministic activation flow. If this heuristic is not working in your model, you can specify the input dimension explicitly using the argument `curiosidade.attach_probers(..., modules_input_dim=dict())`, as shown below. Any input dimenion not explicitly provided will still be inferred, so you can list only modules that are causing you trouble.
+By default, during attachment the input dimension of each probing model will be inferred by keeping the last output dimension before the attachment. This strategy should work in most of the cases based on current deep learning model architectures, but may fail if there is some sort of bifurcation (like a siamese architecture) or a non-deterministic activation flow. If this heuristic is not working in your model, you can specify the input dimension explicitly using the argument `.attach_probers(..., modules_input_dim=dict(module_name=input_dim))`, as shown below. Any input dimenion not explicitly provided will still be inferred, so you can list only modules that are causing you trouble.
 ```python
 prober_container = curiosidade.attach_probers(
     ...,
@@ -335,6 +343,58 @@ df_train = probing_results.train.to_pandas(aggregate_by=agg_cols, aggregate_fn=a
 df_eval = probing_results.eval.to_pandas(aggregate_by=agg_cols, aggregate_fn=agg_fns)
 df_test = probing_results.test.to_pandas(aggregate_by=agg_cols, aggregate_fn=agg_fns)
 ```
+
+### Optimizing training with pruning
+
+There is not point in computing all pretrained model activations past the "farthest" probing model during training. If your probing models does not depends on the final output of your pretrained model, you may benefit from pruning away unnecessary modules.
+
+```mermaid
+flowchart TB
+
+L1{{"Pretrained module 1"}} -->
+L2{{"Pretrained module 2"}} -->
+L3{{"Pretrained module 3"}} -->
+L4{{"Pretrained module 4"}} -->
+L5{{"..."}} -->
+L6{{"Pretrained module N"}}
+
+
+P1(["Probing Model"])
+
+L2 -....-> P1;
+L3 & L4 & L5 & L6 --> Waste(("Wasted\ncomputations"))
+
+
+style Waste stroke-style:dashed,stroke-dasharray:8;
+
+classDef clsProbed fill:#354675,stroke:#103A83,stroke-width:2px;
+class L2 clsProbed;
+
+classDef clsProber fill:#A1425B,stroke:#AC6C7D,stroke-width:2px;
+class P1 clsProber;
+
+classDef clsWaste fill:#D82626,stroke:#103A83,stroke-width:2px;
+class L3,L4,L5,L6 clsWaste;
+```
+
+This optimization is activated upon calling `attach_probers`, as exemplified below:
+
+```python
+prober_container = curiosidade.attach_probers(
+    ...,
+    prune_unrelated_modules="infer",
+)
+```
+
+When `prune_unrelated_modules="infer"`, the forward flow will be interrupted past the last probed module, using the `.named_modules()` order as reference. This strategy should work for any model that has a deterministic and "one-dimensional" forward flow. If this is not working for your architecture, you can provide a list of modules where the forward flow should end prematurely, as exemplified below:
+
+```python
+prober_container = curiosidade.attach_probers(
+    ...,
+    prune_unrelated_modules=["module_name_a"],
+)
+```
+Since the forward flow will never get past through a pruned module, you do not need to list any module that depends from the pruned activation.
 
 ### Preconfigured probing tasks
 This package will provide a collection of preconfigured probing tasks for portuguese language, based on tasks proposed in [(Conneau et. al, 2018)](https://aclanthology.org/P18-1198/). There are basic setups for these tasks already available in this package, as shown below, but they are all work in progress. So far, you can use `ProbingTaskCustom` to set up your own probing tasks.

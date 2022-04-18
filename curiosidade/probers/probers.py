@@ -52,7 +52,7 @@ class ProbingModelWrapper:
         return "\n".join(pieces)
 
     @property
-    def is_attached(self):
+    def is_attached(self) -> bool:
         """Check whether the current probing model is attached to a pretrained module."""
         return self.attached_module is not None
 

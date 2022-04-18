@@ -40,12 +40,12 @@ def get_probing_model_input_dim(
 
 
 def find_modules_to_prune(
-    module_names_to_prune: t.Optional[t.Union[t.Sequence[str], t.Literal["infer"]]],
+    module_names_to_prune: t.Optional[t.Union[t.Collection[str], t.Literal["infer"]]],
     named_modules: t.Sequence[tuple[str, torch.nn.Module]],
     probed_module_names: t.Collection[str],
-) -> tuple[torch.nn.Module, ...]:
+) -> dict[str, torch.nn.Module]:
     if not module_names_to_prune or not probed_module_names or not named_modules:
-        return tuple()
+        return {}
 
     if module_names_to_prune == "infer":
         last_probed_ind = -1
@@ -56,16 +56,16 @@ def find_modules_to_prune(
                 last_probed_ind = i
 
         if not 0 <= last_probed_ind < len(named_modules) - 1:
-            return tuple()
+            return {}
 
-        _, module_to_prune = named_modules[last_probed_ind + 1]
-        return (module_to_prune,)
+        module_name, module_to_prune = named_modules[last_probed_ind + 1]
+        return {module_name: module_to_prune}
 
-    modules_to_prune: list[torch.nn.Module] = []
+    modules_to_prune: dict[str, torch.nn.Module] = {}
     module_names_to_prune = set(module_names_to_prune)
 
     for module_name, module in named_modules:
         if module_name in module_names_to_prune:
-            modules_to_prune.append(module)
+            modules_to_prune[module_name] = module
 
-    return tuple(modules_to_prune)
+    return modules_to_prune

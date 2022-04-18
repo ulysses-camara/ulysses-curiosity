@@ -11,10 +11,10 @@ class PrunedModuleException(RuntimeError):
 
 
 @contextlib.contextmanager
-def stop_forward_if_pruned(modules: t.Sequence[torch.nn.Module]) -> None:
+def stop_forward_if_pruned(modules: t.Sequence[torch.nn.Module]) -> t.Iterator[None]:
     hooks: list[torch.utils.hooks.RemovableHandle] = []
 
-    def stop_forward_fn(layer, *args, **kwargs):
+    def stop_forward_fn(*args: t.Any, **kwargs: t.Any) -> None:
         raise PrunedModuleException
 
     for module in modules:
@@ -28,21 +28,19 @@ def stop_forward_if_pruned(modules: t.Sequence[torch.nn.Module]) -> None:
             hooks.pop().remove()
 
 
-class InferencePruner(base.BaseAdapter):
-    def __init__(self, model: t.Any):
-        super().__init__(model=model, device=model.device)
-        self.pruned_modules: tuple[torch.nn.Module, ...] = tuple()
-
+class InferencePrunerAdapter(base.BaseAdapter):
     def register_pruned_modules(
-        self, pruned_modules: t.Union[list[torch.nn.Module], torch.nn.Module]
-    ) -> "InferencePruner":
-        self.pruned_modules = (
-            tuple(pruned_modules) if hasattr(pruned_modules, "__len__") else (pruned_modules,)
-        )
+        self, pruned_modules: dict[str, torch.nn.Module]
+    ) -> "InferencePrunerAdapter":
+        self._pruned_modules.update(pruned_modules)
+        return self
+
+    def reset_pruned_modules(self) -> "InferencePrunerAdapter":
+        self._pruned_modules.clear()
         return self
 
     def break_batch(self, batch: t.Any) -> t.Any:
-        return self.model.break_batch(batch)
+        return self.model.break_batch(batch)  # type: ignore
 
     def forward(self, X: t.Any) -> t.Any:
         with stop_forward_if_pruned(self.pruned_modules):
@@ -53,3 +51,7 @@ class InferencePruner(base.BaseAdapter):
                 out = None
 
         return out
+
+    def named_modules(self) -> t.Iterator[tuple[str, torch.nn.Module]]:
+        """Return Torch module .named_modules() iterator."""
+        return self.model.named_modules()

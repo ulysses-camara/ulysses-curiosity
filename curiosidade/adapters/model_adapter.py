@@ -24,9 +24,8 @@ except ImportError:
 class HuggingfaceAdapter(base.BaseAdapter):
     """Adapter for Huggingface (`transformers` package) models."""
 
-    def break_batch(
-        self, batch: dict[str, torch.Tensor]
-    ) -> tuple[dict[str, torch.Tensor], torch.Tensor]:
+    @staticmethod
+    def break_batch(batch: dict[str, torch.Tensor]) -> tuple[dict[str, torch.Tensor], torch.Tensor]:
         """Break batch in inputs `X` and input labels `y` appropriately.
 
         Parameters
@@ -68,11 +67,16 @@ class HuggingfaceAdapter(base.BaseAdapter):
 
         return out
 
+    def named_modules(self) -> t.Iterator[tuple[str, torch.nn.Module]]:
+        """Return Torch module .named_modules() iterator."""
+        return self.model.named_modules()
+
 
 class TorchModuleAdapter(base.BaseAdapter):
     """Adapter for PyTorch (`torch` package) modules (`torch.nn.Module`)."""
 
-    def break_batch(self, batch: t.Any) -> tuple[torch.Tensor, torch.Tensor]:
+    @staticmethod
+    def break_batch(batch: t.Any) -> tuple[torch.Tensor, torch.Tensor]:
         """Break batch in inputs `X` and input labels `y` appropriately.
 
         Parameters
@@ -108,6 +112,10 @@ class TorchModuleAdapter(base.BaseAdapter):
         X = X.to(self.device)
         out = self.model(X)
         return out
+
+    def named_modules(self) -> t.Iterator[tuple[str, torch.nn.Module]]:
+        """Return Torch module .named_modules() iterator."""
+        return self.model.named_modules()
 
 
 def get_model_adapter(model: t.Any, *args: t.Any, **kwargs: t.Any) -> base.BaseAdapter:

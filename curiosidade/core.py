@@ -43,7 +43,7 @@ class ProbingModelContainer:
 
         pieces.append(f"(a): Base model: {self.base_model}")
         pieces.append(f"(b): Task name: {self.task.task_name}")
-        pieces.append("(c): Probing datasets:")
+        pieces.append("(c): Probing dataset(s):")
 
         def format_dl_info(split_name: str, dataloader: torch.utils.data.DataLoader) -> str:
             split_name = f"({split_name})"
@@ -61,13 +61,24 @@ class ProbingModelContainer:
             pieces.append(format_dl_info("test", self.task.probing_dataloader_test))
 
         if self.probers:
-            pieces.append(f"(d): Probed modules ({len(self.probers)} in total):")
+            pieces.append(f"(d): Probed module(s) ({len(self.probers)} in total):")
 
-            for i, key in enumerate(self.probers.keys()):
-                pieces.append(f"  ({i}): {key}")
+            for i, probed_modules_name in enumerate(self.probers.keys()):
+                pieces.append(f"  ({i}): {probed_modules_name}")
 
         else:
-            pieces.append(f"(d): No attached probing models.")
+            pieces.append("(d): No attached probing models.")
+
+        if self.base_model.has_pruned_modules:
+            pieces.append(
+                f"(e): Pruned module(s) ({len(self.base_model.pruned_modules_names)} in total):"
+            )
+
+            for i, pruned_modules_name in enumerate(self.base_model.pruned_modules_names):
+                pieces.append(f"  ({i}): {pruned_modules_name}")
+
+        else:
+            pieces.append("(e): No pruned modules.")
 
         return "\n".join(pieces)
 
@@ -131,7 +142,7 @@ class ProbingModelContainer:
         base_model = base_model.to("cpu")
 
         self.base_model = adapters.get_model_adapter(base_model)
-        self.base_model = adapters.pruners.InferencePruner(self.base_model)
+        self.base_model = adapters.pruners.InferencePrunerAdapter(self.base_model)
 
         self.task = probing_model_factory.task
         self.probers = {}

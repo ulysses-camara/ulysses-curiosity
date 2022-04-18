@@ -87,8 +87,18 @@ def find_modules_to_prune(
 
         named_modules = tuple(named_modules)
 
-        module_name, module_to_prune = named_modules[last_probed_ind + 1]
-        return {module_name: module_to_prune}
+        last_probed_module_name, _ = named_modules[last_probed_ind]
+        re_prune_prefix = regex.compile(last_probed_module_name)
+
+        for i, (module_name, module) in enumerate(named_modules[last_probed_ind:], last_probed_ind):
+            if not re_prune_prefix.match(module_name):
+                module_to_prune_name, module_to_prune = named_modules[i]
+                break
+
+        else:
+            return {}
+
+        return {module_to_prune_name: module_to_prune}
 
     modules_to_prune: dict[str, torch.nn.Module] = {}
     module_names_to_prune = set(module_names_to_prune)

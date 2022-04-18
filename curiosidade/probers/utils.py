@@ -44,9 +44,12 @@ class ProbingModelFeedforward(torch.nn.Module):
             torch.nn.Linear(dims[-1], output_dim),
         )
 
+        self.dims = tuple(np.hstack((dims, output_dim)))
+
     def forward(self, X: torch.Tensor) -> torch.Tensor:
         # pylint: disable='missing-function-docstring', 'invalid-name'
         out = self.params(X)  # type: torch.Tensor
+        out = out.squeeze(-1)
         return out
 
 
@@ -108,10 +111,11 @@ class ProbingModelForSequences(ProbingModelFeedforward):
         else:
             self.pooling_fn = functools.partial(torch.mean, axis=pooling_axis)
 
-    def forward(self, X: torch.Tensor) -> torch.Tensor:
-        out = X  # shape: (batch_size, max_sequence_length, embed_dim)
+    def forward(self, *args: torch.Tensor) -> torch.Tensor:
+        out = args[0]  # shape: (batch_size, max_sequence_length, embed_dim)
         out = self.pooling_fn(out)  # shape: (batch_size, embed_dim)
         out = self.params(out)  # shape: (batch_size, output_dim)
+        out = out.squeeze(-1)  # shape: (batch_size, output_dim?)
         return out
 
 

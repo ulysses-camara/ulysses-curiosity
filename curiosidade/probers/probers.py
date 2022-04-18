@@ -32,7 +32,7 @@ class ProbingModelWrapper:
         self.probing_model = probing_model
         self.task = task
 
-        self.input_tensor = torch.empty(0, dtype=torch.float64)
+        self.input_tensors: tuple[torch.nn.Module, ...] = (torch.empty(0, dtype=torch.float64),)
         self.output_tensor = torch.empty(0, dtype=torch.float64)
         self.loss = torch.empty(0)
 
@@ -60,10 +60,15 @@ class ProbingModelWrapper:
         """Attach probing model to `module`."""
 
         def fn_hook_forward(
-            layer: torch.nn.Module, l_input: torch.Tensor, l_output: torch.Tensor
+            layer: torch.nn.Module,
+            l_input: torch.Tensor,
+            l_output: t.Union[tuple[torch.Tensor, ...], torch.Tensor],
         ) -> None:
             # pylint: disable='unused-argument'
-            self.input_tensor = l_output.detach()
+            if torch.is_tensor(l_output):
+                self.input_tensors = (l_output.detach(),)
+            else:
+                self.input_tensors = tuple(tensor.detach() for tensor in l_output)
 
         self.attached_module = module
         self.input_source_hook = module.register_forward_hook(fn_hook_forward)
@@ -109,7 +114,7 @@ class ProbingModelWrapper:
         should_backward = not is_test
         should_optim_step = not accumulate_grad and not is_test
 
-        self.output_tensor = self.probing_model(self.input_tensor)
+        self.output_tensor = self.probing_model(*self.input_tensors)
         self.loss = self.task.loss_fn(self.output_tensor, input_labels)
 
         if should_backward:

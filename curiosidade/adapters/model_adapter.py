@@ -8,6 +8,7 @@ from . import base
 
 
 IS_TRANSFORMERS_AVAILABLE: bool
+IS_SENTENCE_TRANSFORMERS_AVAILABLE: bool
 
 try:
     import transformers
@@ -17,8 +18,37 @@ try:
 except ImportError:
     IS_TRANSFORMERS_AVAILABLE = False
 
+try:
+    import sentence_transformers
 
-class HuggingfaceAdapter(base.BaseAdapter):
+    IS_SENTENCE_TRANSFORMERS_AVAILABLE = True
+
+except ImportError:
+    IS_SENTENCE_TRANSFORMERS_AVAILABLE = False
+
+
+class _HuggingfaceDeviceHangler:
+    @classmethod
+    def _move_batch_to_device(cls, batch: dict[str, t.Any], device: str) -> dict[str, torch.Tensor]:
+        """Move a transformers batch to device appropriately."""
+        try:
+            if isinstance(batch, transformers.BatchEncoding):
+                batch = batch.to(device)
+
+            else:
+                for key, val in batch.items():
+                    batch[key] = val.to(device)
+
+        except AttributeError as err:
+            raise TypeError(
+                f"Input is not a torch.Tensor (got {type(val)}). Maybe you forgot to cast "
+                "your dataset to tensors after text tokenization?"
+            ) from err
+
+        return batch
+
+
+class HuggingfaceAdapter(base.BaseAdapter, _HuggingfaceDeviceHangler):
     """Adapter for Huggingface (`transformers` package) models."""
 
     @classmethod
@@ -59,18 +89,59 @@ class HuggingfaceAdapter(base.BaseAdapter):
         out : dict[str, torch.Tensor]
             Forward pass output.
         """
-        try:
-            for key, val in input_feats.items():
-                input_feats[key] = val.to(self.device)
-
-        except AttributeError as err:
-            raise TypeError(
-                f"Input is not a torch.Tensor (got {type(val)}). Maybe you forgot to cast "
-                "your dataset to tensors after text tokenization?"
-            ) from err
-
+        input_feats = self._move_batch_to_device(input_feats, self.device)
         out = self.model(**input_feats)
 
+        return out
+
+    def named_modules(self) -> t.Iterator[tuple[str, torch.nn.Module]]:
+        """Return Torch module .named_modules() iterator."""
+        return self.model.named_modules()
+
+
+class SentenceTransformersAdapter(base.BaseAdapter, _HuggingfaceDeviceHangler):
+    """Adapter for Sentence Transformers (`sentence-transformers` package) models."""
+
+    @classmethod
+    def break_batch(
+        cls, batch: dict[str, torch.Tensor]
+    ) -> tuple[dict[str, torch.Tensor], torch.Tensor]:
+        """Break batch in inputs `input_feats` and input labels `input_labels` appropriately.
+
+        Parameters
+        ----------
+        batch : dict[str, torch.Tensor]
+            Mapping from model inference argument names to corresponding PyTorch Tensors.
+            If is expected that `batch` has the key `labels`, and every other entry in
+            `batch` has a matching keyword argument in `model` call.
+
+        Returns
+        -------
+        input_feats : dict[str, torch.Tensor]
+            Input features (batch without `labels`).
+
+        input_labels : torch.Tensor
+            Label features.
+        """
+        input_labels = batch.pop("labels" if "labels" in batch.keys() else "label")
+        input_feats = batch
+        return input_feats, input_labels
+
+    def forward(self, input_feats: dict[str, torch.Tensor]) -> torch.Tensor:
+        """Model forward pass.
+
+        Parameters
+        ----------
+        input_feats : dict[str, torch.Tensor]
+            Input pack for transformer model.
+
+        Returns
+        -------
+        out : dict[str, torch.Tensor]
+            Forward pass output.
+        """
+        input_feats = self._move_batch_to_device(input_feats, self.device)
+        out = self.model(input_feats)["token_embeddings"]
         return out
 
     def named_modules(self) -> t.Iterator[tuple[str, torch.nn.Module]]:
@@ -145,6 +216,11 @@ def get_model_adapter(model: t.Any, *args: t.Any, **kwargs: t.Any) -> base.BaseA
     """
     if IS_TRANSFORMERS_AVAILABLE and isinstance(model, transformers.PreTrainedModel):
         return HuggingfaceAdapter(model, *args, **kwargs)
+
+    if IS_SENTENCE_TRANSFORMERS_AVAILABLE and isinstance(
+        model, sentence_transformers.models.Transformer
+    ):
+        return SentenceTransformersAdapter(model, *args, **kwargs)
 
     if isinstance(model, torch.nn.Module):
         return TorchModuleAdapter(model, *args, **kwargs)

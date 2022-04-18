@@ -228,7 +228,7 @@ Finally, the results can be aggregated to better analysis and visualization:
 
 ```python
 # (8): aggregate results.
-agg_cols = ["epoch", "module", "metric_name"]
+agg_cols = ["batch_index"]
 agg_fns = [np.mean, np.std]
 
 df_train = probing_results.train.to_pandas(aggregate_by=agg_cols, aggregate_fn=agg_fns)
@@ -336,7 +336,7 @@ prober_container = curiosidade.attach_probers(
 probing_results = prober_container.train(num_epochs=10)
 
 # (8): aggregate results.
-agg_cols = ["epoch", "module", "metric_name"]
+agg_cols = ["batch_index"]
 agg_fns = [np.mean, np.std]
 
 df_train = probing_results.train.to_pandas(aggregate_by=agg_cols, aggregate_fn=agg_fns)

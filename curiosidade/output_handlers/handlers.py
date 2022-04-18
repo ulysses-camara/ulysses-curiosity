@@ -123,10 +123,12 @@ class MetricPack:
           (0, 'loss', 'relu1', 0): 1.5
           (0, 'acc', 'relu1', 0): 0.1
           (0, 'loss', 'relu1', 1): 1.4
-          (0, 'acc', 'relu1', 1): 0.2
           ...
+          (1, 'acc', 'relu1', 0): 0.33
+          (1, 'loss', 'relu1', 1): 0.85
+          (1, 'acc', 'relu1', 1): 0.43
         >>> metrics.to_pandas(
-        ...     aggregate_by=['epoch', 'metric_name', 'module'],
+        ...     aggregate_by=['batch_index'],
         ...     aggregate_fn=[np.max, np.min],
         ... ).values
         array([[0, 'acc', 'relu1', 0.2, 0.1],
@@ -156,7 +158,9 @@ class MetricPack:
                     f"following: {sorted(tuple(df_columns_set))}."
                 )
 
-            dataframe = dataframe.groupby(aggregate_by).agg(dict(metric=aggregate_fn))
+            group_by_set = sorted(set(dataframe.columns) - aggregate_by_set - {"metric"})
+
+            dataframe = dataframe.groupby(group_by_set).agg(dict(metric=aggregate_fn))
             dataframe.reset_index(inplace=True)
 
         return dataframe

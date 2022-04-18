@@ -13,17 +13,16 @@ def get_fn_select_modules_to_probe(
     modules_to_attach: t.Union[str, t.Pattern[str], t.Sequence[str]]
 ) -> t.Callable[[str], bool]:
     """Return a boolean function that checks if a given module should be probed."""
-    if isinstance(modules_to_attach, (str, regex.Pattern, re.Pattern)):
-        compiled_regex: t.Pattern[str] = (
-            regex.compile(modules_to_attach)
-            if isinstance(modules_to_attach, str)
-            else modules_to_attach
-        )
+    if not isinstance(modules_to_attach, (str, regex.Pattern, re.Pattern)):
+        modules_to_attach_set = frozenset(modules_to_attach)
+        return lambda module_name: module_name in modules_to_attach_set
 
-        return lambda module_name: compiled_regex.search(module_name) is not None
+    if isinstance(modules_to_attach, str):
+        modules_to_attach = regex.compile(f"\s*{modules_to_attach}\s*$")
 
-    modules_to_attach_set = frozenset(modules_to_attach)
-    return lambda module_name: module_name in modules_to_attach_set
+    compiled_regex: t.Pattern[str] = modules_to_attach
+
+    return lambda module_name: compiled_regex.match(module_name) is not None
 
 
 def get_probing_model_input_dim(

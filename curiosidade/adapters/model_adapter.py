@@ -24,8 +24,10 @@ except ImportError:
 class HuggingfaceAdapter(base.BaseAdapter):
     """Adapter for Huggingface (`transformers` package) models."""
 
-    def forward(self, batch: dict[str, torch.Tensor]) -> base.AdapterInferenceOutputType:
-        """Model forward pass.
+    def break_batch(
+        self, batch: dict[str, torch.Tensor]
+    ) -> tuple[dict[str, torch.Tensor], torch.Tensor]:
+        """Break batch in inputs `X` and input labels `y` appropriately.
 
         Parameters
         ----------
@@ -36,31 +38,42 @@ class HuggingfaceAdapter(base.BaseAdapter):
 
         Returns
         -------
-        out : dict[str, torch.Tensor]
-            Forward pass output.
-
         X : dict[str, torch.Tensor]
-            Input features.
+            Input features (batch without `labels`).
 
         y : torch.Tensor
             Label features.
         """
         y = batch.pop("labels")
-
-        for key, val in batch.items():
-            batch[key] = val.to(self.device)
-
         X = batch
+        return X, y
+
+    def forward(self, X: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
+        """Model forward pass.
+
+        Parameters
+        ----------
+        X : dict[str, torch.Tensor]
+            Input pack for transformer model.
+
+        Returns
+        -------
+        out : dict[str, torch.Tensor]
+            Forward pass output.
+        """
+        for key, val in X.items():
+            X[key] = val.to(self.device)
+
         out = self.model(**X)
 
-        return out, X, y
+        return out
 
 
 class TorchModuleAdapter(base.BaseAdapter):
     """Adapter for PyTorch (`torch` package) modules (`torch.nn.Module`)."""
 
-    def forward(self, batch: tuple[torch.Tensor, ...]) -> base.AdapterInferenceOutputType:
-        """Model forward pass.
+    def break_batch(self, batch: t.Any) -> tuple[torch.Tensor, torch.Tensor]:
+        """Break batch in inputs `X` and input labels `y` appropriately.
 
         Parameters
         ----------
@@ -70,19 +83,31 @@ class TorchModuleAdapter(base.BaseAdapter):
 
         Returns
         -------
-        out : torch.Tensor
-            Forward pass output.
-
         X : torch.Tensor
-            Input features.
+            Input features (batch without `labels`).
 
         y : torch.Tensor
             Label features.
         """
         X, y, *_ = batch
+        return X, y
+
+    def forward(self, X: torch.Tensor) -> torch.Tensor:
+        """Model forward pass.
+
+        Parameters
+        ----------
+        X : torch.Tensor
+            Input tensor for model.
+
+        Returns
+        -------
+        out : torch.Tensor
+            Forward pass output.
+        """
         X = X.to(self.device)
         out = self.model(X)
-        return out, X, y
+        return out
 
 
 def get_model_adapter(model: t.Any, *args: t.Any, **kwargs: t.Any) -> base.BaseAdapter:

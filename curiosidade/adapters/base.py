@@ -5,9 +5,6 @@ import abc
 import torch
 
 
-AdapterInferenceOutputType = tuple[t.Any, t.Any, torch.Tensor]
-
-
 class BaseAdapter(abc.ABC):
     """Base class for model adapters.
 
@@ -39,15 +36,16 @@ class BaseAdapter(abc.ABC):
         self.model.train()
         return self
 
+    def named_modules(self) -> t.Iterator[tuple[str, torch.nn.Module]]:
+        """Return Torch module .named_modules() iterator."""
+        return self.model.named_modules()
+
     @abc.abstractmethod
-    def forward(self, batch: t.Any) -> AdapterInferenceOutputType:
-        """Model forward pass.
+    def break_batch(self, batch: t.Any) -> tuple[t.Any, torch.Tensor]:
+        """Break batch in inputs `X` and input labels `y` appropriately.
 
         Returns
         -------
-        out : t.Any
-            Forward pass output.
-
         X : t.Any
             Input features (batch without `labels`).
 
@@ -55,9 +53,17 @@ class BaseAdapter(abc.ABC):
             Label features.
         """
 
-    def __call__(
-        self, *args: t.Any, **kwargs: t.Any
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    @abc.abstractmethod
+    def forward(self, X: t.Any) -> t.Any:
+        """Model forward pass.
+
+        Returns
+        -------
+        out : t.Any
+            Forward pass output.
+        """
+
+    def __call__(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         return self.forward(*args, **kwargs)
 
 
@@ -69,5 +75,8 @@ class DummyAdapter(BaseAdapter):
         dummy = torch.nn.Parameter(torch.empty(0), requires_grad=False)
         super().__init__(model=dummy, device="cpu")
 
-    def forward(self, batch: t.Any) -> AdapterInferenceOutputType:
-        return None, None, torch.empty(0)
+    def break_batch(self, batch: t.Any) -> tuple[t.Any, torch.Tensor]:
+        return None, torch.empty(0)
+
+    def forward(self, X: t.Any) -> t.Any:
+        return None

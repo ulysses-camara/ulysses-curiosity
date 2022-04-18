@@ -96,6 +96,7 @@ class ProbingModelContainer:
         probing_model_factory: probers.ProbingModelFactory,
         modules_to_attach: t.Union[t.Pattern[str], str, t.Sequence[str]],
         modules_input_dim: input_handlers.ModuleInputDimType = None,
+        prune_unrelated_modules: t.Optional[t.Union[t.Sequence[str], t.Literal["infer"]]] = None,
     ) -> "ProbingModelContainer":
         """Attach probing models to specificied `base_model` modules.
 
@@ -120,6 +121,9 @@ class ProbingModelContainer:
             - If None, the input dimensions will be inferred from the output dimensions sequences
               in `base_model.named_modules()`.
 
+        prune_unrelated_modules : t.Sequence[str] or 'infer' or None, default=None
+            TODO.
+
         Returns
         -------
         self
@@ -127,6 +131,8 @@ class ProbingModelContainer:
         base_model = base_model.to("cpu")
 
         self.base_model = adapters.get_model_adapter(base_model)
+        self.base_model = adapters.pruners.InferencePruner(self.base_model)
+
         self.task = probing_model_factory.task
         self.probers = {}
 
@@ -153,6 +159,14 @@ class ProbingModelContainer:
                 probing_input_dim=module_output_dim,
                 random_seed=self.random_seed,
             )
+
+        pruned_modules = input_handlers.find_modules_to_prune(
+            module_names_to_prune=prune_unrelated_modules,
+            named_modules=tuple(self.base_model.named_modules()),
+            probed_module_names=frozenset(self.probers.keys()),
+        )
+
+        self.base_model.register_pruned_modules(pruned_modules)
 
         count_attached_modules = len(self.probers)
 
@@ -205,7 +219,8 @@ class ProbingModelContainer:
 
         for i, batch in enumerate(pbar, 1):
             with torch.no_grad():
-                *_, batch_input_labels = self.base_model(batch=batch)
+                batch_input_feats, batch_input_labels = self.base_model.break_batch(batch)
+                self.base_model(batch_input_feats)
 
             batch_input_labels = batch_input_labels.to(self.device)
             accumulate_grad = i % gradient_accumulation_steps != 0
@@ -325,6 +340,7 @@ def attach_probers(
     probing_model_factory: probers.ProbingModelFactory,
     modules_to_attach: t.Union[t.Pattern[str], str, t.Sequence[str]],
     modules_input_dim: input_handlers.ModuleInputDimType = None,
+    prune_unrelated_modules: t.Optional[t.Union[t.Sequence[str], t.Literal["infer"]]] = None,
     device: t.Union[torch.device, str] = "cpu",
     random_seed: t.Optional[int] = None,
 ) -> ProbingModelContainer:
@@ -351,6 +367,9 @@ def attach_probers(
         - If None, the input dimensions will be inferred from the output dimensions sequences
           in `base_model.named_modules()`.
 
+    prune_unrelated_modules : t.Sequence[str] or 'infer' or None, default=None
+        TODO.
+
     device : {'cpu', 'cuda'}, default='cpu'
         Device used to train probing models.
 
@@ -375,6 +394,7 @@ def attach_probers(
         probing_model_factory=probing_model_factory,
         modules_to_attach=modules_to_attach,
         modules_input_dim=modules_input_dim,
+        prune_unrelated_modules=prune_unrelated_modules,
     )
 
     return prober_container

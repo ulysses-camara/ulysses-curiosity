@@ -357,6 +357,10 @@ class ProbingModelContainer:
                         ).expand_key_dim(epoch)
                     )
 
+            for prober in self.probers.values():
+                if prober.has_lr_scheduler:
+                    prober.step_lr_scheduler()
+
             if self.task.has_test:
                 metrics_test.combine(
                     self._run_epoch(

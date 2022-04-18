@@ -195,7 +195,7 @@ class ProbingResults(t.NamedTuple):
         self,
         aggregate_by: t.Optional[t.Sequence[str]] = None,
         aggregate_fn: t.Callable[[t.Sequence[float]], float] = np.mean,
-    ) -> ProbingResults:
+    ) -> "ProbingResults":
         """Build a pandas DataFrame with stored values.
 
         Parameters

@@ -27,8 +27,10 @@ class ProbingModelWrapper:
         probing_model: torch.nn.Module,
         task: tasks.base.BaseProbingTask,
         optim: torch.optim.Optimizer,
+        lr_scheduler: t.Optional[torch.optim.lr_scheduler._LRScheduler] = None,
     ):
         self.optim = optim
+        self.lr_scheduler = lr_scheduler
         self.probing_model = probing_model
         self.task = task
 
@@ -46,15 +48,24 @@ class ProbingModelWrapper:
         pieces.append("    " + str(self.probing_model).replace("\n", "\n    "))
 
         pieces.append(f"  (b): Optimizer: {self.optim.__class__.__name__}")
-        pieces.append(f"  (c): Task: {self.task.task_name}")
-        pieces.append(f"  (d): Attached: {self.is_attached}")
+        pieces.append(
+            "  (c): Learning rate scheduler: "
+            f"{self.lr_scheduler.__class__.__name__ if self.lr_scheduler else None}"
+        )
+        pieces.append(f"  (d): Task: {self.task.task_name}")
+        pieces.append(f"  (e): Is attached: {self.is_attached}")
 
         return "\n".join(pieces)
 
     @property
     def is_attached(self) -> bool:
-        """Check whether the current probing model is attached to a pretrained module."""
+        """Check whether the probing model is attached to a pretrained module."""
         return self.attached_module is not None
+
+    @property
+    def has_lr_scheduler(self) -> bool:
+        """Check whether the probing model has a learning rate scheduler."""
+        return lr_scheduler is not None
 
     def attach(self, module: torch.nn.Module) -> "ProbingModelWrapper":
         """Attach probing model to `module`."""
@@ -134,6 +145,11 @@ class ProbingModelWrapper:
 
         return metrics
 
+    def step_lr_scheduler(self, *args: t.Any, **kwargs: t.Any) -> "ProbingModelWrapper":
+        """Apply one step of learning rate scheduler."""
+        self.lr_scheduler.step(*args, **kwargs)  # type: ignore
+        return self
+
     def train(self) -> "ProbingModelWrapper":
         """Set model to train mode."""
         self.probing_model.train()
@@ -161,6 +177,9 @@ class ProbingModelFactory:
 
     optim_fn : t.Type[torch.optim.Optimizer], default=torch.optim.Adam
         Optimizer factory function.
+
+    lr_scheduler_fn : t.Type[torch.optim.lr_scheduler._LRScheduler], default=None
+        If provided, will set up a learning rate scheduler coupled to the optimizer.
 
     extra_kwargs : dict[str, t.Any] or None, default=None
         Extra arguments to provide to `probing_model_fn`.
@@ -199,6 +218,7 @@ class ProbingModelFactory:
         probing_model_fn: t.Callable[[int, int], torch.nn.Module],
         task: tasks.base.BaseProbingTask,
         optim_fn: t.Type[torch.optim.Optimizer] = torch.optim.Adam,
+        lr_scheduler_fn: t.Optional[t.Type[torch.optim.lr_scheduler._LRScheduler]] = None,
         extra_kwargs: t.Optional[dict[str, t.Any]] = None,
     ):
         if not hasattr(optim_fn, "__call__"):
@@ -213,6 +233,7 @@ class ProbingModelFactory:
         self.probing_model_fn = probing_model_fn
         self.task = task
         self.optim_fn = optim_fn
+        self.lr_scheduler_fn = lr_scheduler_fn
         self.extra_kwargs = extra_kwargs or {}
 
     def __repr__(self) -> str:
@@ -259,10 +280,12 @@ class ProbingModelFactory:
             )
 
         optim = self.optim_fn(probing_model.parameters())
+        lr_scheduler = self.lr_scheduler_fn(optim) if self.lr_scheduler_fn else None
 
         probing_module = ProbingModelWrapper(
             probing_model=probing_model,
             optim=optim,
+            lr_scheduler=lr_scheduler,
             task=self.task,
         )
 

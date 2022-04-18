@@ -45,7 +45,7 @@ class InferencePrunerExtensor(base.BaseExtensor):
         return self
 
     @property
-    def pruned_modules_names(self) -> tuple[str, ...]:
+    def pruned_module_names(self) -> tuple[str, ...]:
         """Return names of pruned modules."""
         return tuple(self._pruned_modules.keys())
 

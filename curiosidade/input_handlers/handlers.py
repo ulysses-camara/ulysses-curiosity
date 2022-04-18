@@ -48,7 +48,7 @@ def find_modules_to_prune(
 
     Parameters
     ----------
-    modules_names_to_prune : t.Collection[str] or 'infer'
+    module_names_to_prune : t.Collection[str] or 'infer'
         Collection with module names to prune, or 'infer'. If 'infer', the first non-probed
         module after every probed module is assumed to be the only pruned module. This
         heuristic only works properly in 'one-dimensional' models with deterministic flows.
@@ -66,6 +66,13 @@ def find_modules_to_prune(
     """
     if not module_names_to_prune or not probed_module_names or not named_modules:
         return {}
+
+    if isinstance(module_names_to_prune, str) and module_names_to_prune != "infer":
+        raise ValueError(
+            "Parameter 'module_names_to_prune' must be either 'infer' or a collection of layer "
+            f"names (got {module_names_to_prune=}, maybe you forgot to encapsulate your layer "
+            f"name? Try ['{module_names_to_prune}'])."
+        )
 
     if module_names_to_prune == "infer":
         last_probed_ind = -1

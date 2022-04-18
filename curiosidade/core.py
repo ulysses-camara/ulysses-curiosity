@@ -33,7 +33,7 @@ class ProbingModelContainer:
         self.device = torch.device(device)
         self.random_seed = random_seed
 
-        self.base_model: adapters.extensors.InferencePrunerExtensor(adapters.base.DummyAdapter())
+        self.base_model = adapters.extensors.InferencePrunerExtensor(adapters.base.DummyAdapter())
         self.task: probers.tasks.base.BaseProbingTask = probers.tasks.base.DummyProbingTask()
         self.probers: dict[str, probers.ProbingModelWrapper] = {}
         self.is_trained = False
@@ -71,10 +71,10 @@ class ProbingModelContainer:
 
         if self.base_model.has_pruned_modules:
             pieces.append(
-                f"(e): Pruned module(s) ({len(self.base_model.pruned_modules_names)} in total):"
+                f"(e): Pruned module(s) ({len(self.base_model.pruned_module_names)} in total):"
             )
 
-            for i, pruned_modules_name in enumerate(self.base_model.pruned_modules_names):
+            for i, pruned_modules_name in enumerate(self.base_model.pruned_module_names):
                 pieces.append(f"  ({i}): {pruned_modules_name}")
 
         else:
@@ -178,9 +178,7 @@ class ProbingModelContainer:
 
         self.base_model.register_pruned_modules(pruned_modules)
 
-        count_attached_modules = len(self.probers)
-
-        if count_attached_modules == 0:
+        if not self.probers:
             warnings.warn(
                 message=(
                     "No probing modules were attached. One probable cause is format mismatch of "
@@ -189,24 +187,44 @@ class ProbingModelContainer:
                 category=UserWarning,
             )
 
-        is_container = not isinstance(modules_to_attach, str) and hasattr(
-            modules_to_attach, "__len__"
+        self._check_container_length_match(
+            current_container=pruned_modules,
+            expected_container=prune_unrelated_modules,
+            message="Some of modules to prune were not found in pretrained model",
         )
 
-        if is_container and count_attached_modules < len(modules_to_attach):
-            probed_modules = set(self.probers.keys())
-            not_attached_modules: list[str] = sorted(set(modules_to_attach) - probed_modules)
-            not_attached_modules = list(map(lambda item: f" - {item}", not_attached_modules))
-            warnings.warn(
-                message=(
-                    "Some of the provided modules were not effectively attached:\n"
-                    + "\n".join(not_attached_modules)
-                    + "\nThis may be due format mismatch of module name and the provided names."
-                ),
-                category=UserWarning,
-            )
+        self._check_container_length_match(
+            current_container=self.probers.keys(),
+            expected_container=modules_to_attach,
+            message="Some of the provided modules were not effectively attached",
+        )
 
         return self
+
+    @staticmethod
+    def _check_container_length_match(
+        current_container: t.Sized, expected_container: t.Any, message: str
+    ) -> None:
+        """Issue a warning if containers length does not match."""
+        expected_is_container = not isinstance(expected_container, str) and hasattr(
+            expected_container, "__len__"
+        )
+
+        if not expected_is_container or len(current_container) == len(expected_container):
+            return
+
+        unmatched_expected_items: list[str] = sorted(
+            set(expected_container) - set(current_container)
+        )
+        unmatched_expected_items = list(map(lambda item: f" - {item}", unmatched_expected_items))
+        warnings.warn(
+            message=(
+                f"{message}:\n"
+                + "\n".join(unmatched_expected_items)
+                + "\nThis may be due format mismatch of module name and the provided names."
+            ),
+            category=UserWarning,
+        )
 
     def _run_epoch(
         self,

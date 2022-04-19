@@ -57,6 +57,10 @@ class InferencePrunerExtensor(base.BaseExtensor):
     ) -> "InferencePrunerExtensor":
         """Updated in-place pruned modules with all values in `pruned_modules`."""
         self._pruned_modules.update(pruned_modules)
+
+        if "" in self._pruned_modules:
+            self._pruned_modules.pop("")
+
         return self
 
     @property
@@ -77,6 +81,23 @@ class InferencePrunerExtensor(base.BaseExtensor):
     def clear_pruned_modules(self) -> "InferencePrunerExtensor":
         """Clear in-place all pruned modules."""
         self._pruned_modules.clear()
+        return self
+
+    def to(self, device: t.Union[str, torch.device]) -> "InferencePrunerExtensor":
+        """Move non-prunned modules to `device` (if 'device=cpu', move all)."""
+        # pylint: disable='invalid-name'
+        self.device = torch.device(device)
+
+        if self.device.type == "cpu":
+            self.model.to(self.device)
+            return self
+
+        self.model.device = self.device
+
+        for module_name, module in self.model.named_modules():
+            if module_name and module_name not in self._pruned_modules:
+                module.to(self.device)
+
         return self
 
     def forward(self, input_feats: t.Any) -> t.Any:

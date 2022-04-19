@@ -1,4 +1,5 @@
 """Interfaces for inference with distinct model APIs."""
+from __future__ import annotations
 import typing as t
 
 import torch
@@ -29,7 +30,11 @@ except ImportError:
 
 class _HuggingfaceDeviceHangler:
     @classmethod
-    def _move_batch_to_device(cls, batch: dict[str, t.Any], device: str) -> dict[str, torch.Tensor]:
+    def _move_batch_to_device(
+        cls,
+        batch: t.Union[transformers.BatchEncoding, dict[str, t.Any]],
+        device: t.Union[torch.device, str],
+    ) -> t.Union[transformers.BatchEncoding, dict[str, torch.Tensor]]:
         """Move a transformers batch to device appropriately."""
         try:
             if isinstance(batch, transformers.BatchEncoding):
@@ -76,7 +81,9 @@ class HuggingfaceAdapter(base.BaseAdapter, _HuggingfaceDeviceHangler):
         input_feats = batch
         return input_feats, input_labels
 
-    def forward(self, input_feats: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
+    def forward(
+        self, input_feats: t.Union[transformers.BatchEncoding, dict[str, torch.Tensor]]
+    ) -> dict[str, torch.Tensor]:
         """Model forward pass.
 
         Parameters
@@ -127,7 +134,9 @@ class SentenceTransformersAdapter(base.BaseAdapter, _HuggingfaceDeviceHangler):
         input_feats = batch
         return input_feats, input_labels
 
-    def forward(self, input_feats: dict[str, torch.Tensor]) -> torch.Tensor:
+    def forward(
+        self, input_feats: t.Union[transformers.BatchEncoding, dict[str, torch.Tensor]]
+    ) -> torch.Tensor:
         """Model forward pass.
 
         Parameters

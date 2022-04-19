@@ -48,39 +48,39 @@ class ProbingTaskSentenceLength(base.BaseProbingTask):
 
 
 class ProbingTaskWordContent(base.BaseProbingTask):
-    pass
+    """TODO"""
 
 
 class ProbingTaskBigramShift(base.BaseProbingTask):
-    pass
+    """TODO"""
 
 
 class ProbingTaskTreeDepth(base.BaseProbingTask):
-    pass
+    """TODO"""
 
 
 class ProbingTaskTopConstituent(base.BaseProbingTask):
-    pass
+    """TODO"""
 
 
 class ProbingTaskTense(base.BaseProbingTask):
-    pass
+    """TODO"""
 
 
 class ProbingTaskSubjectNumber(base.BaseProbingTask):
-    pass
+    """TODO"""
 
 
 class ProbingTaskObjectNumber(base.BaseProbingTask):
-    pass
+    """TODO"""
 
 
 class ProbingTaskSOMO(base.BaseProbingTask):
-    pass
+    """TODO"""
 
 
 class ProbingTaskCoordinationInversion(base.BaseProbingTask):
-    pass
+    """TODO"""
 
 
 class ProbingTaskCustom(base.BaseProbingTask):

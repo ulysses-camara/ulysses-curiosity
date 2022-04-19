@@ -401,7 +401,7 @@ L6{{"Pretrained module N"}}
 P1(["Probing Model"])
 
 L2 -....-> P1;
-L3 & L4 & L5 & L6 --> Waste(("Wasted\ncomputations"))
+L3 & L4 & L5 & L6 --- Waste(("Wasted\ncomputation"))
 
 
 style Waste stroke-style:dashed,stroke-dasharray:8;
@@ -425,7 +425,7 @@ prober_container = curiosidade.attach_probers(
 )
 ```
 
-When `prune_unrelated_modules="infer"`, the forward flow will be interrupted past the last probed module, using the `.named_modules()` order as reference. This strategy should work for any model that has a deterministic and "one-dimensional" forward flow. If this is not working for your architecture, you can provide a list of modules where the forward flow should end prematurely, as exemplified below:
+When `prune_unrelated_modules="infer"`, the forward flow will be interrupted right after the last probed module ends its forward. This strategy should work for any model that has a deterministic forward flow. If this is not working for your architecture, you can provide a list of module names to prune, as exemplified below:
 
 ```python
 prober_container = curiosidade.attach_probers(
@@ -433,7 +433,7 @@ prober_container = curiosidade.attach_probers(
     prune_unrelated_modules=["module_name_a"],
 )
 ```
-Since the forward flow will never get past through a pruned module, you do not need to list any module that depends on it.
+Be careful to not prune a required module, or else a `RuntimeError` should be raised during training. Since the forward flow will never get past through a pruned module, you do not need to list any module past the first pruned moudle.
 
 ---
 

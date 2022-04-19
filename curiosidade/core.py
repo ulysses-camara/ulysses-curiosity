@@ -6,6 +6,7 @@ import torch
 import torch.nn
 import tqdm.auto
 
+from . import helpers
 from . import probers
 from . import adapters
 from . import input_handlers
@@ -37,6 +38,7 @@ class ProbingModelContainer:
         self.task: probers.tasks.base.BaseProbingTask = probers.tasks.base.DummyProbingTask()
         self.probers: dict[str, probers.ProbingModelWrapper] = {}
         self.is_trained = False
+        self._unnecessary_modules: dict[str, torch.nn.Modules] = {}
 
     def __repr__(self) -> str:
         pieces: list[str] = [f"{self.__class__.__name__}:"]
@@ -175,11 +177,25 @@ class ProbingModelContainer:
                 random_seed=self.random_seed,
             )
 
-        pruned_modules = input_handlers.find_modules_to_prune(
-            module_names_to_prune=prune_unrelated_modules,
-            named_modules=tuple(self.base_model.named_modules()),
-            probed_module_names=frozenset(self.probers.keys()),
-        )
+        self._unnecessary_modules.clear()
+        pruned_modules: dict[str, torch.nn.Module] = {}
+
+        if prune_unrelated_modules == "infer":
+            unnecessary_modules = helpers.find_unnecessary_modules(
+                sample_batch=next(iter(self.task.probing_dataloader_train)),
+                base_model=self.base_model,
+                probed_modules=self.probers.keys(),
+                repeat=1,
+            )
+            self._unnecessary_modules = dict(unnecessary_modules)
+            pruned_modules = dict([unnecessary_modules[0]])
+
+        elif prune_unrelated_modules:
+            pruned_modules = input_handlers.find_modules_to_prune(
+                module_names_to_prune=prune_unrelated_modules,
+                named_modules=tuple(self.base_model.named_modules()),
+                probed_module_names=frozenset(self.probers.keys()),
+            )
 
         self.base_model.register_pruned_modules(pruned_modules)
 

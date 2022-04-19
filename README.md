@@ -76,7 +76,7 @@ With these basic ingredients, the setup using Curiosity is as follows:
 7. Train your probing models; and,
 8. Check probing results, and done.
 
-Check [usage examples in this README](#usage-examples) and also [example notebooks](./notebooks) for concrete examples on how everything works.
+Check [usage examples in this README](#usage-examples) and also [example notebooks](./examples) for concrete examples on how everything works.
 
 ```mermaid
 flowchart TB

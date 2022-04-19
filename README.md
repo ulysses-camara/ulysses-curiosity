@@ -1,24 +1,11 @@
-## Ulysses-curiosity
+## Ulysses Curiosity
 
-Probing task framework for Ulysses project.
+Ulysses Curiosity is a framework for Probing Tasks.
 
----
+The term "probing task" was coined in [(Conneau et. al, 2018)](#references), referring to the act of validating a pretrained model without having validation data that resembles the distribution of interest (e.g. models trained on surrogate self-supervised tasks).
 
-### Table of Contents
-1. [About probing tasks](#about-probing-tasks)
-2. [Installation](#installation)
-3. [Usage examples](#usage-examples)
-    1. [Step-by-step example](#step-by-step-example)
-    2. [Huggingface transformers example](#huggingface-transformers-example)
-4. [Optimizing training with pruning](#optimizing-training-with-pruning)
-5. [Preconfigured probing tasks](#preconfigured-probing-tasks)
-6. [References](#references)
-7. [License](#license)
-8. [Citation](#citation)
+The strategy focus on the elaboration of a surrogate classification task &mdash; a "Probing Task" &mdash; which should be simple, easily interpretable, and is somehow connected to the domain of interest. Probing models are attached to the pretrained model, and optimized to solve the probing task by using as input only activations from the pretrained model. The pretrained model is kept frozen during the entire process (i.e. it is not optimized).
 
----
-
-### About probing tasks
 ```mermaid
 flowchart TB
 P1(["Probing Model A"])
@@ -50,6 +37,46 @@ class L2,L3,L6 clsProbed;
 classDef clsProber fill:#A1425B,stroke:#AC6C7D,stroke-width:2px;
 class P1,P2,P3 clsProber;
 ```
+
+The rationale behind this method is that, since the probing task is related to the distribution of interest, that means the performance of the probing model is limited by how well the pretrained model can embed information about that distribution. In particular, if the probing model can perform well in a probing task, then the pretrained model had success in encoding relevant information regarding the target domain, as its activations were the only source of information received during training.
+
+---
+
+### Table of Contents
+1. [About this framework](#about-this-framework)
+1. [Installation](#installation)
+2. [Usage examples](#usage-examples)
+    1. [Step-by-step example](#step-by-step-example)
+    2. [Huggingface transformers example](#huggingface-transformers-example)
+    3. [More examples](#more-examples)
+3. [Optimizing training with pruning](#optimizing-training-with-pruning)
+4. [Preconfigured probing tasks](#preconfigured-probing-tasks)
+5. [References](#references)
+6. [License](#license)
+7. [Citation](#citation)
+
+---
+
+### About this framework
+
+This frameworks provides all resources needed to train and validate your probing task. We support pretrained [PyTorch](https://pytorch.org/) (`torch.nn.Module`) and [Huggingface Transformer](https://huggingface.co/docs/transformers/index) models. In order to properly set up and train your probing tasks, you'll need:
+
+- A custom probing dataset (preconfigured probing tasks is a work in progress);
+- A pretrained model to probe; and
+- A probing model architecture in mind (we provide some simple suggestions).
+
+With these basic ingredients, the setup using Curiosity is as follows:
+
+1. Load a pretrained model;
+2. Load a probing dataset in dataloaders (`torch.utils.data.DataLoader`);
+3. Set up a Task (Dataloaders + loss function + validation metrics) with `curiosidade.ProbingTaskCustom`;
+4. Set up your Probing Model (any `torch.nn.Module` will do);
+5. Combine your Probing Model and your Task with a `ProbingModelFactory`;
+6. Attach probers into your pretrained model by using `ProbingModelFactory.attach_probers`;
+7. Train your probing models; and,
+8. Check probing results, and done.
+
+Check [usage examples in this README](#usage-examples) and also [example notebooks](./notebooks) for concrete examples on how everything works.
 
 ```mermaid
 flowchart TB
@@ -96,19 +123,29 @@ classDef clsProber fill:#A1425B,stroke:#AC6C7D,stroke-width:2px;
 class P1,P2,P3 clsProber;
 ```
 
+---
+
 ### Installation
 ```shell
 python -m pip install "git+https://github.com/FelSiq/ulysses-curiosity"
 ```
+
+To install additional dependencies, needed to run notebook examples:
+```shell
+python -m pip install "ulysses-curiosity[examples] @ git+https://github.com/FelSiq/ulysses-curiosity"
+```
+
 To install developer dependencies:
 ```shell
 python -m pip install "ulysses-curiosity[dev] @ git+https://github.com/FelSiq/ulysses-curiosity"
 ```
 
+---
+
 ### Usage examples
 
 #### Step-by-step example
-To train probing models with this package, there are only a few steps that you should follow. The preparation is to import the package `curiosidade`, load your pretrained model, and set up a probing model that inherits from the `torch.nn.Module`. The probing model must receive as its two first `__init__` arguments the input dimension (an integer), and the output dimension (also an integer), in that order. Note that the input dimension of every probing model varies accordingly to the output dimension of the module that it is attached to, and the output dimensions depends on the nature of the probing task. (Further in this tutorial you will learn how to provide additional arguments to you model, if necessary.)
+To train probing models with Curiosity, there are a few steps that you need to follow. First, it is required to load your pretrained model and set up a probing model that inherits from the `torch.nn.Module`. The probing model must receive as its first `__init__` argument its input dimension (an integer), and the output dimension as the second argument (also an integer): `__init__(self, input_dim: int, output_dim: int)`. Note that the input dimension of any probing model vary accordingly to the output dimension of the probed module that it is attached to, and its output dimensions depends on the nature of the probing task.
 ```python
 # (1): import needed packages.
 import curiosidade
@@ -139,7 +176,7 @@ For convenience, the probing model shown above can be created with a utility fun
 ProbingModel = curiosidade.probers.utils.get_probing_model_feedforward(hidden_layer_dims=[20])
 ```
 
-The next step is to create a probing task instance. In this step, you must set up important aspects of the training phase, such as the train, evaluation, and test dataloaders, the loss function, the expected output dimension, and the validation metrics that should be collected during training (from every provided dataloader). Note that *evaluation and test dataloaders are optional, but recommended*. The example below show a simple set up for a probing task with 3 classes, with loss function being the Cross Entropy, and collecting the Accuracy and F1 Scores per batch. The loss function value related to every batch is collected automatically by default.
+The next step is to create a probing task. This step set up aspects regarding the training, such as the train, evaluation, and test dataloaders, the loss function, and the validation metrics collected during training. Note that *evaluation and test dataloaders are optional, but recommended*. The example below show a probing task with 3 classes, using Cross Entropy as loss function, and collecting Accuracy and F1 Scores per batch. *The loss value for every batch is always collected automatically*, and will be the only metric recorded if you don't provide any.
 
 ```python
 import torchmetrics
@@ -151,8 +188,8 @@ accuracy_fn = torchmetrics.Accuracy(num_classes=num_classes)
 f1_fn = torchmetrics.F1Score(num_classes=num_classes)
 
 def metrics_fn(logits: torch.Tensor, truth_labels: torch.Tensor) -> dict[str, float]:
-    accuracy = accuracy_fn(logits, truth_labels)
-    f1 = f1_fn(logits, truth_labels)
+    accuracy = accuracy_fn(logits, truth_labels).detach().cpu().item()
+    f1 = f1_fn(logits, truth_labels).detach().cpu().item()
     return {"accuracy": accuracy, "f1": f1}
 
 
@@ -169,12 +206,12 @@ task = curiosidade.ProbingTaskCustom(
     loss_fn=torch.nn.CrossEntropyLoss(),
     task_name="debug_task",
     task_type="classification",
-    output_dim=num_classes,
+    output_dim=num_classes,  # Note: set to '1' if binary classification.
     metrics_fn=metrics_fn,
 )
 ```
 
-Now, we need to attach the probing models to the pretrained model modules. This is achieved by creating a `ProbingModelFactory`, and calling `attach_probers` method. In this step you also need to provide the optimizer responsible to updating the probing model weights. Both the probing model and the optimizer *should not be instantiated* when provided to the ProbingModelFactory, as they will be instantiated automatically many times as required to probe every pretrained modules. The modules to be probed are specified by their names in a list, or by regular expression patterns that matches their names. To check the module names of your model use PyTorch's module built-in `pretrained_model.named_modules()`:
+Now, we need to attach the probing models to the pretrained model modules. This is achieved through a `ProbingModelFactory` and its method `.attach_probers(...)`. In this step you also need to provide the optimizer responsible to updating the probing model weights. The probing model and the optimizer *should not be instantiated* when provided to the ProbingModelFactory. The factory will create brand-new copies for each probed module. The probed modules are specified either explicitly by their names, or by regular expression patterns that matches their names. Note: you can list module names by using PyTorch's built-in `pretrained_model.named_modules()`:
 
 ```python
 pretrained_modules_available_for_probing = [
@@ -202,11 +239,12 @@ prober_container = curiosidade.attach_probers(
     device="cpu",
 )
 
-print(f"{prober_container = }")  # Summarize every configutation done so far.
-print(f"{prober_container.probed_modules = }")  # Lists every probed module in 'pretrained_model'.
+print(f"{prober_container = }")  # Configuration summary.
+print(f"{prober_container.probed_modules = }")  # Lists all probed module names.
 ```
 
-By default, during attachment the input dimension of each probing model will be inferred by keeping the last output dimension before the attachment. This strategy should work in most of the cases based on current deep learning model architectures, but may fail if there is some sort of bifurcation (like a siamese architecture) or a non-deterministic activation flow. If this heuristic is not working in your model, you can specify the input dimension explicitly using the argument `.attach_probers(..., modules_input_dim=dict(module_name=input_dim))`, as shown below. Any input dimenion not explicitly provided will still be inferred, so you can list only modules that are causing you trouble.
+By default, during attachment the input dimension of each probing model will be inferred by bookkeeping the last output dimension before the attachment. This strategy should work in most of the cases based on current deep learning model architectures, but may fail if there is some sort of bifurcation (like a siamese architecture) or a non-deterministic activation flow. If this heuristic is not working in your model, you can specify the input dimension explicitly by using the argument `.attach_probers(..., modules_input_dim=dict(module_name=input_dim))`, as shown below. Any input dimenion not explicitly provided will still be inferred, so you can list only modules that are causing you trouble.
+
 ```python
 prober_container = curiosidade.attach_probers(
     ...,
@@ -217,14 +255,14 @@ prober_container = curiosidade.attach_probers(
 )
 ```
 
-Now we are set up, so we can train our attached probing models:
+Now we are set up. To train our attached probing models:
 
 ```python
 # (7): train probing models.
 probing_results = prober_container.train(num_epochs=5)
 ```
 
-Finally, the results can be aggregated to better analysis and visualization:
+Finally, the results can be aggregated for better analysis, and visualization:
 
 ```python
 # (8): aggregate results.
@@ -253,7 +291,7 @@ print(df_train)
 ```
 
 #### Huggingface transformers example
-The process shown in the previous example should be pretty much universal for any `torch.nn.Modules`, incluing Huggingface's transformers (in PyTorch format). We will repeat the procedure shown previously, but this time probing a pretrained BERT model for Token Classification.
+The process shown in the previous example should be pretty much universal for any `torch.nn.Modules`, which includes Huggingface's transformers (in PyTorch format). We will repeat the procedure shown previously to probe a pretrained BERT model for token classification, but this time a little bit faster with the details:
 ```python
 # (1): import needed packages.
 import functools
@@ -340,9 +378,14 @@ df_train, df_eval, df_test = probing_results.to_pandas(
 )
 ```
 
+#### More examples
+You can find notebooks showcasing more examples in the [Examples](./examples) directory.
+
+---
+
 ### Optimizing training with pruning
 
-There is not point in computing all pretrained model activations past the "farthest" probing model during training. If your probing models does not depends on the final output of your pretrained model, you may benefit from pruning away unnecessary modules.
+There is not point in computing all pretrained model activations past the "farthest" probing model during training. When probing models does not depends on the final output of your pretrained model, pruning away unnecessary modules will reduce computational waste.
 
 ```mermaid
 flowchart TB
@@ -390,10 +433,15 @@ prober_container = curiosidade.attach_probers(
     prune_unrelated_modules=["module_name_a"],
 )
 ```
-Since the forward flow will never get past through a pruned module, you do not need to list any module that depends from the pruned activation.
+Since the forward flow will never get past through a pruned module, you do not need to list any module that depends on it.
+
+---
 
 ### Preconfigured probing tasks
-This package will provide a collection of preconfigured probing tasks for portuguese language, based on tasks proposed in [(Conneau et. al, 2018)](https://aclanthology.org/P18-1198/). There are basic setups for these tasks already available in this package, as shown below, but they are all work in progress. So far, you can use `ProbingTaskCustom` to set up your own probing tasks.
+
+> :warning: Work in progress!
+
+This package will provide a collection of preconfigured probing tasks for Brazilian Portuguese language, based on tasks in [(Conneau et. al, 2018)](https://aclanthology.org/P18-1198/). By now, you need to use `ProbingTaskCustom` to set up your own probing tasks.
 
 ```python
 curiosidade.ProbingTaskSentenceLength
@@ -408,11 +456,17 @@ curiosidade.ProbingTaskSOMO
 curiosidade.ProbingTaskCoordinationInversion
 ```
 
+---
+
 ### References
 [Alexis Conneau, German Kruszewski, Guillaume Lample, Loïc Barrault, and Marco Baroni. 2018. What you can cram into a single $&!#\* vector: Probing sentence embeddings for linguistic properties. In Proceedings of the 56th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers), pages 2126–2136, Melbourne, Australia. Association for Computational Linguistics.](https://aclanthology.org/P18-1198/)
 
+---
+
 ### License
 [MIT.](LICENSE)
+
+---
 
 ### Citation
 ```bibtex

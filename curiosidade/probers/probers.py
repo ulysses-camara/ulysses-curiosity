@@ -166,7 +166,7 @@ class ProbingModelFactory:
 
     Parameters
     ----------
-    probing_model_fn : t.Callable[[int, int], torch.nn.Module]
+    probing_model_fn : t.Callable[..., torch.nn.Module]
         Probing model factory function, or class derived from torch.nn.Module. Must receive its
         input dimension (an integer) as its first positional argument, and its output dimension
         (also an integer) as its second positional argument. Extra arguments can be handled via
@@ -215,9 +215,11 @@ class ProbingModelFactory:
 
     def __init__(
         self,
-        probing_model_fn: t.Callable[[int, int], torch.nn.Module],
+        probing_model_fn: t.Callable[..., torch.nn.Module],
         task: tasks.base.BaseProbingTask,
-        optim_fn: t.Type[torch.optim.Optimizer] = torch.optim.Adam,
+        optim_fn: t.Callable[
+            [t.Iterator[torch.nn.Parameter]], torch.optim.Optimizer
+        ] = torch.optim.Adam,
         lr_scheduler_fn: t.Optional[t.Type[torch.optim.lr_scheduler._LRScheduler]] = None,
         extra_kwargs: t.Optional[dict[str, t.Any]] = None,
     ):
@@ -280,14 +282,14 @@ class ProbingModelFactory:
         probing_output_dim = self.task.output_dim
 
         if not hasattr(probing_input_dim, "__len__"):
-            probing_input_dim = (probing_input_dim,)
+            probing_input_dim = (probing_input_dim,)  # type: ignore
 
         with torch.random.fork_rng(enabled=random_seed is not None):
             if random_seed is not None:
                 torch.random.manual_seed(random_seed)
 
             probing_model = self.probing_model_fn(
-                *probing_input_dim,
+                *probing_input_dim,  # type: ignore
                 probing_output_dim,
                 **self.extra_kwargs,
             )

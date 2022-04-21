@@ -97,7 +97,7 @@ class HuggingfaceAdapter(base.BaseAdapter, _HuggingfaceDeviceHangler):
             Forward pass output.
         """
         input_feats = self._move_batch_to_device(input_feats, self.device)
-        out = self.model(**input_feats)
+        out: dict[str, torch.Tensor] = self.model(**input_feats)
 
         return out
 
@@ -151,7 +151,7 @@ class SentenceTransformersAdapter(base.BaseAdapter, _HuggingfaceDeviceHangler):
         """
         input_feats = self._move_batch_to_device(input_feats, self.device)
         out = self.model(input_feats)["token_embeddings"]
-        return out
+        return torch.as_tensor(out)
 
     def named_modules(self) -> t.Iterator[tuple[str, torch.nn.Module]]:
         """Return Torch module .named_modules() iterator."""
@@ -197,7 +197,7 @@ class TorchModuleAdapter(base.BaseAdapter):
         """
         input_feats = input_feats.to(self.device)
         out = self.model(input_feats)
-        return out
+        return torch.as_tensor(out)
 
     def named_modules(self) -> t.Iterator[tuple[str, torch.nn.Module]]:
         """Return Torch module .named_modules() iterator."""

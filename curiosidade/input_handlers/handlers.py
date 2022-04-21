@@ -19,9 +19,8 @@ def get_fn_select_modules_to_probe(
 
     if isinstance(modules_to_attach, str):
         modules_to_attach = r"\s*" + modules_to_attach + r"\s*$"
-        modules_to_attach = regex.compile(modules_to_attach)
 
-    compiled_regex: t.Pattern[str] = modules_to_attach
+    compiled_regex: t.Pattern[str] = regex.compile(modules_to_attach)
 
     return lambda module_name: compiled_regex.match(module_name) is not None
 

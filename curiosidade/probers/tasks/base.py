@@ -9,7 +9,8 @@ import torch.nn
 
 LossFunctionType = t.Callable[[torch.Tensor, torch.Tensor], torch.Tensor]
 ValidationFunctionType = t.Callable[[torch.Tensor, torch.Tensor], dict[str, float]]
-DataLoaderType = t.Union[str, pathlib.Path, torch.utils.data.DataLoader]
+DataLoaderType = torch.utils.data.DataLoader[tuple[torch.Tensor, ...]]
+DataLoaderGenericType = t.Union[str, pathlib.Path, DataLoaderType]
 
 
 class BaseProbingTask(abc.ABC):
@@ -60,9 +61,9 @@ class BaseProbingTask(abc.ABC):
         self,
         output_dim: int,
         loss_fn: LossFunctionType,
-        dataset_uri_or_dataloader_train: DataLoaderType,
-        dataset_uri_or_dataloader_eval: t.Optional[DataLoaderType] = None,
-        dataset_uri_or_dataloader_test: t.Optional[DataLoaderType] = None,
+        dataset_uri_or_dataloader_train: DataLoaderGenericType,
+        dataset_uri_or_dataloader_eval: t.Optional[DataLoaderGenericType] = None,
+        dataset_uri_or_dataloader_test: t.Optional[DataLoaderGenericType] = None,
         metrics_fn: t.Optional[ValidationFunctionType] = None,
         task_name: str = "unnamed_task",
         task_type: t.Literal["classification", "regression", "mixed"] = "classification",
@@ -86,9 +87,9 @@ class BaseProbingTask(abc.ABC):
         self.task_type = task_type
         self.output_dim = output_dim
 
-        dl_train: torch.utils.data.DataLoader
-        dl_eval: t.Optional[torch.utils.data.DataLoader]
-        dl_test: t.Optional[torch.utils.data.DataLoader]
+        dl_train: DataLoaderType
+        dl_eval: t.Optional[DataLoaderType]
+        dl_test: t.Optional[DataLoaderType]
 
         if isinstance(dataset_uri_or_dataloader_train, (str, pathlib.Path)):
             dl_train = torch.utils.data.DataLoader(
@@ -148,7 +149,9 @@ class BaseProbingTask(abc.ABC):
         return self.metrics_fn is not None
 
     @staticmethod
-    def _load_dataset(dataset_uri: t.Union[pathlib.Path, str]) -> torch.utils.data.TensorDataset:
+    def _load_dataset(
+        dataset_uri: t.Union[pathlib.Path, str]
+    ) -> torch.utils.data.Dataset[tuple[torch.Tensor, ...]]:
         """Load a prepared dataset."""
         raise NotImplementedError
 
@@ -158,7 +161,7 @@ class DummyProbingTask(BaseProbingTask):
 
     def __init__(self, *args: t.Any, **kwargs: t.Any):
         # pylint: disable='unused-argument'
-        dummy_df = torch.utils.data.TensorDataset(torch.empty(0))
+        dummy_df = torch.utils.data.TensorDataset(torch.empty(0), torch.empty(0))
         dummy_dl = torch.utils.data.DataLoader(dummy_df)
         super().__init__(
             dataset_uri_or_dataloader_train=dummy_dl,

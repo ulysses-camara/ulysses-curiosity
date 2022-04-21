@@ -6,10 +6,16 @@ import pathlib
 import torch
 import torch.nn
 
+try:
+    from typing_extensions import TypeAlias
+
+except ImportError:
+    from typing import TypeAlias  # type: ignore
+
 
 LossFunctionType = t.Callable[[torch.Tensor, torch.Tensor], torch.Tensor]
 ValidationFunctionType = t.Callable[[torch.Tensor, torch.Tensor], dict[str, float]]
-DataLoaderType = torch.utils.data.DataLoader[tuple[torch.Tensor, ...]]
+DataLoaderType: TypeAlias = torch.utils.data.DataLoader[tuple[torch.Tensor, ...]]
 DataLoaderGenericType = t.Union[str, pathlib.Path, DataLoaderType]
 
 

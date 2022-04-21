@@ -37,7 +37,7 @@ dev = [
 
 examples = [
 	"notebook == 6.4.10",
-	"torchmetrics-0.8.0",
+	"torchmetrics == 0.8.0",
 	"seaborn == 0.11.2",
 	"transformers == 4.18.0",
 	"sentence-transformers == 2.2.0",
@@ -60,7 +60,7 @@ install_types = true
 
 [tool.pytest.ini_options]
 addopts = """
-	--cov=segmentador
+	--cov=curiosidade
 	--last-failed
 	--failed-first
 	--new-first
@@ -86,3 +86,43 @@ min-similarity-lines=10
 
 [tool.black]
 line-length=100
+
+[tool.tox]
+legacy_tox_ini = """
+[tox]
+envlist = py39, py310, mypy, pylint
+isolated_build = true
+
+[gh-actions]
+python =
+    3.9: mypy, pylint
+
+[testenv]
+whitelist_externals = flit
+commands =
+	pip install .
+	pip install '.[dev]'
+	pip install '.[examples]'
+	python -m pytest
+	python -m pytest curiosidade/ --doctest-modules --doctest-glob="**/*.py"
+
+[testenv:mypy]
+basepython = python3.9
+deps = mypy
+commands =
+	python -m mypy --install-types --non-interactive curiosidade/
+	python -m mypy curiosidade/
+
+[testenv:pylint]
+basepython = python3.9
+deps =
+	pylint
+	pytest
+	pandas
+	torch
+	regex
+	tqdm
+commands =
+	python -m pylint curiosidade/
+	python -m pylint --disable='missing-function-docstring' tests/
+"""

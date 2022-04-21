@@ -26,19 +26,6 @@ def get_fn_select_modules_to_probe(
     return lambda module_name: compiled_regex.match(module_name) is not None
 
 
-def get_probing_model_input_dim(
-    modules_input_dim: ModuleInputDimType, default_dim: int, module_name: str, module_index: int
-) -> int:
-    """Return module input dimension."""
-    if modules_input_dim is None:
-        return default_dim
-
-    if isinstance(modules_input_dim, dict):
-        return modules_input_dim.get(module_name, default_dim)
-
-    return modules_input_dim[module_index]
-
-
 def find_modules_to_prune(
     module_names_to_prune: t.Collection[str],
     named_modules: t.Sequence[tuple[str, torch.nn.Module]],

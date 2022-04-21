@@ -103,6 +103,7 @@ class ProbingModelContainer:
         modules_to_attach: t.Union[t.Pattern[str], str, t.Sequence[str]],
         modules_input_dim: input_handlers.ModuleInputDimType = None,
         prune_unrelated_modules: t.Optional[t.Union[t.Sequence[str], t.Literal["infer"]]] = None,
+        enable_cuda_in_inspection: bool = True,
     ) -> "ProbingModelContainer":
         """Attach probing models to specificied `base_model` modules.
 
@@ -141,6 +142,11 @@ class ProbingModelContainer:
             - If None, no module will be pruned, and the pretrained forward flow will be computed on
               its entirety.
 
+        enable_cuda_in_inspection : bool, default=True
+            Whether cuda can be enabled during probing input dimension inference, or while in search
+            for unrelated modules in pretrained model. Argument used only if container device is set
+            to 'cuda', otherwise it is ignored.
+
         Returns
         -------
         self
@@ -151,39 +157,40 @@ class ProbingModelContainer:
 
         self.task = probing_model_factory.task
         self.probers = {}
+        inspection_result: dict[str, t.Any] = {}
+        pruned_modules: dict[str, torch.nn.Module] = {}
+        modules_input_dim = modules_input_dim or {}
 
         fn_module_is_probed = input_handlers.get_fn_select_modules_to_probe(modules_to_attach)
+        probed_modules = {
+            module_name: module
+            for module_name, module in base_model.named_modules()
+            if fn_module_is_probed(module_name)
+        }
 
-        prev_output_dim: int = 0
+        if enable_cuda_in_inspection:
+            self.base_model.to(self.device)
 
-        for module_name, module in base_model.named_modules():
-            if hasattr(module, "out_features"):
-                prev_output_dim = module.out_features
+        inspection_result = helpers.run_inspection_batches(
+            sample_batches=[next(iter(self.task.probing_dataloader_train))],
+            base_model=self.base_model,
+            probed_modules=probed_modules.keys(),
+        )
 
-            if not fn_module_is_probed(module_name):
-                continue
+        unnecessary_modules = inspection_result["unnecessary_modules"]
+        probing_input_dims = inspection_result["probing_input_dims"]
+        probing_input_dims.update(modules_input_dim)
 
-            module_output_dim = input_handlers.get_probing_model_input_dim(
-                modules_input_dim=modules_input_dim,
-                default_dim=prev_output_dim,
-                module_name=module_name,
-                module_index=len(self.probers),
-            )
+        self.base_model.to("cpu")
 
+        for module_name, module in probed_modules.items():
             self.probers[module_name] = probing_model_factory.create_and_attach(
                 module=module,
-                probing_input_dim=module_output_dim,
+                probing_input_dim=probing_input_dims[module_name],
                 random_seed=self.random_seed,
             )
 
-        pruned_modules: dict[str, torch.nn.Module] = {}
-
         if prune_unrelated_modules == "infer":
-            unnecessary_modules = helpers.find_unnecessary_modules(
-                sample_batches=[next(iter(self.task.probing_dataloader_train))],
-                base_model=self.base_model,
-                probed_modules=self.probers.keys(),
-            )
             pruned_modules = dict(unnecessary_modules)
 
         elif prune_unrelated_modules:

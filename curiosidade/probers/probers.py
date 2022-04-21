@@ -246,7 +246,10 @@ class ProbingModelFactory:
         return "\n".join(pieces)
 
     def create_and_attach(
-        self, module: torch.nn.Module, probing_input_dim: int, random_seed: t.Optional[int] = None
+        self,
+        module: torch.nn.Module,
+        probing_input_dim: t.Union[int, tuple[int, ...]],
+        random_seed: t.Optional[int] = None,
     ) -> ProbingModelWrapper:
         """Create a brand-new probing model and attach it to `module`.
 
@@ -255,12 +258,19 @@ class ProbingModelFactory:
         module : torch.nn.Module
             Module to attach the probing model.
 
-        probing_input_dim : int
+        probing_input_dim : int or tuple[int, ...]
             Input dimension of probing model. It should match the output dimension of `module`.
+            If `module` has more than one output, must be a tuple with the dimensions of each
+            output, mantaining the order. This tuple will be unpacked before provided to the
+            probing model.
 
         random_seed : int or None, default=None
-            Random seed to instantiate the probing model, controlling for random weight
-            initialization, and any other non-deterministic behaviours.
+            Random seed set while creating the probing model, mainly to control for random weight
+            initialization, and any other non-deterministic behaviours. Note that this only take
+            into account Torch-related pseudo-randomness. If your model depends on other independent
+            pseudo-random generators (such as `random` or `numpy.random`), you must control their
+            behaviour separately within the probing model code (for instance, providing a random
+            seed via `ProbingModelFactory.extra_kwargs`).
 
         Returns
         -------
@@ -269,12 +279,15 @@ class ProbingModelFactory:
         """
         probing_output_dim = self.task.output_dim
 
+        if not hasattr(probing_input_dim, "__len__"):
+            probing_input_dim = (probing_input_dim,)
+
         with torch.random.fork_rng(enabled=random_seed is not None):
             if random_seed is not None:
                 torch.random.manual_seed(random_seed)
 
             probing_model = self.probing_model_fn(
-                probing_input_dim,
+                *probing_input_dim,
                 probing_output_dim,
                 **self.extra_kwargs,
             )

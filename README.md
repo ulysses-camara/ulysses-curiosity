@@ -243,7 +243,7 @@ print(f"{prober_container = }")  # Configuration summary.
 print(f"{prober_container.probed_modules = }")  # Lists all probed module names.
 ```
 
-By default, during attachment the input dimension of each probing model will be inferred by bookkeeping the last output dimension before the attachment. This strategy should work in most of the cases based on current deep learning model architectures, but may fail if there is some sort of bifurcation (like a siamese architecture) or a non-deterministic activation flow. If this heuristic is not working in your model, you can specify the input dimension explicitly by using the argument `.attach_probers(..., modules_input_dim=dict(module_name=input_dim))`, as shown below. Any input dimenion not explicitly provided will still be inferred, so you can list only modules that are causing you trouble.
+By default, during attachment the input dimension of each probing model is inferred by forwarding a sample batch in the pretrained model. You can specify the input dimension explicitly by using the argument `modules_input_dim` of `attach_probers` method if necessary, as depicted in the example below. Dimensions not explicitly provided will still be inferred, so you can list only modules that are causing you trouble.
 
 ```python
 prober_container = curiosidade.attach_probers(
@@ -291,7 +291,7 @@ print(df_train)
 ```
 
 #### Huggingface transformers example
-The process shown in the previous example should be pretty much universal for any `torch.nn.Modules`, which includes Huggingface's transformers (in PyTorch format). We will repeat the procedure shown previously to probe a pretrained BERT model for token classification, but this time a little bit faster with the details:
+The process shown in the previous example should be pretty much universal for any `torch.nn.Module`, which includes Huggingface's transformers (in PyTorch format). We will repeat the procedure shown previously to probe a pretrained BERT model for token classification, but this time a little bit faster with the details:
 ```python
 # (1): import needed packages.
 import functools

@@ -1,3 +1,5 @@
+[![Tests](https://github.com/FelSiq/ulysses-curiosity/actions/workflows/tests.yml/badge.svg)](https://github.com/FelSiq/ulysses-curiosity/actions/workflows/tests.yml)
+
 ## Ulysses Curiosity
 
 Ulysses Curiosity is a framework for Probing Tasks.

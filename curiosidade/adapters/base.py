@@ -72,6 +72,13 @@ class BaseAdapter(abc.ABC):
     def __call__(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         return self.forward(*args, **kwargs)
 
+    def get_torch_module(self) -> torch.nn.Module:
+        """Return PyTorch Module within adapted model."""
+        if isinstance(self.model, BaseAdapter):
+            return self.model.get_torch_module()
+
+        return self.model
+
 
 class DummyAdapter(BaseAdapter):
     """Dummy adapter used as placeholder."""

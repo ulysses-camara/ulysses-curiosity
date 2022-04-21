@@ -36,6 +36,7 @@ class InferencePrunerExtensor(base.BaseExtensor):
     def __init__(self, model: base.BaseAdapter):
         super().__init__(model=model)
         self._pruned_modules: dict[str, torch.nn.Module] = {}
+        self.device = model.device
 
     def __repr__(self) -> str:
         pieces: list[str] = [f"{self.__class__.__name__}({self.model})"]

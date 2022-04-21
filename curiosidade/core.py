@@ -51,7 +51,7 @@ class ProbingModelContainer:
         pieces.append(f"(b): Task name: {self.task.task_name}")
         pieces.append("(c): Probing dataset(s):")
 
-        def format_dl_info(split_name: str, dataloader: torch.utils.data.DataLoader) -> str:
+        def format_dl_info(split_name: str, dataloader: probers.tasks.base.DataLoaderType) -> str:
             split_name = f"({split_name})"
             return (
                 f" | {split_name:<7}: {len(dataloader):4} batches of size (at most) "
@@ -61,10 +61,10 @@ class ProbingModelContainer:
         pieces.append(format_dl_info("train", self.task.probing_dataloader_train))
 
         if self.task.has_eval:
-            pieces.append(format_dl_info("eval", self.task.probing_dataloader_eval))
+            pieces.append(format_dl_info("eval", self.task.probing_dataloader_eval))  # type: ignore
 
         if self.task.has_test:
-            pieces.append(format_dl_info("test", self.task.probing_dataloader_test))
+            pieces.append(format_dl_info("test", self.task.probing_dataloader_test))  # type: ignore
 
         if self.probers:
             pieces.append(f"(d): Probed module(s) ({len(self.probers)} in total):")
@@ -212,7 +212,7 @@ class ProbingModelContainer:
             )
 
         self._check_container_length_match(
-            current_container=pruned_modules,
+            current_container=pruned_modules.keys(),
             expected_container=prune_unrelated_modules,
             message="Some of modules to prune were not found in pretrained model",
         )
@@ -227,7 +227,7 @@ class ProbingModelContainer:
 
     @staticmethod
     def _check_container_length_match(
-        current_container: t.Sized, expected_container: t.Any, message: str
+        current_container: t.Collection[t.Any], expected_container: t.Any, message: str
     ) -> None:
         """Issue a warning if containers length does not match."""
         expected_is_container = not isinstance(expected_container, str) and hasattr(
@@ -252,7 +252,7 @@ class ProbingModelContainer:
 
     def _run_epoch(
         self,
-        dataloader: torch.utils.data.DataLoader,
+        dataloader: probers.tasks.base.DataLoaderType,
         gradient_accumulation_steps: int = 1,
         is_test: bool = False,
         show_progress_bar: bool = False,
@@ -371,7 +371,7 @@ class ProbingModelContainer:
                 if self.task.has_eval:
                     metrics_eval.combine(
                         self._run_epoch(
-                            dataloader=self.task.probing_dataloader_eval,
+                            dataloader=self.task.probing_dataloader_eval,  # type: ignore
                             is_test=True,
                         ).expand_key_dim(epoch)
                     )
@@ -383,7 +383,7 @@ class ProbingModelContainer:
             if self.task.has_test:
                 metrics_test.combine(
                     self._run_epoch(
-                        dataloader=self.task.probing_dataloader_test,
+                        dataloader=self.task.probing_dataloader_test,  # type: ignore
                         is_test=True,
                     ).expand_key_dim(-1)
                 )

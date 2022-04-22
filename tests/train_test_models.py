@@ -1,3 +1,4 @@
+"""Train test models to simulate pretrained models."""
 import typing as t
 import collections
 
@@ -5,6 +6,35 @@ import torch
 import torch.nn
 
 from . import model_utils
+
+
+class TorchFF(torch.nn.Module):
+    """Simple feedforward torch model."""
+
+    def __init__(self, input_dim: int, output_dim: int):
+        super().__init__()
+
+        self.params = torch.nn.Sequential(
+            collections.OrderedDict(
+                (
+                    ("lin1", torch.nn.Linear(input_dim, 25, bias=True)),
+                    ("relu1", torch.nn.ReLU(inplace=True)),
+                    ("lin2", torch.nn.Linear(25, 35, bias=True)),
+                    ("relu2", torch.nn.ReLU(inplace=True)),
+                    ("lin3", torch.nn.Linear(35, 20, bias=True)),
+                    ("relu3", torch.nn.ReLU(inplace=True)),
+                    ("lin4", torch.nn.Linear(20, output_dim)),
+                )
+            ),
+        )
+
+    def forward(self, X):
+        return self.params(X).squeeze(-1)
+
+
+AVAILABLE_MODELS: t.Final[dict[str, torch.nn.Module]] = {
+    "torch_ff.pt": TorchFF,
+}
 
 
 def gen_random_dataset(
@@ -44,33 +74,6 @@ def gen_random_dataset(
     df_test = torch.utils.data.TensorDataset(X_test, y_test)
 
     return df_train, df_eval, df_test, num_labels
-
-
-class TorchFF(torch.nn.Module):
-    def __init__(self, input_dim: int, output_dim: int):
-        super().__init__()
-
-        self.params = torch.nn.Sequential(
-            collections.OrderedDict(
-                (
-                    ("lin1", torch.nn.Linear(input_dim, 25, bias=True)),
-                    ("relu1", torch.nn.ReLU(inplace=True)),
-                    ("lin2", torch.nn.Linear(25, 35, bias=True)),
-                    ("relu2", torch.nn.ReLU(inplace=True)),
-                    ("lin3", torch.nn.Linear(35, 20, bias=True)),
-                    ("relu3", torch.nn.ReLU(inplace=True)),
-                    ("lin4", torch.nn.Linear(20, output_dim)),
-                )
-            ),
-        )
-
-    def forward(self, X):
-        return self.params(X).squeeze(-1)
-
-
-AVAILABLE_MODELS: t.Final[dict[str, torch.nn.Module]] = {
-    "torch_ff.pt": TorchFF,
-}
 
 
 def train(

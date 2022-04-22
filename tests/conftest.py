@@ -1,3 +1,4 @@
+"""Test fixtures."""
 import pytest
 import transformers
 import sentence_transformers
@@ -24,7 +25,7 @@ def fn_fixture_pretrained_torch_bifurcation():
     pretrained_torch_bifurcation_name = "torch_bifurcation.pt"
 
     try:
-        model = load_pickled_model(pretrained_torch_bifurcation_name)
+        model = model_utils.load_pickled_model(pretrained_torch_bifurcation_name)
 
     except (OSError, FileNotFoundError):
         model = train_test_models.train(model_name=pretrained_torch_bifurcation_name, save=True)
@@ -34,11 +35,14 @@ def fn_fixture_pretrained_torch_bifurcation():
 
 @pytest.fixture(scope="session", name="fixture_pretrained_distilbert")
 def fn_fixture_pretrained_distilbert():
-    pretrained_distilbert_name = ""
-    return model
+    tokenizer = transformers.DistilBertTokenizer.from_pretrained("distilbert-base-uncased")
+    distilbert = transformers.DistilBertModel.from_pretrained("distilbert-base-uncased")
+    return distilbert, tokenizer
 
 
 @pytest.fixture(scope="session", name="fixture_pretrained_sbert")
 def fn_fixture_pretrained_sbert():
-    pretrained_sbert_name = ""
-    return model
+    sbert = sentence_transformers.SentenceTransformer("distilbert-base-nli-mean-tokens")
+    tokenizer = sbert.tokenizer
+    distilbert = sbert.get_submodule("0")
+    return distilbert, tokenizer

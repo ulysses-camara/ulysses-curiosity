@@ -1,3 +1,4 @@
+"""Test main features from package (probing model attachment and training)."""
 import functools
 
 import torchmetrics
@@ -90,5 +91,6 @@ def test_probe_torch_ff(fixture_pretrained_torch_ff: torch.nn.Module):
     assert f1_train[-1] > f1_train[0] * 0.5
     assert f1_eval[-1] > f1_eval[0] * 0.5
 
+    assert abs(min(loss_test) - loss_train[-1]) < loss_train[0] * 0.1
     assert f1_test[-1] > 0.80
     assert accuracy_test[-1] > 0.80

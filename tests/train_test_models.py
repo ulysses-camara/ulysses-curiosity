@@ -1,40 +1,9 @@
 """Train test models to simulate pretrained models."""
-import typing as t
-import collections
-
 import torch
 import torch.nn
 
 from . import model_utils
-
-
-class TorchFF(torch.nn.Module):
-    """Simple feedforward torch model."""
-
-    def __init__(self, input_dim: int, output_dim: int):
-        super().__init__()
-
-        self.params = torch.nn.Sequential(
-            collections.OrderedDict(
-                (
-                    ("lin1", torch.nn.Linear(input_dim, 25, bias=True)),
-                    ("relu1", torch.nn.ReLU(inplace=True)),
-                    ("lin2", torch.nn.Linear(25, 35, bias=True)),
-                    ("relu2", torch.nn.ReLU(inplace=True)),
-                    ("lin3", torch.nn.Linear(35, 20, bias=True)),
-                    ("relu3", torch.nn.ReLU(inplace=True)),
-                    ("lin4", torch.nn.Linear(20, output_dim)),
-                )
-            ),
-        )
-
-    def forward(self, X):
-        return self.params(X).squeeze(-1)
-
-
-AVAILABLE_MODELS: t.Final[dict[str, torch.nn.Module]] = {
-    "torch_ff.pt": TorchFF,
-}
+from . import architectures
 
 
 def gen_random_dataset(
@@ -85,7 +54,7 @@ def train(
 ):
     df_train, *_ = gen_random_dataset()
 
-    model = AVAILABLE_MODELS[model_name](input_dim=3, output_dim=4)
+    model = architectures.AVAILABLE_MODELS[model_name](input_dim=3, output_dim=4)
     optim = torch.optim.Adam(model.parameters(), lr=lr)
     criterion = torch.nn.CrossEntropyLoss()
 

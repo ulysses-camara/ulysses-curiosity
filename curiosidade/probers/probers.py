@@ -20,6 +20,9 @@ class ProbingModelWrapper:
 
     optim : torch.optim.Optimizer
         Optimizer used to train `probing_model` parameters.
+
+    lr_scheduler : torch.optim.lr_scheduler._LRScheduler or None, default=None
+        Optional learning rate scheduler, coupled with `optim`.
     """
 
     def __init__(

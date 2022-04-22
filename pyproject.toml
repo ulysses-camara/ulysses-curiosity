@@ -95,7 +95,8 @@ isolated_build = true
 
 [gh-actions]
 python =
-    3.9: mypy, pylint
+    3.9: mypy, pylint, py39
+	3.10: py310
 
 [testenv]
 whitelist_externals = flit

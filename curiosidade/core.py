@@ -87,6 +87,14 @@ class ProbingModelContainer:
         """Return names of all probed modules."""
         return tuple(self.probers.keys())
 
+    @property
+    def pruned_modules(self) -> tuple[str, ...]:
+        """Return names of all probed modules."""
+        if not isinstance(self.base_model, adapters.extensors.InferencePrunerExtensor):
+            return tuple()  # type: ignore
+
+        return self.base_model.pruned_module_names
+
     def __getitem__(self, key: str) -> probers.ProbingModelWrapper:
         return self.probers[key]
 

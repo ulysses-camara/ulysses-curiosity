@@ -83,7 +83,7 @@ Check [usage examples in this README](#usage-examples) and also [example noteboo
 ```mermaid
 flowchart TB
 
-L2{{"Pretrained frozen module"}}
+L2{{"Frozen pretrained module"}}
 
 subgraph PMF["ProbingTaskFactory"]
     direction LR

@@ -28,7 +28,7 @@ except ImportError:
     IS_SENTENCE_TRANSFORMERS_AVAILABLE = False
 
 
-class _HuggingfaceDeviceHangler:
+class _HuggingfaceDeviceHandler:
     @classmethod
     def _move_batch_to_device(
         cls,
@@ -53,7 +53,7 @@ class _HuggingfaceDeviceHangler:
         return batch
 
 
-class HuggingfaceAdapter(base.BaseAdapter, _HuggingfaceDeviceHangler):
+class HuggingfaceAdapter(base.BaseAdapter, _HuggingfaceDeviceHandler):
     """Adapter for Huggingface (`transformers` package) models."""
 
     @classmethod
@@ -106,7 +106,7 @@ class HuggingfaceAdapter(base.BaseAdapter, _HuggingfaceDeviceHangler):
         return self.model.named_modules()
 
 
-class SentenceTransformersAdapter(base.BaseAdapter, _HuggingfaceDeviceHangler):
+class SentenceTransformersAdapter(base.BaseAdapter, _HuggingfaceDeviceHandler):
     """Adapter for Sentence Transformers (`sentence-transformers` package) models."""
 
     @classmethod

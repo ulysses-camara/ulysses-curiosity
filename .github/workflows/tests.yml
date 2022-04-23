@@ -8,11 +8,13 @@ on:
     paths-ignore:
       - '**.md'
       - 'docs/'
+      - '**.yaml'
 
   pull_request:
     paths-ignore:
       - '**.md'
       - 'docs/'
+      - '**.yaml'
 
 jobs:
   test:

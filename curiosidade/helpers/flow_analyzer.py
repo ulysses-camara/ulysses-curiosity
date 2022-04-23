@@ -17,15 +17,16 @@ __all__ = [
 TensorType = t.Union[torch.Tensor, tuple[torch.Tensor, ...]]
 
 
-class _AnalyzerContainer(t.NamedTuple):
+class _AnalyzerContainer:
     """Container for information gathered while exploring pretrained model."""
 
-    unnecessary_cand: list[tuple[str, torch.nn.Module]] = []
-    probing_input_dims: dict[str, tuple[int, ...]] = {}
+    def __init__(self):
+        self.unnecessary_cand: list[tuple[str, torch.nn.Module]] = []
+        self.probing_input_dims: dict[str, tuple[int, ...]] = {}
 
-    # Note: it is necessary to keep a collection of 'modules that can not be ignored' since
-    # modules are reused.
-    cant_be_ignored: set[tuple[str, torch.nn.Module]] = set()
+        # Note: it is necessary to keep a collection of 'modules that can not be ignored' since
+        # modules are reused.
+        self.cant_be_ignored: set[tuple[str, torch.nn.Module]] = set()
 
     def dismiss_unnecessary_cand(self) -> "_AnalyzerContainer":
         """Clear current unnecessary module candidates, and mark then as `can't be ignored`."""

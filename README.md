@@ -8,7 +8,7 @@ The term "probing task" was coined in [(Conneau et. al, 2018)](#references), ref
 
 The strategy focus on the elaboration of a surrogate classification task &mdash; a "Probing Task" &mdash; which should be simple, easily interpretable, and is somehow connected to the domain of interest. Probing models are attached to the pretrained model, and optimized to solve the probing task by using as input only activations from the pretrained model. The pretrained model is kept frozen during the entire process (i.e. it is not optimized).
 
-```mermaid
+```{mermaid}
 flowchart TB
 P1(["Probing Model A"])
 P2(["Probing Model B"])
@@ -31,12 +31,12 @@ L2 -..-> P1;
 L3 -..-> P2;
 L6 -..-> P3;
 
-style PM fill:#111,stroke:#BBB;
+style PM fill:none,stroke:#BBB,color:white;
 
 classDef clsProbed fill:#5485D8,stroke:#103A83,stroke-width:2px;
 class L2,L3,L6 clsProbed;
 
-classDef clsProber fill:#A1425B,stroke:#AC6C7D,stroke-width:2px;
+classDef clsProber fill:#A1425B,stroke:#AC6C7D,stroke-width:2px,color:white;
 class P1,P2,P3 clsProber;
 ```
 
@@ -80,7 +80,7 @@ With these basic ingredients, the setup using Curiosity is as follows:
 
 Check [usage examples in this README](#usage-examples) and also [example notebooks](./examples) for concrete examples on how everything works.
 
-```mermaid
+```{mermaid}
 flowchart TB
 
 L2{{"Frozen pretrained module"}}
@@ -112,10 +112,12 @@ style LF fill:#7F4B52;
 style MT fill:#5E6B3D;
 style Metrics fill:#5B5531;
 
+classDef default color:white;
+
 classDef clsDataloader fill:#4D2E4C,stroke:#BBB;
 class D1,D2,D3 clsDataloader;
 
-classDef clsContainer fill:#111,stroke:#BBB;
+classDef clsContainer fill:none,stroke:#BBB;
 class PMF,TASK clsContainer;
 
 classDef clsProbed fill:#354675,stroke:#103A83,stroke-width:2px;
@@ -389,7 +391,7 @@ You can find notebooks showcasing more examples in the [Examples](./examples) di
 
 There is not point in computing all pretrained model activations past the "farthest" probing model during training. When probing models does not depends on the final output of your pretrained model, pruning away unnecessary modules will reduce computational waste.
 
-```mermaid
+```{mermaid}
 flowchart TB
 
 L1{{"Pretrained module 1"}} -->
@@ -406,7 +408,12 @@ L2 -....-> P1;
 L3 & L4 & L5 & L6 --- Waste(("Wasted\ncomputation"))
 
 
-style Waste stroke-style:dashed,stroke-dasharray:8;
+classDef default color:white;
+
+style Waste stroke-style:dashed,stroke-dasharray:8,color:black;
+
+classDef clsBlackText color:black;
+class L1,Waste clsBlackText;
 
 classDef clsProbed fill:#354675,stroke:#103A83,stroke-width:2px;
 class L2 clsProbed;

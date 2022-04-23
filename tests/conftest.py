@@ -48,11 +48,11 @@ def fn_fixture_pretrained_distilbert() -> tuple[
     return distilbert, tokenizer
 
 
-@pytest.fixture(scope="session", name="fixture_pretrained_sbert")
-def fn_fixture_pretrained_sbert():
-    sbert = sentence_transformers.SentenceTransformer(
-        "distilbert-base-nli-mean-tokens", cache_folder=model_utils.PRETRAINED_MODEL_DIR
+@pytest.fixture(scope="session", name="fixture_pretrained_minilmv2")
+def fn_fixture_pretrained_minilmv2():
+    minilmv2 = sentence_transformers.SentenceTransformer(
+        "paraphrase-MiniLM-L6-v2", cache_folder=model_utils.PRETRAINED_MODEL_DIR
     )
-    tokenizer = sbert.tokenizer
-    distilbert = sbert.get_submodule("0")
+    tokenizer = minilmv2.tokenizer
+    distilbert = minilmv2.get_submodule("0")
     return distilbert, tokenizer

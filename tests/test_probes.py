@@ -292,12 +292,12 @@ def test_probe_distilbert(
     standard_result_validation(probing_results, scale_loss=0.7)
 
 
-def test_probe_sentence_distilbert(
-    fixture_pretrained_sbert: tuple[
+def test_probe_sentence_minilmv2(
+    fixture_pretrained_minilmv2: tuple[
         sentence_transformers.models.Transformer, transformers.DistilBertTokenizer
     ],
 ):
-    distilbert, tokenizer = fixture_pretrained_sbert
+    minilmv2, tokenizer = fixture_pretrained_minilmv2
     dataset_train, dataset_eval, dataset_test, num_classes = load_dataset_imdb(tokenizer)
 
     probing_dataloader_train = torch.utils.data.DataLoader(
@@ -319,7 +319,7 @@ def test_probe_sentence_distilbert(
     )
 
     probing_model_fn = curiosidade.probers.utils.get_probing_model_for_sequences(
-        hidden_layer_dims=[192, 64],
+        hidden_layer_dims=[256, 128],
         pooling_strategy="mean",
     )
 
@@ -337,13 +337,13 @@ def test_probe_sentence_distilbert(
         probing_dataloader_eval=probing_dataloader_eval,
         probing_dataloader_test=probing_dataloader_test,
         loss_fn=torch.nn.CrossEntropyLoss(),
-        task_name="test sentence distilbert sentlen",
+        task_name="test sentence minilmv2 sentlen",
         output_dim=num_classes,
         metrics_fn=metrics_fn,
     )
 
-    optim_fn = functools.partial(torch.optim.Adam, lr=0.001)
-    lr_scheduler_fn = functools.partial(torch.optim.lr_scheduler.ExponentialLR, gamma=0.9)
+    optim_fn = functools.partial(torch.optim.Adam, lr=0.05)
+    lr_scheduler_fn = functools.partial(torch.optim.lr_scheduler.ExponentialLR, gamma=0.8)
 
     probing_factory = curiosidade.ProbingModelFactory(
         task=task,
@@ -355,23 +355,23 @@ def test_probe_sentence_distilbert(
     with warnings.catch_warnings():
         warnings.simplefilter(action="error", category=UserWarning)
         prober_container = curiosidade.core.attach_probers(
-            base_model=distilbert,
+            base_model=minilmv2,
             probing_model_factory=probing_factory,
-            modules_to_attach="auto_model.transformer.layer.[12]",
+            modules_to_attach="auto_model.encoder.layer.[02]",
             device="cuda" if torch.cuda.is_available() else "cpu",
             prune_unrelated_modules="infer",
         )
 
-    assert prober_container.pruned_modules
+    assert len(prober_container.pruned_modules) > 40
     assert prober_container.probed_modules == (
-        "auto_model.transformer.layer.1",
-        "auto_model.transformer.layer.2",
+        "auto_model.encoder.layer.0",
+        "auto_model.encoder.layer.2",
     )
 
     probing_results = prober_container.train(
-        num_epochs=3,
+        num_epochs=4,
         show_progress_bar="epoch",
         gradient_accumulation_steps=2,
     )
 
-    standard_result_validation(probing_results, scale_loss=0.7)
+    standard_result_validation(probing_results, scale_loss=0.6)

@@ -33,6 +33,7 @@ dev = [
 	"black == 22.3.0",
 	"pytest-cov == 3.0.0",
 	"pytest-html == 3.1.1",
+	"datasets == 2.1.0",
 ]
 
 examples = [
@@ -41,6 +42,7 @@ examples = [
 	"seaborn == 0.11.2",
 	"transformers == 4.18.0",
 	"sentence-transformers == 2.2.0",
+	"datasets == 2.1.0",
 ]
 
 [tool.mypy]
@@ -126,6 +128,7 @@ deps =
 	torchmetrics
 	transformers
 	sentence_transformers
+	datasets
 commands =
 	python -m pylint curiosidade/
 	python -m pylint --disable='missing-function-docstring,invalid-name' tests/

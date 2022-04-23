@@ -284,7 +284,7 @@ def test_probe_distilbert(
     assert prober_container.probed_modules == ("transformer.layer.0", "transformer.layer.2")
 
     probing_results = prober_container.train(
-        num_epochs=3,
+        num_epochs=4,
         show_progress_bar="epoch",
         gradient_accumulation_steps=2,
     )

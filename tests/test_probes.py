@@ -21,7 +21,7 @@ def standard_result_validation(
     scale_loss: float = 0.1,
     scale_accuracy: float = 0.5,
     scale_f1: float = 0.5,
-    min_f1_test: float = 0.8,
+    min_f1_test: float = 0.6,
     min_accuracy_test: float = 0.8,
 ):
     df_train, df_eval, df_test = probing_results.to_pandas(

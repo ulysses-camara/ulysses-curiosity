@@ -22,7 +22,7 @@ def standard_result_validation(
     scale_accuracy: float = 0.5,
     scale_f1: float = 0.5,
     min_f1_test: float = 0.6,
-    min_accuracy_test: float = 0.8,
+    min_accuracy_test: float = 0.65,
 ):
     df_train, df_eval, df_test = probing_results.to_pandas(
         aggregate_by=["batch_index"],

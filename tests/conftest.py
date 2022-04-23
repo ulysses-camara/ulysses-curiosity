@@ -51,7 +51,7 @@ def fn_fixture_pretrained_distilbert() -> tuple[
 @pytest.fixture(scope="session", name="fixture_pretrained_minilmv2")
 def fn_fixture_pretrained_minilmv2():
     minilmv2 = sentence_transformers.SentenceTransformer(
-        "paraphrase-MiniLM-L6-v2", cache_folder=model_utils.PRETRAINED_MODEL_DIR
+        "paraphrase-MiniLM-L6-v2", device="cpu", cache_folder=model_utils.PRETRAINED_MODEL_DIR
     )
     tokenizer = minilmv2.tokenizer
     distilbert = minilmv2.get_submodule("0")

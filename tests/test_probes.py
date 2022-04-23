@@ -241,8 +241,10 @@ def test_probe_distilbert(
         pooling_strategy="mean",
     )
 
-    acc_fn = torchmetrics.Accuracy(num_classes=num_classes).to("cuda")
-    f1_fn = torchmetrics.F1Score(num_classes=num_classes).to("cuda")
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+
+    acc_fn = torchmetrics.Accuracy(num_classes=num_classes).to(device)
+    f1_fn = torchmetrics.F1Score(num_classes=num_classes).to(device)
 
     def metrics_fn(logits, truth_labels):
         # pylint: disable='not-callable'
@@ -276,7 +278,7 @@ def test_probe_distilbert(
             base_model=distilbert,
             probing_model_factory=probing_factory,
             modules_to_attach="transformer.layer.[02]",
-            device="cuda" if torch.cuda.is_available() else "cpu",
+            device=device,
             prune_unrelated_modules="infer",
         )
 
@@ -323,8 +325,10 @@ def test_probe_sentence_minilmv2(
         pooling_strategy="mean",
     )
 
-    acc_fn = torchmetrics.Accuracy(num_classes=num_classes).to("cuda")
-    f1_fn = torchmetrics.F1Score(num_classes=num_classes).to("cuda")
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+
+    acc_fn = torchmetrics.Accuracy(num_classes=num_classes).to(device)
+    f1_fn = torchmetrics.F1Score(num_classes=num_classes).to(device)
 
     def metrics_fn(logits, truth_labels):
         # pylint: disable='not-callable'
@@ -358,7 +362,7 @@ def test_probe_sentence_minilmv2(
             base_model=minilmv2,
             probing_model_factory=probing_factory,
             modules_to_attach="auto_model.encoder.layer.[02]",
-            device="cuda" if torch.cuda.is_available() else "cpu",
+            device=device,
             prune_unrelated_modules="infer",
         )
 

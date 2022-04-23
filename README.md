@@ -1,4 +1,5 @@
 [![Tests](https://github.com/FelSiq/ulysses-curiosity/actions/workflows/tests.yml/badge.svg)](https://github.com/FelSiq/ulysses-curiosity/actions/workflows/tests.yml)
+[![Documentation Status](https://readthedocs.org/projects/ulysses-curiosity/badge/?version=latest)](https://ulysses-curiosity.readthedocs.io/en/latest/?badge=latest)
 
 ## Ulysses Curiosity
 

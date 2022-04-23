@@ -115,7 +115,7 @@ class ProbingTaskCustom(base.BaseProbingTask):
         If None, no extra validation metrics will be computed, and only the loss values will
         be returned as result.
 
-    task_name : str, default="unnamed_task"
+    task_name : str, default='unnamed_task'
         Probing task name.
 
     task_type : {'classification', 'regression', 'mixed'}, default='classification'

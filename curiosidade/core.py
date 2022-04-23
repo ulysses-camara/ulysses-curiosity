@@ -89,7 +89,7 @@ class ProbingModelContainer:
 
     @property
     def pruned_modules(self) -> tuple[str, ...]:
-        """Return names of all probed modules."""
+        """Return names of all pruned modules."""
         if not isinstance(self.base_model, adapters.extensors.InferencePrunerExtensor):
             return tuple()  # type: ignore
 
@@ -129,6 +129,7 @@ class ProbingModelContainer:
 
         modules_input_dim : t.Sequence[int] or dict[str, int] or None, default=None
             Input dimension of each probing model.
+
             - If list, the dimension in the i-th index should correspond to the input dimension of
               the i-th probing model.
             - If mapping (dict), should map the module name to its corresponding input dimension.
@@ -142,7 +143,8 @@ class ProbingModelContainer:
             model depends on final pretrained modules. Attempting to forward through pruned modules
             will interrupt immediately the forward flow, therefore saving computations since no
             further activations are required to train the probing models.
-            - If 'infer', will attemp to find the first module such that no probing model depends on
+
+            - If 'infer', attempt to find the first module such that no probing model depends on
               any further module outputs. This heuristics only works properly if the model forward
               flow is deterministic and 'one-dimensional' (no bifurcations). This strategy is
               expected to work most of the time for any regular pretrained model.
@@ -313,9 +315,10 @@ class ProbingModelContainer:
             Number of batches before one weight update.
 
         show_progress_bar : {'epoch', True, None}, default=None
-            If 'epoch', display a progress bar for each epoch.
-            If True, display a single progress bar for the entire training procedure.
-            If None, progress bar is omitted.
+
+            - If 'epoch', display a progress bar for each epoch.
+            - If True, display a single progress bar for the entire training procedure.
+            - If None, progress bar is omitted.
 
         Returns
         -------
@@ -434,6 +437,7 @@ def attach_probers(
 
     modules_input_dim : t.Sequence[int] or dict[str, int] or None, default=None
         Input dimension of each probing model.
+
         - If sequence, the dimension in the i-th index should correspond to the input dimension of
           the i-th probing model.
         - If mapping (dict), should map the module name to its corresponding input dimension.
@@ -447,6 +451,7 @@ def attach_probers(
         model depends on final pretrained modules. Attempting to forward through pruned modules
         will interrupt immediately the forward flow, therefore saving computations since no
         further activations are required to train the probing models.
+
         - If 'infer', will attemp to find the first module such that no probing model depends on
           any further module outputs. This heuristics only works properly if the model forward
           flow is deterministic and 'one-dimensional' (no bifurcations). This strategy is expected

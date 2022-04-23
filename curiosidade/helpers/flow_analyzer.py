@@ -130,6 +130,7 @@ def run_inspection_batches(
     inspection_results : dict[str, t.Any]
         Dictionary containing information about pretrained model architecture, containing the
         following keys:
+
         - `probing_input_dims`: dictionary mapping probed modules to its input dimensions (tuples).
         - `unnecessary_modules`: tuple containing all modules deemed unnecessary for probing model
           training, following the (module_name, module_reference) pair format.

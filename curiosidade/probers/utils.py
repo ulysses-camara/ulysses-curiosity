@@ -7,6 +7,12 @@ import torch.nn
 import numpy as np
 
 
+__all__ = [
+    "get_probing_model_feedforward",
+    "get_probing_model_for_sequences",
+]
+
+
 ProbingModelType = t.Callable[[int, int], torch.nn.Module]
 
 
@@ -120,7 +126,7 @@ class ProbingModelForSequences(ProbingModelFeedforward):
 
 
 def get_probing_model_feedforward(hidden_layer_dims: t.Sequence[int]) -> ProbingModelType:
-    """Get a ProbingModelFeedforward architecture.
+    """Get a ``ProbingModelFeedforward`` architecture.
 
     Parameters
     ----------
@@ -129,7 +135,7 @@ def get_probing_model_feedforward(hidden_layer_dims: t.Sequence[int]) -> Probing
 
     Returns
     -------
-    architecture : callable
+    architecture : t.Callable[[int, ...], ProbingModelFeedforward]
         Callable that generates the corresponding probing model.
     """
     return functools.partial(ProbingModelFeedforward, hidden_layer_dims=hidden_layer_dims)
@@ -140,7 +146,7 @@ def get_probing_model_for_sequences(
     pooling_strategy: t.Literal["max", "mean"] = "max",
     pooling_axis: int = 1,
 ) -> ProbingModelType:
-    """Get a ProbingModelForSequences architecture.
+    """Get a ``ProbingModelForSequences`` architecture.
 
     This probing model architecture handles variable-length inputs, by applying a pooling
     function in a variable-length axis, therefore transforming the inputs to fixed-length
@@ -159,7 +165,7 @@ def get_probing_model_for_sequences(
 
     Returns
     -------
-    architecture : callable
+    architecture : t.Callable[[int, ...], ProbingModelForSequences]
         Callable that generates the corresponding probing model.
     """
     return functools.partial(

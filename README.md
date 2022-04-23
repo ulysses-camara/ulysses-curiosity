@@ -408,12 +408,9 @@ L2 -....-> P1;
 L3 & L4 & L5 & L6 --- Waste(("Wasted\ncomputation"))
 
 
-classDef default color:white;
+classDef default fill:#222,color:white;
 
 style Waste stroke-style:dashed,stroke-dasharray:8,color:black;
-
-classDef clsBlackText color:black;
-class L1,Waste clsBlackText;
 
 classDef clsProbed fill:#354675,stroke:#103A83,stroke-width:2px;
 class L2 clsProbed;

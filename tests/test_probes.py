@@ -195,9 +195,9 @@ def load_dataset_imdb(
 
     num_classes = 8
 
-    dataset_train = dataset_train.shard(num_shards=25, index=0)
-    dataset_eval = dataset_test.shard(num_shards=100, index=0)
-    dataset_test = dataset_test.shard(num_shards=100, index=2)
+    dataset_train = dataset_train.shard(num_shards=50, index=0)
+    dataset_eval = dataset_test.shard(num_shards=50, index=0)
+    dataset_test = dataset_test.shard(num_shards=50, index=2)
 
     dataset_train = dataset_train.map(tokenize_fn, remove_columns="text")
     dataset_eval = dataset_eval.map(tokenize_fn, remove_columns="text")
@@ -260,8 +260,8 @@ def test_probe_distilbert(
         metrics_fn=metrics_fn,
     )
 
-    optim_fn = functools.partial(torch.optim.Adam, lr=0.025)
-    lr_scheduler_fn = functools.partial(torch.optim.lr_scheduler.ExponentialLR, gamma=0.5)
+    optim_fn = functools.partial(torch.optim.Adam, lr=0.001)
+    lr_scheduler_fn = functools.partial(torch.optim.lr_scheduler.ExponentialLR, gamma=0.9)
 
     probing_factory = curiosidade.ProbingModelFactory(
         task=task,
@@ -284,12 +284,12 @@ def test_probe_distilbert(
     assert prober_container.probed_modules == ("transformer.layer.0", "transformer.layer.2")
 
     probing_results = prober_container.train(
-        num_epochs=4,
+        num_epochs=3,
         show_progress_bar="epoch",
         gradient_accumulation_steps=2,
     )
 
-    standard_result_validation(probing_results, scale_loss=0.6)
+    standard_result_validation(probing_results, scale_loss=0.7)
 
 
 def test_probe_sentence_distilbert(
@@ -319,7 +319,7 @@ def test_probe_sentence_distilbert(
     )
 
     probing_model_fn = curiosidade.probers.utils.get_probing_model_for_sequences(
-        hidden_layer_dims=[256, 128],
+        hidden_layer_dims=[192, 64],
         pooling_strategy="mean",
     )
 
@@ -343,7 +343,7 @@ def test_probe_sentence_distilbert(
     )
 
     optim_fn = functools.partial(torch.optim.Adam, lr=0.001)
-    lr_scheduler_fn = functools.partial(torch.optim.lr_scheduler.ExponentialLR, gamma=0.5)
+    lr_scheduler_fn = functools.partial(torch.optim.lr_scheduler.ExponentialLR, gamma=0.9)
 
     probing_factory = curiosidade.ProbingModelFactory(
         task=task,
@@ -357,7 +357,7 @@ def test_probe_sentence_distilbert(
         prober_container = curiosidade.core.attach_probers(
             base_model=distilbert,
             probing_model_factory=probing_factory,
-            modules_to_attach="auto_model.transformer.layer.[13]",
+            modules_to_attach="auto_model.transformer.layer.[12]",
             device="cuda" if torch.cuda.is_available() else "cpu",
             prune_unrelated_modules="infer",
         )
@@ -365,13 +365,13 @@ def test_probe_sentence_distilbert(
     assert prober_container.pruned_modules
     assert prober_container.probed_modules == (
         "auto_model.transformer.layer.1",
-        "auto_model.transformer.layer.3",
+        "auto_model.transformer.layer.2",
     )
 
     probing_results = prober_container.train(
-        num_epochs=4,
+        num_epochs=3,
         show_progress_bar="epoch",
         gradient_accumulation_steps=2,
     )
 
-    standard_result_validation(probing_results, scale_loss=0.6)
+    standard_result_validation(probing_results, scale_loss=0.7)

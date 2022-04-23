@@ -8,7 +8,7 @@ The term "probing task" was coined in [(Conneau et. al, 2018)](#references), ref
 
 The strategy focus on the elaboration of a surrogate classification task &mdash; a "Probing Task" &mdash; which should be simple, easily interpretable, and is somehow connected to the domain of interest. Probing models are attached to the pretrained model, and optimized to solve the probing task by using as input only activations from the pretrained model. The pretrained model is kept frozen during the entire process (i.e. it is not optimized).
 
-```{mermaid}
+```mermaid
 flowchart TB
 P1(["Probing Model A"])
 P2(["Probing Model B"])
@@ -80,7 +80,7 @@ With these basic ingredients, the setup using Curiosity is as follows:
 
 Check [usage examples in this README](#usage-examples) and also [example notebooks](./examples) for concrete examples on how everything works.
 
-```{mermaid}
+```mermaid
 flowchart TB
 
 L2{{"Frozen pretrained module"}}
@@ -391,7 +391,7 @@ You can find notebooks showcasing more examples in the [Examples](./examples) di
 
 There is not point in computing all pretrained model activations past the "farthest" probing model during training. When probing models does not depends on the final output of your pretrained model, pruning away unnecessary modules will reduce computational waste.
 
-```{mermaid}
+```mermaid
 flowchart TB
 
 L1{{"Pretrained module 1"}} -->

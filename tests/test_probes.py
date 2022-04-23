@@ -291,7 +291,7 @@ def test_probe_distilbert(
         gradient_accumulation_steps=2,
     )
 
-    standard_result_validation(probing_results, scale_loss=0.7)
+    standard_result_validation(probing_results, scale_loss=0.8)
 
 
 def test_probe_sentence_minilmv2(
@@ -378,4 +378,4 @@ def test_probe_sentence_minilmv2(
         gradient_accumulation_steps=2,
     )
 
-    standard_result_validation(probing_results, scale_loss=0.6)
+    standard_result_validation(probing_results, scale_loss=0.8)

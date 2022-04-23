@@ -1,3 +1,4 @@
+"""Model architectures built specifically for tests."""
 import typing as t
 import collections
 
@@ -30,6 +31,7 @@ class TorchFF(torch.nn.Module):
 
 
 class TorchBifurcationInner(torch.nn.Module):
+    """PyTorch module with two outputs (bifurcation module)."""
     def __init__(self, input_dim: int, output_dim: int):
         super().__init__()
 
@@ -62,6 +64,7 @@ class TorchBifurcationInner(torch.nn.Module):
 
 
 class TorchBifurcationOuter(torch.nn.Module):
+    """PyTorch module that has a bifurcation module within."""
     def __init__(self, input_dim: int, output_dim: int):
         super().__init__()
 
@@ -86,6 +89,7 @@ class TorchBifurcationOuter(torch.nn.Module):
 
 
 class ProbingModelBifurcation(torch.nn.Module):
+    """Probing model adapted to bifurcation modules (two outputs)."""
     def __init__(self, input_dim_a: int, input_dim_b: int, output_dim: int):
         super().__init__()
 

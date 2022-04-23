@@ -20,7 +20,7 @@ TensorType = t.Union[torch.Tensor, tuple[torch.Tensor, ...]]
 class _AnalyzerContainer:
     """Container for information gathered while exploring pretrained model."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.unnecessary_cand: list[tuple[str, torch.nn.Module]] = []
         self.probing_input_dims: dict[str, tuple[int, ...]] = {}
 

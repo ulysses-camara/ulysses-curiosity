@@ -18,7 +18,7 @@ from . import architectures
 
 def standard_result_validation(
     probing_results,
-    scale_loss: float = 0.1,
+    scale_loss: float = 0.4,
     scale_accuracy: float = 0.5,
     scale_f1: float = 0.5,
     min_f1_test: float = 0.6,

@@ -1,4 +1,4 @@
-[![Tests](https://github.com/FelSiq/ulysses-curiosity/actions/workflows/tests.yml/badge.svg)](https://github.com/FelSiq/ulysses-curiosity/actions/workflows/tests.yml)
+[![Tests](https://github.com/ulysses-camara/ulysses-curiosity/actions/workflows/tests.yml/badge.svg)](https://github.com/ulysses-camara/ulysses-curiosity/actions/workflows/tests.yml)
 [![Documentation Status](https://readthedocs.org/projects/ulysses-curiosity/badge/?version=latest)](https://ulysses-curiosity.readthedocs.io/en/latest/?badge=latest)
 
 ## Ulysses Curiosity
@@ -132,17 +132,17 @@ class P1,P2,P3 clsProber;
 
 ### Installation
 ```shell
-python -m pip install "git+https://github.com/FelSiq/ulysses-curiosity"
+python -m pip install "git+https://github.com/ulysses-camara/ulysses-curiosity"
 ```
 
 To install additional dependencies, needed to run notebook examples:
 ```shell
-python -m pip install "ulysses-curiosity[examples] @ git+https://github.com/FelSiq/ulysses-curiosity"
+python -m pip install "ulysses-curiosity[examples] @ git+https://github.com/ulysses-camara/ulysses-curiosity"
 ```
 
 To install developer dependencies:
 ```shell
-python -m pip install "ulysses-curiosity[dev] @ git+https://github.com/FelSiq/ulysses-curiosity"
+python -m pip install "ulysses-curiosity[dev] @ git+https://github.com/ulysses-camara/ulysses-curiosity"
 ```
 
 ---

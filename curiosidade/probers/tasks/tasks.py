@@ -1,10 +1,8 @@
 """Probing task classes."""
 import typing as t
-import os
 
 import torch
 import torch.nn
-import buscador
 
 from . import base
 
@@ -47,7 +45,11 @@ class ProbingTaskSentenceLength(base.BaseProbingTask):
     ):
         self.check_if_domain_is_valid(data_domain)
 
-        buscador_kwargs: dict[str, t.Any] = dict(
+        if data_domain == "general-pt-br":
+            resource_name = "dataset_wikipedia_ptbr_sentence_length_v1"
+
+        resource_uris = base.get_resource_from_ulysses_fetcher(
+            resource_name=resource_name,
             output_dir=output_dir,
             show_progress_bar=show_progress_bar,
             check_cached=check_cached,
@@ -56,38 +58,16 @@ class ProbingTaskSentenceLength(base.BaseProbingTask):
             timeout_limit_seconds=timeout_limit_seconds,
         )
 
-        if data_domain == "general-pt-br":
-            resource_name = "dataset_wikipedia_ptbr_sentence_length_v1"
-
-        buscador.download_resource(
-            task_name="probing_task",
-            resource_name=resource_name,
-            **buscador_kwargs,
-        )
-
-        input_dir = os.path.join(output_dir, resource_name)
-        input_dir = os.path.abspath(input_dir)
-
-        dataset_uri_train = os.path.join(input_dir, "train.tsv")
-        dataset_uri_eval = os.path.join(input_dir, "eval.tsv")
-        dataset_uri_test = os.path.join(input_dir, "test.tsv")
-        labels_uri = os.path.join(input_dir, "labels.json")
-
-        num_classes = 6
-
         super().__init__(
             loss_fn=torch.nn.CrossEntropyLoss(),
             metrics_fn=metrics_fn,
-            output_dim=num_classes,
             fn_raw_data_to_tensor=fn_raw_data_to_tensor,
-            dataset_uri_or_dataloader_train=dataset_uri_train,
-            dataset_uri_or_dataloader_eval=dataset_uri_eval,
-            dataset_uri_or_dataloader_test=dataset_uri_test,
-            labels_uri_or_map=labels_uri,
+            output_dim="infer_from_labels",
             task_type="classification",
             task_name="sentence length (sentlen)",
             batch_size_train=batch_size_train,
             batch_size_eval=batch_size_eval,
+            **resource_uris,
         )
 
 

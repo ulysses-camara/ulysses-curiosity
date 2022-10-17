@@ -3,10 +3,12 @@ import typing as t
 import pathlib
 import abc
 import json
+import os
 
 import torch
 import torch.nn
 import pandas as pd
+import buscador
 
 try:
     from typing_extensions import TypeAlias
@@ -79,12 +81,12 @@ class BaseProbingTask(abc.ABC):
 
     def __init__(
         self,
-        output_dim: int,
         loss_fn: LossFunctionType,
         labels_uri_or_map: t.Union[dict[str, int], t.Sequence[str], str],
         dataset_uri_or_dataloader_train: DataLoaderGenericType,
         dataset_uri_or_dataloader_eval: t.Optional[DataLoaderGenericType] = None,
         dataset_uri_or_dataloader_test: t.Optional[DataLoaderGenericType] = None,
+        output_dim: t.Union[int, t.Literal["infer_from_labels"]] = "infer_from_labels",
         metrics_fn: t.Optional[ValidationFunctionType] = None,
         fn_raw_data_to_tensor: t.Optional[t.Callable[[list[str], list[int]], t.Any]] = None,
         task_name: str = "unnamed_task",
@@ -98,17 +100,11 @@ class BaseProbingTask(abc.ABC):
                 "'classification', 'regression' or 'mixed'."
             )
 
-        output_dim = int(output_dim)
-
-        if output_dim <= 0:
-            raise ValueError(f"Invalid 'output_dim' ({output_dim}), must be >= 1.")
-
         self.task_name = task_name
         self.metrics_fn = metrics_fn
         self.fn_raw_data_to_tensor = fn_raw_data_to_tensor
         self.loss_fn = loss_fn
         self.task_type = task_type
-        self.output_dim = output_dim
 
         dl_train: DataLoaderType
         dl_eval: t.Optional[DataLoaderType]
@@ -126,6 +122,16 @@ class BaseProbingTask(abc.ABC):
 
         else:
             self.labels = {cls: ind for ind, cls in enumerate(labels_uri_or_map)}
+
+        if output_dim == "infer_from_labels":
+            output_dim = len(self.labels) if len(self.labels) >= 3 else 1
+
+        output_dim = int(output_dim)
+
+        if output_dim <= 0:
+            raise ValueError(f"Invalid 'output_dim' ({output_dim}), must be >= 1.")
+
+        self.output_dim = output_dim
 
         if isinstance(dataset_uri_or_dataloader_train, (str, pathlib.Path)):
             dl_train = torch.utils.data.DataLoader(
@@ -241,3 +247,60 @@ class DummyProbingTask(BaseProbingTask):
             labels_uri_or_map=["A", "B"],
             output_dim=2,
         )
+
+
+def get_resource_from_ulysses_fetcher(
+    resource_name: str, output_dir: str, *args: t.Any, **kwargs: t.Any
+) -> dict[str, str]:
+    """Download necessary resources using Ulysses Fetcher.
+
+    Parameters
+    ----------
+    resource_name : str
+        Requested resource name. See [1]_ for available resources for `probing_task` task.
+
+    output_dir : str
+        Output directory to store downloaded resources.
+
+    *args : any
+        Additional positional parameters for ``buscador.download_resource`` function.
+        Check Ulysses Fetcher documentation for more information.
+
+    **kwargs : any
+        Additional named parameters for ``buscador.download_resource`` function.
+        Check Ulysses Fetcher documentation for more information.
+
+    References
+    ----------
+    .. [1] Ulysses Fetcher: https://github.com/ulysses-camara/ulysses-fetcher
+    """
+    has_succeed = buscador.download_resource(
+        task_name="probing_task",
+        resource_name=resource_name,
+        output_dir=output_dir,
+        *args,
+        **kwargs,
+    )
+
+    if not has_succeed:
+        raise FileNotFoundError(
+            "Could not find or download the necessary resource '{resource_name}' using the "
+            "Ulysses Fetcher. Please check write permissions or connectivity issues."
+        )
+
+    input_dir = os.path.join(output_dir, resource_name)
+    input_dir = os.path.abspath(input_dir)
+
+    dataset_uri_train = os.path.join(input_dir, "train.tsv")
+    dataset_uri_eval = os.path.join(input_dir, "eval.tsv")
+    dataset_uri_test = os.path.join(input_dir, "test.tsv")
+    labels_uri = os.path.join(input_dir, "labels.json")
+
+    resources_uris = dict(
+        dataset_uri_or_dataloader_train=dataset_uri_train,
+        dataset_uri_or_dataloader_eval=dataset_uri_eval,
+        dataset_uri_or_dataloader_test=dataset_uri_test,
+        labels_uri_or_map=labels_uri,
+    )
+
+    return resources_uris

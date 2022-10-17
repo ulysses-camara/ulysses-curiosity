@@ -150,6 +150,15 @@ class ProbingTaskCustom(base.BaseProbingTask):
         If None, no extra validation metrics will be computed, and only the loss values will
         be returned as result.
 
+    labels_uri_or_map : str or t.Sequence[str] or dict[str, int] or None, default=None
+        Map labels to indices.
+
+        If str, assume it is an URI to a JSON file containing the mapping;
+        If sequence, assume that the sequence[i] corresponds to the `i`-th label;
+        If dict, assume that dict[label] = index;
+        If None, assume that labels are integers ranging from `0` to ``output_dim`` if\
+                ``output_dim >= 2``, else [0, 1].
+
     task_name : str, default='unnamed_task'
         Probing task name.
 
@@ -166,13 +175,18 @@ class ProbingTaskCustom(base.BaseProbingTask):
         probing_dataloader_eval: t.Optional[base.DataLoaderType] = None,
         probing_dataloader_test: t.Optional[base.DataLoaderType] = None,
         metrics_fn: t.Optional[base.ValidationFunctionType] = None,
+        labels_uri_or_map: t.Optional[t.Union[str, t.Sequence[str], dict[str, int]]] = None,
         task_name: str = "unnamed_task",
         task_type: t.Literal["classification", "regression", "mixed"] = "classification",
     ):
+        if labels_uri_or_map is None:
+            labels_uri_or_map = list(range(max(2, output_dim)))
+
         super().__init__(
             dataset_uri_or_dataloader_train=probing_dataloader_train,
             dataset_uri_or_dataloader_eval=probing_dataloader_eval,
             dataset_uri_or_dataloader_test=probing_dataloader_test,
+            labels_uri_or_map=labels_uri_or_map,
             loss_fn=loss_fn,
             metrics_fn=metrics_fn,
             output_dim=output_dim,

@@ -4,10 +4,10 @@ requires = ["flit_core >=3.2,<4"]
 
 [project]
 name = "ulysses-curiosity"
-version = "0.1.0"
+version = "0.2.0"
 description = "Implement probing tasks for models trained on brazilian legal documents."
 authors = [
-	{name="felsiq", email= "felipe.siqueira@usp.br"}
+    {name="felsiq", email= "felipe.siqueira@usp.br"}
 ]
 
 [tool.flit.module]
@@ -16,43 +16,43 @@ name = "curiosidade"
 requires-python = ">=3.9"
 
 dependencies = [
-	"torch >= 1.11.0",
-	"numpy >= 1.22.3",
-	"regex >= 2022.3.15",
-	"pandas >= 1.4.2",
-	"tqdm >= 4.64.0",
+    "torch >= 1.11.0",
+    "numpy >= 1.22.3",
+    "regex >= 2022.3.15",
+    "pandas >= 1.4.2",
+    "tqdm >= 4.64.0",
     "buscador @ https://github.com/ulysses-camara/ulysses-fetcher@v1.0.0-beta",
 ]
 
 
 [project.optional-dependencies]
 dev = [
-	"pytest >= 7.1.1",
-	"tox >= 3.25.0",
-	"mypy >= 0.942",
-	"pylint >= 2.13.5",
-	"black >= 22.3.0",
-	"pytest-cov >= 3.0.0",
-	"pytest-html >= 3.1.1",
-	"datasets >= 2.1.0",
+    "pytest >= 7.1.1",
+    "tox >= 3.25.0",
+    "mypy >= 0.942",
+    "pylint >= 2.13.5",
+    "black >= 22.3.0",
+    "pytest-cov >= 3.0.0",
+    "pytest-html >= 3.1.1",
+    "datasets >= 2.1.0",
 ]
 
 examples = [
-	"notebook >= 6.4.10",
-	"torchmetrics >= 0.8.0",
-	"seaborn >= 0.11.2",
-	"transformers >= 4.18.0",
-	"sentence-transformers >= 2.2.0",
-	"datasets >= 2.1.0",
+    "notebook >= 6.4.10",
+    "torchmetrics >= 0.8.0",
+    "seaborn >= 0.11.2",
+    "transformers >= 4.18.0",
+    "sentence-transformers >= 2.2.0",
+    "datasets >= 2.1.0",
 ]
 
 docs = [
-	"sphinx == 4.5.0",
-	"myst-parser == 0.17.2",
-	"sphinxcontrib-mermaid == 0.7.1",
-	"numpydoc == 1.2.1",
-	"sphinx-autoapi == 1.8.4",
-	"sphinx-rtd-theme == 1.0.0",
+    "sphinx == 4.5.0",
+    "myst-parser == 0.17.2",
+    "sphinxcontrib-mermaid == 0.7.1",
+    "numpydoc == 1.2.1",
+    "sphinx-autoapi == 1.8.4",
+    "sphinx-rtd-theme == 1.0.0",
 ]
 
 [tool.mypy]
@@ -72,27 +72,27 @@ install_types = true
 
 [tool.pytest.ini_options]
 addopts = """
-	--cov=curiosidade
-	--last-failed
-	--failed-first
-	--new-first
-	--cov-report=html
+    --cov=curiosidade
+    --last-failed
+    --failed-first
+    --new-first
+    --cov-report=html
 """
 testpaths = [
-	"tests",
+    "tests",
 ]
 
 [tool.pylint.messages_control]
 generated-members = "torch.*"
 jobs = 4
 disable = """
-	too-few-public-methods,
-	too-many-locals,
-	too-many-arguments,
-	too-many-statements,
-	too-many-branches,
-	import-outside-toplevel,
-	too-many-instance-attributes
+    too-few-public-methods,
+    too-many-locals,
+    too-many-arguments,
+    too-many-statements,
+    too-many-branches,
+    import-outside-toplevel,
+    too-many-instance-attributes
 """
 min-similarity-lines=10
 
@@ -108,38 +108,38 @@ isolated_build = true
 [gh-actions]
 python =
     3.9: mypy, pylint, py39
-	3.10: py310
+    3.10: py310
 
 [testenv]
 whitelist_externals = flit
 commands =
-	pip install .
-	pip install '.[dev]'
-	pip install '.[examples]'
-	python -m pytest
-	python -m pytest curiosidade/ --doctest-modules --doctest-glob="**/*.py"
+    pip install .
+    pip install '.[dev]'
+    pip install '.[examples]'
+    python -m pytest
+    python -m pytest curiosidade/ --doctest-modules --doctest-glob="**/*.py"
 
 [testenv:mypy]
 basepython = python3.9
 deps = mypy
 commands =
-	python -m mypy --install-types --non-interactive curiosidade/
-	python -m mypy curiosidade/
+    python -m mypy --install-types --non-interactive curiosidade/
+    python -m mypy curiosidade/
 
 [testenv:pylint]
 basepython = python3.9
 deps =
-	pylint
-	pytest
-	pandas
-	torch
-	regex
-	tqdm
-	torchmetrics
-	transformers
-	sentence_transformers
-	datasets
+    pylint
+    pytest
+    pandas
+    torch
+    regex
+    tqdm
+    torchmetrics
+    transformers
+    sentence_transformers
+    datasets
 commands =
-	python -m pylint curiosidade/
-	python -m pylint --disable='missing-function-docstring,invalid-name' tests/
+    python -m pylint curiosidade/
+    python -m pylint --disable='missing-function-docstring,invalid-name' tests/
 """

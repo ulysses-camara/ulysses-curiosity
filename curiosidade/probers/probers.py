@@ -82,7 +82,9 @@ class ProbingModelWrapper:
             if torch.is_tensor(l_output):
                 self.input_tensors = (l_output.detach(),)  # type: ignore
             else:
-                self.input_tensors = tuple(tensor.detach() for tensor in l_output)
+                self.input_tensors = tuple(
+                    tensor.detach() for tensor in l_output if torch.is_tensor(tensor)
+                )
 
         self.attached_module = module
         self.input_source_hook = module.register_forward_hook(fn_hook_forward)

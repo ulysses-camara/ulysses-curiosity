@@ -51,7 +51,7 @@ class BaseProbingTask(abc.ABC):
             default=None
         Validation function to compute extra scores from training, validation and test batches.
         As the first argument, it must receive a logit tensor of shape (batch_size, output_dim),
-        and  a ground-truth label tensor os shape (batch_size,) as the second argument.
+        and as the second argument a ground-truth label tensor of shape (batch_size,).
         The return value must always be a dictionary (or any other valid mapping) mapping the
         metric name and its computed value.
         If None, no extra validation metrics will be computed, and only the loss values will
@@ -250,7 +250,7 @@ class DummyProbingTask(BaseProbingTask):
 
 
 def get_resource_from_ulysses_fetcher(
-    resource_name: str, output_dir: str, *args: t.Any, **kwargs: t.Any
+    resource_name: str, output_dir: str, **kwargs: t.Any
 ) -> dict[str, str]:
     """Download necessary resources using Ulysses Fetcher.
 
@@ -261,10 +261,6 @@ def get_resource_from_ulysses_fetcher(
 
     output_dir : str
         Output directory to store downloaded resources.
-
-    *args : any
-        Additional positional parameters for ``buscador.download_resource`` function.
-        Check Ulysses Fetcher documentation for more information.
 
     **kwargs : any
         Additional named parameters for ``buscador.download_resource`` function.
@@ -278,7 +274,6 @@ def get_resource_from_ulysses_fetcher(
         task_name="probing_task",
         resource_name=resource_name,
         output_dir=output_dir,
-        *args,
         **kwargs,
     )
 

@@ -146,10 +146,10 @@ class ProbingModelWrapper:
         metrics = dict(loss=loss_val)
 
         if compute_metrics and self.task.has_metrics:
-            metrics_fn_out = self.task.metrics_fn(self.output_tensor, input_labels)
+            metrics_fn_out = self.task.metrics_fn(self.output_tensor, input_labels)  # type:ignore
 
             try:
-                metrics.update(metrics_fn_out)  # type:ignore
+                metrics.update(metrics_fn_out)
 
             except TypeError as err:
                 raise TypeError(

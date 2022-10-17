@@ -18,7 +18,43 @@ class ProbingTaskSentenceLength(base.BaseProbingTask):
         Function used to transform raw data into PyTorch tensors. The output of this function
         will be feed directly into a `torch.utils.data.DataLoader`.
 
-    TODO
+    batch_size_train : int, default=128
+        Batch size for train dataloader.
+
+    batch_size_eval : int, default=256
+        Batch size for train validation and test dataloaders.
+
+    data_domain : {"general-pt-br"}, default="general-pt-br"
+        Set the data domain for this probing task.
+
+        - `general-pt-br`: General PT-br data domain from Portuguese Wikipedia.
+
+    output_dir : str, default="probing_datasets"
+        Output directory for probing datasets.
+
+    metrics_fn : base.ValidationFunctionType or None, default=None
+        Validation function to compute extra scores from training, validation and test batches.
+        As the first argument, it must receive a logit tensor of shape (batch_size, output_dim),
+        and as the second argument a ground-truth label tensor of shape (batch_size,).
+        The return value must always be a dictionary (or any other valid mapping) mapping the
+        metric name and its computed value.
+        If None, no extra validation metrics will be computed, and only the loss values will
+        be returned as result.
+
+    show_progress_bar : bool, default=True
+        If True, show progress bar while downloading probing datasets.
+
+    check_cached : bool, default=True
+        If True, check if probing datasets are available locally before downloading.
+
+    clean_compressed_files : bool, default=True
+        If True, delete compressed probing datasets after decompression.
+
+    check_resource_hash : bool, default=True
+        If True, verify downloaded probing dataset hash.
+
+    timeout_limit_seconds : int, default=10
+        Maximum time limit, in seconds, to try to download the probing dataset.
 
     References
     ----------
@@ -27,6 +63,7 @@ class ProbingTaskSentenceLength(base.BaseProbingTask):
        linguistic properties. In Proceedings of the 56th Annual Meeting of the Association for
        Computational Linguistics (Volume 1: Long Papers), pages 2126–2136, Melbourne, Australia.
        Association for Computational Linguistics.
+    .. [2] Ulysses Fetcher: https://github.com/ulysses-camara/ulysses-fetcher
     """
 
     def __init__(

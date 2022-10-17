@@ -208,7 +208,13 @@ class ProbingTaskCustom(base.BaseProbingTask):
         if labels_uri_or_map is None:
             labels_uri_or_map = list(map(str, range(max(2, output_dim))))
 
-        for dloader in (probing_dataloader_train, probing_dataloader_eval, probing_dataloader_test):
+        if not isinstance(probing_dataloader_train, torch.utils.data.DataLoader):
+            raise TypeError(
+                "You must provide a PyTorch dataloader in 'probing_dataloader_train' argument "
+                f"(got '{type(probing_dataloader_train) = }')."
+            )
+
+        for dloader in (probing_dataloader_eval, probing_dataloader_test):
             if dloader is not None and not isinstance(dloader, torch.utils.data.DataLoader):
                 raise TypeError(
                     "Custom probing tasks only accept dataloaders as train, eval and test data "

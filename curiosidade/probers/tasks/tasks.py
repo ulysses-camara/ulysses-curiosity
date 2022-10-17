@@ -1,10 +1,14 @@
 """Probing task classes."""
 import typing as t
+import os
 
 import torch
 import torch.nn
+import buscador
+import pandas as pd
 
 from . import base
+from . import utils
 
 
 class ProbingTaskSentenceLength(base.BaseProbingTask):
@@ -23,23 +27,55 @@ class ProbingTaskSentenceLength(base.BaseProbingTask):
 
     def __init__(
         self,
-        batch_size_train: int = 16,
-        batch_size_eval: int = 32,
-        data_domain: str = "legal-pt-br",
+        fn_text_to_tensor: t.Callable[[list[str], list[int]], any],
+        batch_size_train: int = 128,
+        batch_size_eval: int = 256,
+        data_domain: str = "general-pt-br",
+        output_dir: str = "probing_datasets",
+        metrics_fn: t.Optional[base.ValidationFunctionType] = None,
+        show_progress_bar: bool = True,
+        check_cached: bool = True,
+        clean_compressed_files: bool = True,
+        check_resource_hash: bool = True,
+        timeout_limit_seconds: int = 10,
     ):
         self.check_if_domain_is_valid(data_domain)
+        self.fn_text_to_tensor = fn_text_to_tensor
 
-        if data_domain == "legal-pt-br":
-            dataset_uri_train = "todo"
-            dataset_uri_eval = "todo"
-            dataset_uri_test = "todo"
+        buscador_kwargs = dict(
+            output_dir=output_dir,
+            show_progress_bar=show_progress_bar,
+            check_cached=check_cached,
+            clean_compressed_files=clean_compressed_files,
+            check_resource_hash=check_resource_hash,
+            timeout_limit_seconds=timeout_limit_seconds,
+        )
+
+        if data_domain == "general-pt-br":
+            buscador.download_resource(
+                task_name="probing_task",
+                resource_name="dataset_wikipedia_ptbr_sentence_length_v1",
+                **buscador_kwargs,
+            )
+
+            input_dir = os.path.join(output_dir, "dataset_wikipedia_ptbr_sentence_length_v1")
+
+        input_dir = os.path.abspath(input_dir)
+        dataset_uri_train = os.path.join(input_dir, "train.tsv")
+        dataset_uri_eval = os.path.join(input_dir, "eval.tsv")
+        dataset_uri_test = os.path.join(input_dir, "test.tsv")
+        labels_uri = os.path.join(input_dir, "labels.json")
+
+        num_classes = 6
 
         super().__init__(
             loss_fn=torch.nn.CrossEntropyLoss(),
-            output_dim=6,
+            metrics_fn=metrics_fn or utils.get_standard_metrics_fn(num_classes=num_classes),
+            output_dim=num_classes,
             dataset_uri_or_dataloader_train=dataset_uri_train,
             dataset_uri_or_dataloader_eval=dataset_uri_eval,
             dataset_uri_or_dataloader_test=dataset_uri_test,
+            labels_uri_or_map=labels_uri,
             task_type="classification",
             task_name="sentence length (sentlen)",
             batch_size_train=batch_size_train,

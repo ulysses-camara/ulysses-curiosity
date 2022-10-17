@@ -1,10 +1,13 @@
 """Base class for a probing task."""
 import typing as t
-import abc
 import pathlib
+import abc
+import os
+import json
 
 import torch
 import torch.nn
+import pandas as pd
 
 try:
     from typing_extensions import TypeAlias
@@ -61,12 +64,13 @@ class BaseProbingTask(abc.ABC):
         how exactly the labels must be formatted.
     """
 
-    VALID_DATA_DOMAINS: t.Final[tuple[str, ...]] = ("legal-pt-br",)
+    VALID_DATA_DOMAINS: t.Final[frozenset[str, ...]] = frozenset(("general-pt-br",))
 
     def __init__(
         self,
         output_dim: int,
         loss_fn: LossFunctionType,
+        labels_uri_or_map: t.Union[dict[str, int], t.Sequence[str], str],
         dataset_uri_or_dataloader_train: DataLoaderGenericType,
         dataset_uri_or_dataloader_eval: t.Optional[DataLoaderGenericType] = None,
         dataset_uri_or_dataloader_test: t.Optional[DataLoaderGenericType] = None,
@@ -96,10 +100,23 @@ class BaseProbingTask(abc.ABC):
         dl_train: DataLoaderType
         dl_eval: t.Optional[DataLoaderType]
         dl_test: t.Optional[DataLoaderType]
+        self.labels: t.Dict[str, int]
+
+        if isinstance(labels_uri_or_map, dict):
+            self.labels = labels_uri_or_map.copy()
+
+        elif isinstance(labels_uri_or_map, (str, pathlib.Path)):
+            with open(labels_uri_or_map, "r", encoding="utf-8") as f_in:
+                labels = json.load(f_in)["sentence_length"]
+
+            self.labels = {cls: ind for ind, cls in enumerate(labels)}
+
+        else:
+            self.labels = {cls: ind for ind, cls in enumerate(labels_uri_or_map)}
 
         if isinstance(dataset_uri_or_dataloader_train, (str, pathlib.Path)):
             dl_train = torch.utils.data.DataLoader(
-                self._load_dataset(dataset_uri_or_dataloader_train),
+                self._load_dataset(dataset_uri_or_dataloader_train, split="train"),
                 batch_size=batch_size_train or 16,
                 shuffle=True,
             )
@@ -109,7 +126,7 @@ class BaseProbingTask(abc.ABC):
 
         if isinstance(dataset_uri_or_dataloader_eval, (str, pathlib.Path)):
             dl_eval = torch.utils.data.DataLoader(
-                self._load_dataset(dataset_uri_or_dataloader_eval),
+                self._load_dataset(dataset_uri_or_dataloader_eval, split="eval"),
                 batch_size=batch_size_eval or 32,
                 shuffle=False,
             )
@@ -119,7 +136,7 @@ class BaseProbingTask(abc.ABC):
 
         if isinstance(dataset_uri_or_dataloader_test, (str, pathlib.Path)):
             dl_test = torch.utils.data.DataLoader(
-                self._load_dataset(dataset_uri_or_dataloader_test),
+                self._load_dataset(dataset_uri_or_dataloader_test, split="test"),
                 batch_size=batch_size_eval,
                 shuffle=False,
             )
@@ -154,12 +171,37 @@ class BaseProbingTask(abc.ABC):
         """Check whether task has metric functions."""
         return self.metrics_fn is not None
 
-    @staticmethod
+    @property
+    def num_classes(self) -> int:
+        """Return number of classes of the probing task."""
+        return len(self.labels)
+
     def _load_dataset(
-        dataset_uri: t.Union[pathlib.Path, str]
+        self,
+        dataset_split_uri: t.Union[pathlib.Path, str],
+        split: t.Literal["train", "eval", "test"],
     ) -> torch.utils.data.Dataset[tuple[torch.Tensor, ...]]:
         """Load a prepared dataset."""
-        raise NotImplementedError
+        df_split = pd.read_csv(
+            dataset_split_uri,
+            sep="\t",
+            header=0,
+            usecols=["label", "content"],
+            dtype=str,
+        )
+
+        labels = df_split["label"].map(self.labels)
+
+        content = df_split["content"].tolist()
+        labels = labels.tolist()
+
+        try:
+            out = self.fn_text_to_tensor(content, labels, split=split)
+
+        except AttributeError:
+            out = self.fn_text_to_tensor(content, labels)
+
+        return out
 
 
 class DummyProbingTask(BaseProbingTask):
@@ -172,5 +214,6 @@ class DummyProbingTask(BaseProbingTask):
         super().__init__(
             dataset_uri_or_dataloader_train=dummy_dl,
             loss_fn=torch.nn.CrossEntropyLoss(),
+            labels_uri_or_map=["A", "B"],
             output_dim=2,
         )

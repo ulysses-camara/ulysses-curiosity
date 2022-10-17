@@ -112,7 +112,54 @@ class ProbingModelBifurcation(torch.nn.Module):
         return out
 
 
+class TorchLSTM(torch.nn.Module):
+    """Simple PyTorch LSTM model."""
+
+    def __init__(
+        self,
+        output_dim: int,
+        vocab_size: int = 32,
+        embedding_dim: int = 16,
+        hidden_dim: int = 32,
+        bidirectional: bool = False,
+        num_layers: int = 1,
+    ):
+        super().__init__()
+
+        self._vocab_size = int(vocab_size)
+
+        self.embeddings = torch.nn.Embedding(
+            num_embeddings=self._vocab_size,
+            embedding_dim=embedding_dim,
+            padding_idx=0,
+        )
+
+        self.lstm = torch.nn.LSTM(
+            input_size=embedding_dim,
+            hidden_size=hidden_dim,
+            num_layers=num_layers,
+            batch_first=True,
+            bidirectional=bidirectional,
+        )
+
+        self.lin_out = torch.nn.Linear((1 + int(bidirectional)) * hidden_dim, output_dim)
+
+    @property
+    def vocab_size(self):
+        return self._vocab_size
+
+    def forward(self, input_ids: torch.Tensor):
+        out = input_ids
+
+        out = self.embeddings(out)
+        out, *_ = self.lstm(out)
+        out = self.lin_out(out)
+
+        return out
+
+
 AVAILABLE_MODELS: t.Final[dict[str, torch.nn.Module]] = {
     "torch_ff.pt": TorchFF,
     "torch_bifurcation.pt": TorchBifurcationOuter,
+    "torch_lstm.pt": TorchLSTM,
 }

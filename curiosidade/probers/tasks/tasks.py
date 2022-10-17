@@ -8,7 +8,6 @@ import buscador
 import pandas as pd
 
 from . import base
-from . import utils
 
 
 class ProbingTaskSentenceLength(base.BaseProbingTask):
@@ -70,7 +69,7 @@ class ProbingTaskSentenceLength(base.BaseProbingTask):
 
         super().__init__(
             loss_fn=torch.nn.CrossEntropyLoss(),
-            metrics_fn=metrics_fn or utils.get_standard_metrics_fn(num_classes=num_classes),
+            metrics_fn=metrics_fn,
             output_dim=num_classes,
             dataset_uri_or_dataloader_train=dataset_uri_train,
             dataset_uri_or_dataloader_eval=dataset_uri_eval,

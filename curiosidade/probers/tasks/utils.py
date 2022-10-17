@@ -12,7 +12,15 @@ MetricFnType = t.Callable[[torch.Tensor, torch.Tensor], dict[str, float]]
 
 
 def get_standard_metrics_fn(num_classes: int) -> MetricFnType:
-    import torchmetrics
+    try:
+        import torchmetrics
+
+    except ImportError as err:
+        raise ImportError(
+            "Package 'torchmetrics' not found. This package is necessary for a preconfigured "
+            "'metrics_fn' of this probing task. Please install it, or provide your own "
+            "'metrics_fn'."
+        ) from err
 
     accuracy_fn = torchmetrics.Accuracy(num_classes=num_classes)
     f1_fn = torchmetrics.F1Score(num_classes=num_classes)

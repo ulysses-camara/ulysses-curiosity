@@ -202,7 +202,6 @@ class ProbingTaskCustom(base.BaseProbingTask):
         probing_dataloader_test: t.Optional[base.DataLoaderType] = None,
         metrics_fn: t.Optional[base.ValidationFunctionType] = None,
         labels_uri_or_map: t.Optional[t.Union[str, t.Sequence[str], dict[str, int]]] = None,
-        fn_raw_data_to_tensor: t.Optional[t.Callable[[list[str], list[int]], t.Any]] = None,
         task_name: str = "unnamed_task",
         task_type: t.Literal["classification", "regression", "mixed"] = "classification",
     ):
@@ -221,7 +220,6 @@ class ProbingTaskCustom(base.BaseProbingTask):
             dataset_uri_or_dataloader_eval=probing_dataloader_eval,
             dataset_uri_or_dataloader_test=probing_dataloader_test,
             labels_uri_or_map=labels_uri_or_map,
-            fn_raw_data_to_tensor=fn_raw_data_to_tensor,
             loss_fn=loss_fn,
             metrics_fn=metrics_fn,
             output_dim=output_dim,

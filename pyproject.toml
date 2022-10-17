@@ -2,6 +2,9 @@
 build-backend = "flit_core.buildapi"
 requires = ["flit_core >=3.2,<4"]
 
+[tool.flit.module]
+name = "curiosidade"
+
 [project]
 name = "ulysses-curiosity"
 version = "0.2.0"
@@ -9,9 +12,6 @@ description = "Implement probing tasks for models trained on brazilian legal doc
 authors = [
     {name="felsiq", email= "felipe.siqueira@usp.br"}
 ]
-
-[tool.flit.module]
-name = "curiosidade"
 
 requires-python = ">=3.9"
 
@@ -21,9 +21,8 @@ dependencies = [
     "regex >= 2022.3.15",
     "pandas >= 1.4.2",
     "tqdm >= 4.64.0",
-    "buscador @ https://github.com/ulysses-camara/ulysses-fetcher@v1.0.0-beta",
+    "buscador @ git+https://github.com/ulysses-camara/ulysses-fetcher@v1.0.0-beta",
 ]
-
 
 [project.optional-dependencies]
 dev = [
@@ -113,9 +112,7 @@ python =
 [testenv]
 whitelist_externals = flit
 commands =
-    pip install .
-    pip install '.[dev]'
-    pip install '.[examples]'
+    pip install '.[dev,examples]'
     python -m pytest
     python -m pytest curiosidade/ --doctest-modules --doctest-glob="**/*.py"
 
@@ -139,6 +136,7 @@ deps =
     transformers
     sentence_transformers
     datasets
+    buscador @ git+https://github.com/ulysses-camara/ulysses-fetcher@v1.0.0-beta
 commands =
     python -m pylint curiosidade/
     python -m pylint --disable='missing-function-docstring,invalid-name' tests/

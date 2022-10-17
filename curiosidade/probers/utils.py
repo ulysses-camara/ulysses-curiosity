@@ -109,6 +109,7 @@ class ProbingModelForSequences(ProbingModelFeedforward):
         if pooling_strategy == "max":
 
             def pooling_fn(inp: torch.Tensor) -> torch.Tensor:
+                out: torch.Tensor
                 out, _ = inp.max(dim=pooling_axis)
                 return out
 

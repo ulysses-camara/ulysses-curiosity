@@ -2,7 +2,6 @@
 import typing as t
 import pathlib
 import abc
-import os
 import json
 
 import torch
@@ -56,15 +55,27 @@ class BaseProbingTask(abc.ABC):
         If None, no extra validation metrics will be computed, and only the loss values will
         be returned as result.
 
+    fn_raw_data_to_tensor : t.Callable[[list[str], list[int]], any] or None, default=None
+        Function used to transform raw data into PyTorch tensors. The output of this function
+        will be feed directly into a `torch.utils.data.DataLoader`. This argument is used
+        only if any dataset `dataloader` is actually a file URI, as the data read from disk
+        must be transformed into tensors.
+
     task_name : str, default="unnamed_task"
         Probing task name.
 
     task_type : {'classification', 'regression', 'mixed'}, default='classification'
         Type of task. Used only as reference, since it is the `loss_fn` that dictates
         how exactly the labels must be formatted.
+
+    batch_size_train : int, default=64
+        Batch size for train dataloader.
+
+    batch_size_eval : int, default=128
+        Batch size for eval and test dataloader (if any).
     """
 
-    VALID_DATA_DOMAINS: t.Final[frozenset[str, ...]] = frozenset(("general-pt-br",))
+    VALID_DATA_DOMAINS: t.Final[frozenset[str]] = frozenset(("general-pt-br",))
 
     def __init__(
         self,
@@ -75,10 +86,11 @@ class BaseProbingTask(abc.ABC):
         dataset_uri_or_dataloader_eval: t.Optional[DataLoaderGenericType] = None,
         dataset_uri_or_dataloader_test: t.Optional[DataLoaderGenericType] = None,
         metrics_fn: t.Optional[ValidationFunctionType] = None,
+        fn_raw_data_to_tensor: t.Optional[t.Callable[[list[str], list[int]], t.Any]] = None,
         task_name: str = "unnamed_task",
         task_type: t.Literal["classification", "regression", "mixed"] = "classification",
-        batch_size_train: t.Optional[int] = None,
-        batch_size_eval: t.Optional[int] = None,
+        batch_size_train: int = 64,
+        batch_size_eval: int = 128,
     ):
         if task_type not in {"classification", "regression", "mixed"}:
             raise ValueError(
@@ -93,6 +105,7 @@ class BaseProbingTask(abc.ABC):
 
         self.task_name = task_name
         self.metrics_fn = metrics_fn
+        self.fn_raw_data_to_tensor = fn_raw_data_to_tensor
         self.loss_fn = loss_fn
         self.task_type = task_type
         self.output_dim = output_dim
@@ -117,7 +130,7 @@ class BaseProbingTask(abc.ABC):
         if isinstance(dataset_uri_or_dataloader_train, (str, pathlib.Path)):
             dl_train = torch.utils.data.DataLoader(
                 self._load_dataset(dataset_uri_or_dataloader_train, split="train"),
-                batch_size=batch_size_train or 16,
+                batch_size=batch_size_train or 64,
                 shuffle=True,
             )
 
@@ -127,7 +140,7 @@ class BaseProbingTask(abc.ABC):
         if isinstance(dataset_uri_or_dataloader_eval, (str, pathlib.Path)):
             dl_eval = torch.utils.data.DataLoader(
                 self._load_dataset(dataset_uri_or_dataloader_eval, split="eval"),
-                batch_size=batch_size_eval or 32,
+                batch_size=batch_size_eval or 128,
                 shuffle=False,
             )
 
@@ -137,7 +150,7 @@ class BaseProbingTask(abc.ABC):
         if isinstance(dataset_uri_or_dataloader_test, (str, pathlib.Path)):
             dl_test = torch.utils.data.DataLoader(
                 self._load_dataset(dataset_uri_or_dataloader_test, split="test"),
-                batch_size=batch_size_eval,
+                batch_size=batch_size_eval or 128,
                 shuffle=False,
             )
 
@@ -180,7 +193,7 @@ class BaseProbingTask(abc.ABC):
         self,
         dataset_split_uri: t.Union[pathlib.Path, str],
         split: t.Literal["train", "eval", "test"],
-    ) -> torch.utils.data.Dataset[tuple[torch.Tensor, ...]]:
+    ) -> t.Any:
         """Load a prepared dataset."""
         df_split = pd.read_csv(
             dataset_split_uri,
@@ -195,11 +208,21 @@ class BaseProbingTask(abc.ABC):
         content = df_split["content"].tolist()
         labels = labels.tolist()
 
+        if not self.fn_raw_data_to_tensor:
+            raise ValueError(
+                "The function 'fn_raw_data_to_tensor' is not provided, but it is required to "
+                "appropriately transform raw data loaded from disk to PyTorch tensors. "
+                "Please either provide 'fn_raw_data_to_tensor' or a preloaded "
+                "'torch.utils.data.DataLoader' in 'dataset_uri_or_dataloader_train' argument "
+                "(and optionally 'dataset_uri_or_dataloader_eval' and "
+                "'dataset_uri_or_dataloader_test')."
+            )
+
         try:
-            out = self.fn_text_to_tensor(content, labels, split=split)
+            out = self.fn_raw_data_to_tensor(content, labels, split=split)  # type: ignore
 
         except AttributeError:
-            out = self.fn_text_to_tensor(content, labels)
+            out = self.fn_raw_data_to_tensor(content, labels)
 
         return out
 
@@ -214,6 +237,7 @@ class DummyProbingTask(BaseProbingTask):
         super().__init__(
             dataset_uri_or_dataloader_train=dummy_dl,
             loss_fn=torch.nn.CrossEntropyLoss(),
+            fn_raw_data_to_tensor=lambda *args, **kwargs: None,
             labels_uri_or_map=["A", "B"],
             output_dim=2,
         )

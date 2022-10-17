@@ -5,7 +5,6 @@ import os
 import torch
 import torch.nn
 import buscador
-import pandas as pd
 
 from . import base
 
@@ -14,6 +13,14 @@ class ProbingTaskSentenceLength(base.BaseProbingTask):
     """Preconfigured Sentence length (SentLen) probing task.
 
     Based on [1]_.
+
+    Parameters
+    ----------
+    fn_raw_data_to_tensor : t.Callable[[list[str], list[int]], any]
+        Function used to transform raw data into PyTorch tensors. The output of this function
+        will be feed directly into a `torch.utils.data.DataLoader`.
+
+    TODO
 
     References
     ----------
@@ -26,7 +33,7 @@ class ProbingTaskSentenceLength(base.BaseProbingTask):
 
     def __init__(
         self,
-        fn_text_to_tensor: t.Callable[[list[str], list[int]], any],
+        fn_raw_data_to_tensor: t.Callable[[list[str], list[int]], t.Any],
         batch_size_train: int = 128,
         batch_size_eval: int = 256,
         data_domain: str = "general-pt-br",
@@ -39,9 +46,8 @@ class ProbingTaskSentenceLength(base.BaseProbingTask):
         timeout_limit_seconds: int = 10,
     ):
         self.check_if_domain_is_valid(data_domain)
-        self.fn_text_to_tensor = fn_text_to_tensor
 
-        buscador_kwargs = dict(
+        buscador_kwargs: dict[str, t.Any] = dict(
             output_dir=output_dir,
             show_progress_bar=show_progress_bar,
             check_cached=check_cached,
@@ -51,15 +57,17 @@ class ProbingTaskSentenceLength(base.BaseProbingTask):
         )
 
         if data_domain == "general-pt-br":
-            buscador.download_resource(
-                task_name="probing_task",
-                resource_name="dataset_wikipedia_ptbr_sentence_length_v1",
-                **buscador_kwargs,
-            )
+            resource_name = "dataset_wikipedia_ptbr_sentence_length_v1"
 
-            input_dir = os.path.join(output_dir, "dataset_wikipedia_ptbr_sentence_length_v1")
+        buscador.download_resource(
+            task_name="probing_task",
+            resource_name=resource_name,
+            **buscador_kwargs,
+        )
 
+        input_dir = os.path.join(output_dir, resource_name)
         input_dir = os.path.abspath(input_dir)
+
         dataset_uri_train = os.path.join(input_dir, "train.tsv")
         dataset_uri_eval = os.path.join(input_dir, "eval.tsv")
         dataset_uri_test = os.path.join(input_dir, "test.tsv")
@@ -71,6 +79,7 @@ class ProbingTaskSentenceLength(base.BaseProbingTask):
             loss_fn=torch.nn.CrossEntropyLoss(),
             metrics_fn=metrics_fn,
             output_dim=num_classes,
+            fn_raw_data_to_tensor=fn_raw_data_to_tensor,
             dataset_uri_or_dataloader_train=dataset_uri_train,
             dataset_uri_or_dataloader_eval=dataset_uri_eval,
             dataset_uri_or_dataloader_test=dataset_uri_test,
@@ -156,7 +165,7 @@ class ProbingTaskCustom(base.BaseProbingTask):
         If str, assume it is an URI to a JSON file containing the mapping;
         If sequence, assume that the sequence[i] corresponds to the `i`-th label;
         If dict, assume that dict[label] = index;
-        If None, assume that labels are integers ranging from `0` to ``output_dim`` if\
+        If None, assume that labels are integers ranging from `0` to ``output_dim`` if \
                 ``output_dim >= 2``, else [0, 1].
 
     task_name : str, default='unnamed_task'
@@ -176,17 +185,26 @@ class ProbingTaskCustom(base.BaseProbingTask):
         probing_dataloader_test: t.Optional[base.DataLoaderType] = None,
         metrics_fn: t.Optional[base.ValidationFunctionType] = None,
         labels_uri_or_map: t.Optional[t.Union[str, t.Sequence[str], dict[str, int]]] = None,
+        fn_raw_data_to_tensor: t.Optional[t.Callable[[list[str], list[int]], t.Any]] = None,
         task_name: str = "unnamed_task",
         task_type: t.Literal["classification", "regression", "mixed"] = "classification",
     ):
         if labels_uri_or_map is None:
-            labels_uri_or_map = list(range(max(2, output_dim)))
+            labels_uri_or_map = list(map(str, range(max(2, output_dim))))
+
+        for dloader in (probing_dataloader_train, probing_dataloader_eval, probing_dataloader_test):
+            if not isinstance(dloader, torch.utils.data.DataLoader):
+                raise TypeError(
+                    "Custom probing tasks only accept dataloaders as train, eval and test data "
+                    f"(got '{type(dloader) = }')."
+                )
 
         super().__init__(
             dataset_uri_or_dataloader_train=probing_dataloader_train,
             dataset_uri_or_dataloader_eval=probing_dataloader_eval,
             dataset_uri_or_dataloader_test=probing_dataloader_test,
             labels_uri_or_map=labels_uri_or_map,
+            fn_raw_data_to_tensor=fn_raw_data_to_tensor,
             loss_fn=loss_fn,
             metrics_fn=metrics_fn,
             output_dim=output_dim,

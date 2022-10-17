@@ -146,7 +146,16 @@ class ProbingModelWrapper:
         metrics = dict(loss=loss_val)
 
         if compute_metrics and self.task.has_metrics:
-            metrics.update(self.task.metrics_fn(self.output_tensor, input_labels))  # type:ignore
+            metrics_fn_out = self.task.metrics_fn(self.output_tensor, input_labels)
+
+            try:
+                metrics.update(metrics_fn_out)  # type:ignore
+
+            except TypeError as err:
+                raise TypeError(
+                    "Provided 'metrics_fn' function must return a dictionary in the format "
+                    f"{{metric_name: metric_value}} (got type '{type(metrics_fn_out) = }')."
+                ) from err
 
         return metrics
 

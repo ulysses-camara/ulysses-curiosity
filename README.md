@@ -189,8 +189,8 @@ import torchmetrics
 num_classes = 3
 
 # Note: here we are using 'torchmetrics' as a suggestion, but you can use whatever you like.
-accuracy_fn = torchmetrics.Accuracy(num_classes=num_classes)
-f1_fn = torchmetrics.F1Score(num_classes=num_classes)
+accuracy_fn = torchmetrics.Accuracy(num_classes=num_classes).to("cpu")
+f1_fn = torchmetrics.F1Score(num_classes=num_classes).to("cpu")
 
 def metrics_fn(logits: torch.Tensor, truth_labels: torch.Tensor) -> dict[str, float]:
     accuracy = accuracy_fn(logits, truth_labels).detach().cpu().item()

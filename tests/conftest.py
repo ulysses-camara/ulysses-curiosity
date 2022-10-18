@@ -83,3 +83,12 @@ def fn_fixture_pretrained_minilmv2():
     tokenizer = minilmv2.tokenizer
     distilbert = minilmv2.get_submodule("0")
     return distilbert, tokenizer
+
+
+@pytest.fixture(scope="session", name="fixture_pretrained_bertimbau_tokenizer")
+def fn_fixture_pretrained_bertimbau_tokenizer():
+    tokenizer = transformers.AutoTokenizer.from_pretrained(
+        "neuralmind/bert-base-portuguese-cased",
+        cache_dir=model_utils.PRETRAINED_MODEL_DIR,
+    )
+    return tokenizer

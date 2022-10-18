@@ -4,6 +4,7 @@ import pathlib
 import abc
 import json
 import os
+import inspect
 
 import torch
 import torch.nn
@@ -116,7 +117,7 @@ class BaseProbingTask(abc.ABC):
 
         elif isinstance(labels_uri_or_map, (str, pathlib.Path)):
             with open(labels_uri_or_map, "r", encoding="utf-8") as f_in:
-                labels = json.load(f_in)["sentence_length"]
+                labels = json.load(f_in)[self.task_name]
 
             self.labels = {cls: ind for ind, cls in enumerate(labels)}
 
@@ -224,10 +225,10 @@ class BaseProbingTask(abc.ABC):
                 "'dataset_uri_or_dataloader_test')."
             )
 
-        try:
+        if "split" in inspect.signature(self.fn_raw_data_to_tensor).parameters:
             out = self.fn_raw_data_to_tensor(content, labels, split=split)  # type: ignore
 
-        except AttributeError:
+        else:
             out = self.fn_raw_data_to_tensor(content, labels)
 
         return out

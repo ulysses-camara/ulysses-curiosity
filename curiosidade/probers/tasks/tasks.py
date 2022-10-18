@@ -101,7 +101,7 @@ class ProbingTaskSentenceLength(base.BaseProbingTask):
             fn_raw_data_to_tensor=fn_raw_data_to_tensor,
             output_dim="infer_from_labels",
             task_type="classification",
-            task_name="sentence length (sentlen)",
+            task_name="sentence_length",
             batch_size_train=batch_size_train,
             batch_size_eval=batch_size_eval,
             **resource_uris,
@@ -111,37 +111,406 @@ class ProbingTaskSentenceLength(base.BaseProbingTask):
 class ProbingTaskWordContent(base.BaseProbingTask):
     """TODO"""
 
+    def __init__(
+        self,
+        fn_raw_data_to_tensor: t.Callable[[list[str], list[int]], t.Any],
+        batch_size_train: int = 128,
+        batch_size_eval: int = 256,
+        data_domain: str = "general-pt-br",
+        output_dir: str = "probing_datasets",
+        metrics_fn: t.Optional[base.ValidationFunctionType] = None,
+        show_progress_bar: bool = True,
+        check_cached: bool = True,
+        clean_compressed_files: bool = True,
+        check_resource_hash: bool = True,
+        timeout_limit_seconds: int = 10,
+    ):
+        self.check_if_domain_is_valid(data_domain)
+
+        if data_domain == "general-pt-br":
+            resource_name = "dataset_wikipedia_ptbr_word_content_v1"
+
+        resource_uris = base.get_resource_from_ulysses_fetcher(
+            resource_name=resource_name,
+            output_dir=output_dir,
+            show_progress_bar=show_progress_bar,
+            check_cached=check_cached,
+            clean_compressed_files=clean_compressed_files,
+            check_resource_hash=check_resource_hash,
+            timeout_limit_seconds=timeout_limit_seconds,
+        )
+
+        super().__init__(
+            loss_fn=torch.nn.CrossEntropyLoss(),
+            metrics_fn=metrics_fn,
+            fn_raw_data_to_tensor=fn_raw_data_to_tensor,
+            output_dim="infer_from_labels",
+            task_type="classification",
+            task_name="word_content",
+            batch_size_train=batch_size_train,
+            batch_size_eval=batch_size_eval,
+            **resource_uris,
+        )
+
 
 class ProbingTaskBigramShift(base.BaseProbingTask):
     """TODO"""
+
+    def __init__(
+        self,
+        fn_raw_data_to_tensor: t.Callable[[list[str], list[int]], t.Any],
+        batch_size_train: int = 128,
+        batch_size_eval: int = 256,
+        data_domain: str = "general-pt-br",
+        output_dir: str = "probing_datasets",
+        metrics_fn: t.Optional[base.ValidationFunctionType] = None,
+        show_progress_bar: bool = True,
+        check_cached: bool = True,
+        clean_compressed_files: bool = True,
+        check_resource_hash: bool = True,
+        timeout_limit_seconds: int = 10,
+    ):
+        self.check_if_domain_is_valid(data_domain)
+
+        if data_domain == "general-pt-br":
+            resource_name = "dataset_wikipedia_ptbr_bigram_shift_v1"
+
+        resource_uris = base.get_resource_from_ulysses_fetcher(
+            resource_name=resource_name,
+            output_dir=output_dir,
+            show_progress_bar=show_progress_bar,
+            check_cached=check_cached,
+            clean_compressed_files=clean_compressed_files,
+            check_resource_hash=check_resource_hash,
+            timeout_limit_seconds=timeout_limit_seconds,
+        )
+
+        super().__init__(
+            loss_fn=torch.nn.BCEWithLogitsLoss(),
+            metrics_fn=metrics_fn,
+            fn_raw_data_to_tensor=fn_raw_data_to_tensor,
+            output_dim=1,
+            task_type="classification",
+            task_name="bigram_shift",
+            batch_size_train=batch_size_train,
+            batch_size_eval=batch_size_eval,
+            **resource_uris,
+        )
 
 
 class ProbingTaskTreeDepth(base.BaseProbingTask):
     """TODO"""
 
+    def __init__(
+        self,
+        fn_raw_data_to_tensor: t.Callable[[list[str], list[int]], t.Any],
+        batch_size_train: int = 128,
+        batch_size_eval: int = 256,
+        data_domain: str = "general-pt-br",
+        output_dir: str = "probing_datasets",
+        metrics_fn: t.Optional[base.ValidationFunctionType] = None,
+        show_progress_bar: bool = True,
+        check_cached: bool = True,
+        clean_compressed_files: bool = True,
+        check_resource_hash: bool = True,
+        timeout_limit_seconds: int = 10,
+    ):
+        self.check_if_domain_is_valid(data_domain)
+
+        if data_domain == "general-pt-br":
+            resource_name = "dataset_wikipedia_ptbr_tree_depth_v1"
+
+        resource_uris = base.get_resource_from_ulysses_fetcher(
+            resource_name=resource_name,
+            output_dir=output_dir,
+            show_progress_bar=show_progress_bar,
+            check_cached=check_cached,
+            clean_compressed_files=clean_compressed_files,
+            check_resource_hash=check_resource_hash,
+            timeout_limit_seconds=timeout_limit_seconds,
+        )
+
+        super().__init__(
+            loss_fn=torch.nn.CrossEntropyLoss(),
+            metrics_fn=metrics_fn,
+            fn_raw_data_to_tensor=fn_raw_data_to_tensor,
+            output_dim="infer_from_labels",
+            task_type="classification",
+            task_name="tree_depth",
+            batch_size_train=batch_size_train,
+            batch_size_eval=batch_size_eval,
+            **resource_uris,
+        )
+
 
 class ProbingTaskTopConstituent(base.BaseProbingTask):
     """TODO"""
 
+    def __init__(
+        self,
+        fn_raw_data_to_tensor: t.Callable[[list[str], list[int]], t.Any],
+        batch_size_train: int = 128,
+        batch_size_eval: int = 256,
+        data_domain: str = "general-pt-br",
+        output_dir: str = "probing_datasets",
+        metrics_fn: t.Optional[base.ValidationFunctionType] = None,
+        show_progress_bar: bool = True,
+        check_cached: bool = True,
+        clean_compressed_files: bool = True,
+        check_resource_hash: bool = True,
+        timeout_limit_seconds: int = 10,
+    ):
+        self.check_if_domain_is_valid(data_domain)
 
-class ProbingTaskTense(base.BaseProbingTask):
+        if data_domain == "general-pt-br":
+            resource_name = "dataset_wikipedia_ptbr_top_constituents_v1"
+
+        resource_uris = base.get_resource_from_ulysses_fetcher(
+            resource_name=resource_name,
+            output_dir=output_dir,
+            show_progress_bar=show_progress_bar,
+            check_cached=check_cached,
+            clean_compressed_files=clean_compressed_files,
+            check_resource_hash=check_resource_hash,
+            timeout_limit_seconds=timeout_limit_seconds,
+        )
+
+        super().__init__(
+            loss_fn=torch.nn.CrossEntropyLoss(),
+            metrics_fn=metrics_fn,
+            fn_raw_data_to_tensor=fn_raw_data_to_tensor,
+            output_dim="infer_from_labels",
+            task_type="classification",
+            task_name="top_constituents",
+            batch_size_train=batch_size_train,
+            batch_size_eval=batch_size_eval,
+            **resource_uris,
+        )
+
+
+class ProbingTaskPastPresent(base.BaseProbingTask):
     """TODO"""
+
+    def __init__(
+        self,
+        fn_raw_data_to_tensor: t.Callable[[list[str], list[int]], t.Any],
+        batch_size_train: int = 128,
+        batch_size_eval: int = 256,
+        data_domain: str = "general-pt-br",
+        output_dir: str = "probing_datasets",
+        metrics_fn: t.Optional[base.ValidationFunctionType] = None,
+        show_progress_bar: bool = True,
+        check_cached: bool = True,
+        clean_compressed_files: bool = True,
+        check_resource_hash: bool = True,
+        timeout_limit_seconds: int = 10,
+    ):
+        self.check_if_domain_is_valid(data_domain)
+
+        if data_domain == "general-pt-br":
+            resource_name = "dataset_wikipedia_ptbr_past_present_v1"
+
+        resource_uris = base.get_resource_from_ulysses_fetcher(
+            resource_name=resource_name,
+            output_dir=output_dir,
+            show_progress_bar=show_progress_bar,
+            check_cached=check_cached,
+            clean_compressed_files=clean_compressed_files,
+            check_resource_hash=check_resource_hash,
+            timeout_limit_seconds=timeout_limit_seconds,
+        )
+
+        super().__init__(
+            loss_fn=torch.nn.BCEWithLogitsLoss(),
+            metrics_fn=metrics_fn,
+            fn_raw_data_to_tensor=fn_raw_data_to_tensor,
+            output_dim=1,
+            task_type="classification",
+            task_name="past_present",
+            batch_size_train=batch_size_train,
+            batch_size_eval=batch_size_eval,
+            **resource_uris,
+        )
 
 
 class ProbingTaskSubjectNumber(base.BaseProbingTask):
     """TODO"""
 
+    def __init__(
+        self,
+        fn_raw_data_to_tensor: t.Callable[[list[str], list[int]], t.Any],
+        batch_size_train: int = 128,
+        batch_size_eval: int = 256,
+        data_domain: str = "general-pt-br",
+        output_dir: str = "probing_datasets",
+        metrics_fn: t.Optional[base.ValidationFunctionType] = None,
+        show_progress_bar: bool = True,
+        check_cached: bool = True,
+        clean_compressed_files: bool = True,
+        check_resource_hash: bool = True,
+        timeout_limit_seconds: int = 10,
+    ):
+        self.check_if_domain_is_valid(data_domain)
+
+        if data_domain == "general-pt-br":
+            resource_name = "dataset_wikipedia_ptbr_subj_number_v1"
+
+        resource_uris = base.get_resource_from_ulysses_fetcher(
+            resource_name=resource_name,
+            output_dir=output_dir,
+            show_progress_bar=show_progress_bar,
+            check_cached=check_cached,
+            clean_compressed_files=clean_compressed_files,
+            check_resource_hash=check_resource_hash,
+            timeout_limit_seconds=timeout_limit_seconds,
+        )
+
+        super().__init__(
+            loss_fn=torch.nn.BCEWithLogitsLoss(),
+            metrics_fn=metrics_fn,
+            fn_raw_data_to_tensor=fn_raw_data_to_tensor,
+            output_dim=1,
+            task_type="classification",
+            task_name="subj_number",
+            batch_size_train=batch_size_train,
+            batch_size_eval=batch_size_eval,
+            **resource_uris,
+        )
+
 
 class ProbingTaskObjectNumber(base.BaseProbingTask):
     """TODO"""
+
+    def __init__(
+        self,
+        fn_raw_data_to_tensor: t.Callable[[list[str], list[int]], t.Any],
+        batch_size_train: int = 128,
+        batch_size_eval: int = 256,
+        data_domain: str = "general-pt-br",
+        output_dir: str = "probing_datasets",
+        metrics_fn: t.Optional[base.ValidationFunctionType] = None,
+        show_progress_bar: bool = True,
+        check_cached: bool = True,
+        clean_compressed_files: bool = True,
+        check_resource_hash: bool = True,
+        timeout_limit_seconds: int = 10,
+    ):
+        self.check_if_domain_is_valid(data_domain)
+
+        if data_domain == "general-pt-br":
+            resource_name = "dataset_wikipedia_ptbr_obj_number_v1"
+
+        resource_uris = base.get_resource_from_ulysses_fetcher(
+            resource_name=resource_name,
+            output_dir=output_dir,
+            show_progress_bar=show_progress_bar,
+            check_cached=check_cached,
+            clean_compressed_files=clean_compressed_files,
+            check_resource_hash=check_resource_hash,
+            timeout_limit_seconds=timeout_limit_seconds,
+        )
+
+        super().__init__(
+            loss_fn=torch.nn.BCEWithLogitsLoss(),
+            metrics_fn=metrics_fn,
+            fn_raw_data_to_tensor=fn_raw_data_to_tensor,
+            output_dim=1,
+            task_type="classification",
+            task_name="obj_number",
+            batch_size_train=batch_size_train,
+            batch_size_eval=batch_size_eval,
+            **resource_uris,
+        )
 
 
 class ProbingTaskSOMO(base.BaseProbingTask):
     """TODO"""
 
+    def __init__(
+        self,
+        fn_raw_data_to_tensor: t.Callable[[list[str], list[int]], t.Any],
+        batch_size_train: int = 128,
+        batch_size_eval: int = 256,
+        data_domain: str = "general-pt-br",
+        output_dir: str = "probing_datasets",
+        metrics_fn: t.Optional[base.ValidationFunctionType] = None,
+        show_progress_bar: bool = True,
+        check_cached: bool = True,
+        clean_compressed_files: bool = True,
+        check_resource_hash: bool = True,
+        timeout_limit_seconds: int = 10,
+    ):
+        self.check_if_domain_is_valid(data_domain)
+
+        if data_domain == "general-pt-br":
+            resource_name = "dataset_wikipedia_ptbr_odd_man_out_v1"
+
+        resource_uris = base.get_resource_from_ulysses_fetcher(
+            resource_name=resource_name,
+            output_dir=output_dir,
+            show_progress_bar=show_progress_bar,
+            check_cached=check_cached,
+            clean_compressed_files=clean_compressed_files,
+            check_resource_hash=check_resource_hash,
+            timeout_limit_seconds=timeout_limit_seconds,
+        )
+
+        super().__init__(
+            loss_fn=torch.nn.BCEWithLogitsLoss(),
+            metrics_fn=metrics_fn,
+            fn_raw_data_to_tensor=fn_raw_data_to_tensor,
+            output_dim=1,
+            task_type="classification",
+            task_name="odd_man_out",
+            batch_size_train=batch_size_train,
+            batch_size_eval=batch_size_eval,
+            **resource_uris,
+        )
+
 
 class ProbingTaskCoordinationInversion(base.BaseProbingTask):
     """TODO"""
+
+    def __init__(
+        self,
+        fn_raw_data_to_tensor: t.Callable[[list[str], list[int]], t.Any],
+        batch_size_train: int = 128,
+        batch_size_eval: int = 256,
+        data_domain: str = "general-pt-br",
+        output_dir: str = "probing_datasets",
+        metrics_fn: t.Optional[base.ValidationFunctionType] = None,
+        show_progress_bar: bool = True,
+        check_cached: bool = True,
+        clean_compressed_files: bool = True,
+        check_resource_hash: bool = True,
+        timeout_limit_seconds: int = 10,
+    ):
+        self.check_if_domain_is_valid(data_domain)
+
+        if data_domain == "general-pt-br":
+            resource_name = "dataset_wikipedia_ptbr_coordination_inversion_v1"
+
+        resource_uris = base.get_resource_from_ulysses_fetcher(
+            resource_name=resource_name,
+            output_dir=output_dir,
+            show_progress_bar=show_progress_bar,
+            check_cached=check_cached,
+            clean_compressed_files=clean_compressed_files,
+            check_resource_hash=check_resource_hash,
+            timeout_limit_seconds=timeout_limit_seconds,
+        )
+
+        super().__init__(
+            loss_fn=torch.nn.BCEWithLogitsLoss(),
+            metrics_fn=metrics_fn,
+            fn_raw_data_to_tensor=fn_raw_data_to_tensor,
+            output_dim=1,
+            task_type="classification",
+            task_name="coordination_inversion",
+            batch_size_train=batch_size_train,
+            batch_size_eval=batch_size_eval,
+            **resource_uris,
+        )
 
 
 class ProbingTaskCustom(base.BaseProbingTask):

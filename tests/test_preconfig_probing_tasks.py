@@ -1,3 +1,4 @@
+"""Test preconfigured probing tasks."""
 import typing as t
 import functools
 import os
@@ -10,9 +11,6 @@ import transformers
 import numpy as np
 
 import curiosidade
-
-from . import train_test_models
-from . import architectures
 
 
 @pytest.mark.parametrize(

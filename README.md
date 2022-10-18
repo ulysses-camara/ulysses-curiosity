@@ -456,7 +456,7 @@ curiosidade.ProbingTaskWordContent
 curiosidade.ProbingTaskBigramShift
 curiosidade.ProbingTaskTreeDepth
 curiosidade.ProbingTaskTopConstituent
-curiosidade.ProbingTaskTense
+curiosidade.ProbingTaskPastPresent
 curiosidade.ProbingTaskSubjectNumber
 curiosidade.ProbingTaskObjectNumber
 curiosidade.ProbingTaskSOMO

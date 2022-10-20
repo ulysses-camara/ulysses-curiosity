@@ -7,6 +7,20 @@ import torch.nn
 from . import base
 
 
+__all__ = [
+    "ProbingTaskSentenceLength",
+    "ProbingTaskBigramShift",
+    "ProbingTaskPastPresent",
+    "ProbingTaskSOMO",
+    "ProbingTaskSubjectNumber",
+    "ProbingTaskObjectNumber",
+    "ProbingTaskTreeDepth",
+    "ProbingTaskCoordinationInversion",
+    "ProbingTaskWordContent",
+    "ProbingTaskTopConstituent",
+]
+
+
 class ProbingTaskSentenceLength(base.BaseProbingTask):
     """Preconfigured Sentence length (SentLen) probing task.
 

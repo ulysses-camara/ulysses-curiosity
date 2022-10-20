@@ -215,7 +215,7 @@ class ProbingModelFactory:
     ...     def forward(self, X):
     ...         return self.params(X)
     ...
-    >>> task = curiosidade.base.DummyProbingTask()
+    >>> task = curiosidade.probers.base.DummyProbingTask()
     >>> ProbingModelFactory(
     ...     probing_model_fn=ProbingModel,  # Note: do not instantiate.
     ...     optim_fn=functools.partial(torch.optim.Adam, lr=0.01),  # Note: do not instantiate.

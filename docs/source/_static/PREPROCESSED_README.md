@@ -1,4 +1,5 @@
-[![Tests](https://github.com/FelSiq/ulysses-curiosity/actions/workflows/tests.yml/badge.svg)](https://github.com/FelSiq/ulysses-curiosity/actions/workflows/tests.yml)
+[![Tests](https://github.com/ulysses-camara/ulysses-curiosity/actions/workflows/tests.yml/badge.svg)](https://github.com/ulysses-camara/ulysses-curiosity/actions/workflows/tests.yml)
+[![Documentation Status](https://readthedocs.org/projects/ulysses-curiosity/badge/?version=latest)](https://ulysses-curiosity.readthedocs.io/en/latest/?badge=latest)
 
 # Ulysses Curiosity
 
@@ -133,17 +134,17 @@ class P1,P2,P3 clsProber;
 
 ## Installation
 ```shell
-python -m pip install "git+https://github.com/FelSiq/ulysses-curiosity"
+python -m pip install "git+https://github.com/ulysses-camara/ulysses-curiosity"
 ```
 
 To install additional dependencies, needed to run notebook examples:
 ```shell
-python -m pip install "ulysses-curiosity[examples] @ git+https://github.com/FelSiq/ulysses-curiosity"
+python -m pip install "ulysses-curiosity[examples] @ git+https://github.com/ulysses-camara/ulysses-curiosity"
 ```
 
 To install developer dependencies:
 ```shell
-python -m pip install "ulysses-curiosity[dev] @ git+https://github.com/FelSiq/ulysses-curiosity"
+python -m pip install "ulysses-curiosity[dev] @ git+https://github.com/ulysses-camara/ulysses-curiosity"
 ```
 
 ---
@@ -190,8 +191,8 @@ import torchmetrics
 num_classes = 3
 
 # Note: here we are using 'torchmetrics' as a suggestion, but you can use whatever you like.
-accuracy_fn = torchmetrics.Accuracy(num_classes=num_classes)
-f1_fn = torchmetrics.F1Score(num_classes=num_classes)
+accuracy_fn = torchmetrics.Accuracy(num_classes=num_classes).to("cpu")
+f1_fn = torchmetrics.F1Score(num_classes=num_classes).to("cpu")
 
 def metrics_fn(logits: torch.Tensor, truth_labels: torch.Tensor) -> dict[str, float]:
     accuracy = accuracy_fn(logits, truth_labels).detach().cpu().item()
@@ -458,7 +459,7 @@ curiosidade.ProbingTaskWordContent
 curiosidade.ProbingTaskBigramShift
 curiosidade.ProbingTaskTreeDepth
 curiosidade.ProbingTaskTopConstituent
-curiosidade.ProbingTaskTense
+curiosidade.ProbingTaskPastPresent
 curiosidade.ProbingTaskSubjectNumber
 curiosidade.ProbingTaskObjectNumber
 curiosidade.ProbingTaskSOMO

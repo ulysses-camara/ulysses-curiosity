@@ -82,7 +82,9 @@ class ProbingModelWrapper:
             if torch.is_tensor(l_output):
                 self.input_tensors = (l_output.detach(),)  # type: ignore
             else:
-                self.input_tensors = tuple(tensor.detach() for tensor in l_output)
+                self.input_tensors = tuple(
+                    tensor.detach() for tensor in l_output if torch.is_tensor(tensor)
+                )
 
         self.attached_module = module
         self.input_source_hook = module.register_forward_hook(fn_hook_forward)
@@ -144,7 +146,16 @@ class ProbingModelWrapper:
         metrics = dict(loss=loss_val)
 
         if compute_metrics and self.task.has_metrics:
-            metrics.update(self.task.metrics_fn(self.output_tensor, input_labels))  # type:ignore
+            metrics_fn_out = self.task.metrics_fn(self.output_tensor, input_labels)  # type:ignore
+
+            try:
+                metrics.update(metrics_fn_out)
+
+            except TypeError as err:
+                raise TypeError(
+                    "Provided 'metrics_fn' function must return a dictionary in the format "
+                    f"{{metric_name: metric_value}} (got type '{type(metrics_fn_out) = }')."
+                ) from err
 
         return metrics
 
@@ -204,7 +215,7 @@ class ProbingModelFactory:
     ...     def forward(self, X):
     ...         return self.params(X)
     ...
-    >>> task = curiosidade.base.DummyProbingTask()
+    >>> task = curiosidade.probers.base.DummyProbingTask()
     >>> ProbingModelFactory(
     ...     probing_model_fn=ProbingModel,  # Note: do not instantiate.
     ...     optim_fn=functools.partial(torch.optim.Adam, lr=0.01),  # Note: do not instantiate.

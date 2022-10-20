@@ -17,7 +17,9 @@ def fn_fixture_pretrained_torch_ff() -> torch.nn.Module:
         model = model_utils.load_pickled_model(pretrained_torch_ff_name)
 
     except (OSError, FileNotFoundError):
-        model = train_test_models.train(model_name=pretrained_torch_ff_name, save=True)
+        model = train_test_models.train(
+            model_name=pretrained_torch_ff_name, save=True, input_dim=3, output_dim=4
+        )
 
     return model
 
@@ -30,7 +32,32 @@ def fn_fixture_pretrained_torch_bifurcation() -> torch.nn.Module:
         model = model_utils.load_pickled_model(pretrained_torch_bifurcation_name)
 
     except (OSError, FileNotFoundError):
-        model = train_test_models.train(model_name=pretrained_torch_bifurcation_name, save=True)
+        model = train_test_models.train(
+            model_name=pretrained_torch_bifurcation_name, save=True, input_dim=3, output_dim=4
+        )
+
+    return model
+
+
+@pytest.fixture(scope="session", name="fixture_pretrained_torch_lstm_onedir_1_layer")
+def fn_fixture_pretrained_torch_lstm_onedir_1_layer() -> torch.nn.Module:
+    pretrained_torch_lstm_name = "torch_lstm.pt"
+
+    try:
+        model = model_utils.load_pickled_model(pretrained_torch_lstm_name)
+
+    except (OSError, FileNotFoundError):
+        model = train_test_models.train(
+            model_name=pretrained_torch_lstm_name,
+            save=True,
+            integer_data=True,
+            output_dim=4,
+            vocab_size=32,
+            embedding_dim=16,
+            hidden_dim=32,
+            bidirectional=False,
+            num_layers=1,
+        )
 
     return model
 
@@ -56,3 +83,12 @@ def fn_fixture_pretrained_minilmv2():
     tokenizer = minilmv2.tokenizer
     distilbert = minilmv2.get_submodule("0")
     return distilbert, tokenizer
+
+
+@pytest.fixture(scope="session", name="fixture_pretrained_bertimbau_tokenizer")
+def fn_fixture_pretrained_bertimbau_tokenizer():
+    tokenizer = transformers.AutoTokenizer.from_pretrained(
+        "neuralmind/bert-base-portuguese-cased",
+        cache_dir=model_utils.PRETRAINED_MODEL_DIR,
+    )
+    return tokenizer

@@ -162,3 +162,5 @@ cython_debug/
 venvs
 .tool-versions
 tests/pretrained_models_for_tests_dir/
+tests/test_probing_datasets/
+examples/probing_datasets/

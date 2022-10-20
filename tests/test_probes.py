@@ -55,6 +55,74 @@ def standard_result_validation(
     assert accuracy_test[-1] >= min_accuracy_test
 
 
+def test_probe_torch_lstm_onedir_1_layer(
+    fixture_pretrained_torch_lstm_onedir_1_layer: torch.nn.Module,
+):
+    df_train, df_eval, df_test, num_labels = train_test_models.gen_random_dataset(
+        integer_data=True,
+        vocab_size=fixture_pretrained_torch_lstm_onedir_1_layer.vocab_size,
+    )
+
+    probing_model_fn = curiosidade.probers.utils.get_probing_model_for_sequences(
+        hidden_layer_dims=[30],
+    )
+
+    acc_fn = torchmetrics.Accuracy(num_classes=num_labels)
+    f1_fn = torchmetrics.F1Score(num_classes=num_labels)
+
+    def metrics_fn(logits: torch.Tensor, truth_labels: torch.Tensor) -> dict[str, float]:
+        # pylint: disable='not-callable'
+        accuracy = acc_fn(logits, truth_labels).detach().cpu().item()
+        f1 = f1_fn(logits, truth_labels).detach().cpu().item()
+        return {"accuracy": accuracy, "f1": f1}
+
+    batch_size = 16
+
+    probing_dataloader_train = torch.utils.data.DataLoader(
+        df_train, batch_size=batch_size, shuffle=True
+    )
+    probing_dataloader_eval = torch.utils.data.DataLoader(
+        df_eval, batch_size=batch_size, shuffle=False
+    )
+    probing_dataloader_test = torch.utils.data.DataLoader(
+        df_test, batch_size=batch_size, shuffle=False
+    )
+
+    task = curiosidade.ProbingTaskCustom(
+        probing_dataloader_train=probing_dataloader_train,
+        probing_dataloader_eval=probing_dataloader_eval,
+        probing_dataloader_test=probing_dataloader_test,
+        loss_fn=torch.nn.CrossEntropyLoss(),
+        task_name="test task (torch, lstm, onedir, 1 layer)",
+        task_type="classification",
+        output_dim=num_labels,
+        metrics_fn=metrics_fn,
+    )
+
+    probing_factory = curiosidade.ProbingModelFactory(
+        probing_model_fn=probing_model_fn,
+        optim_fn=functools.partial(torch.optim.Adam, lr=0.005),
+        task=task,
+    )
+
+    with warnings.catch_warnings():
+        warnings.simplefilter(action="error", category=UserWarning)
+        prober_container = curiosidade.attach_probers(
+            base_model=fixture_pretrained_torch_lstm_onedir_1_layer,
+            probing_model_factory=probing_factory,
+            modules_to_attach=["lstm"],
+            random_seed=32,
+            prune_unrelated_modules=["lin_out"],
+        )
+
+    assert prober_container.pruned_modules == ("lin_out",)
+    assert prober_container.probed_modules == ("lstm",)
+
+    probing_results = prober_container.train(num_epochs=30, show_progress_bar=None)
+
+    standard_result_validation(probing_results)
+
+
 def test_probe_torch_ff(fixture_pretrained_torch_ff: torch.nn.Module):
     df_train, df_eval, df_test, num_labels = train_test_models.gen_random_dataset()
 

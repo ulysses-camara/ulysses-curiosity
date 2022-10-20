@@ -1,4 +1,6 @@
 """Test expected warnings."""
+import typing as t
+
 import pytest
 import torch
 import torch.nn
@@ -171,3 +173,44 @@ def test_error_train_without_attachment(fixture_pretrained_torch_ff: torch.nn.Mo
 
     with pytest.raises(RuntimeError):
         prober_container.train(num_epochs=1)
+
+
+@pytest.mark.parametrize(
+    "probing_dataloader_train,probing_dataloader_eval,probing_dataloader_test",
+    (
+        ("train.tsv", None, None),
+        (None, None, None),
+        (None, "eval.tsv", "test.tsv"),
+        (None, "<BUILD_DATALOADER>", "<BUILD_DATALOADER>"),
+        ("train.tsv", "<BUILD_DATALOADER>", "<BUILD_DATALOADER>"),
+        ("<BUILD_DATALOADER>", "eval.tsv", "<BUILD_DATALOADER>"),
+        ("<BUILD_DATALOADER>", "<BUILD_DATALOADER>", "test.tsv"),
+    ),
+)
+def test_error_custom_probing_task_with_file_uri(
+    probing_dataloader_train: t.Optional[str],
+    probing_dataloader_eval: t.Optional[str],
+    probing_dataloader_test: t.Optional[str],
+):
+    if probing_dataloader_train == "<BUILD_DATALOADER>":
+        dataset = torch.utils.data.TensorDataset(torch.empty(0), torch.empty(0))
+        probing_dataloader_train = torch.utils.data.DataLoader(dataset)
+
+    if probing_dataloader_test == "<BUILD_DATALOADER>":
+        dataset = torch.utils.data.TensorDataset(torch.empty(0), torch.empty(0))
+        probing_dataloader_test = torch.utils.data.DataLoader(dataset)
+
+    if probing_dataloader_eval == "<BUILD_DATALOADER>":
+        dataset = torch.utils.data.TensorDataset(torch.empty(0), torch.empty(0))
+        probing_dataloader_eval = torch.utils.data.DataLoader(dataset)
+
+    with pytest.raises(TypeError):
+        curiosidade.ProbingTaskCustom(
+            probing_dataloader_train=probing_dataloader_train,
+            probing_dataloader_eval=probing_dataloader_eval,
+            probing_dataloader_test=probing_dataloader_test,
+            loss_fn=torch.nn.CrossEntropyLoss(),
+            task_name="test task (torch, simple)",
+            task_type="classification",
+            output_dim=3,
+        )

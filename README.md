@@ -189,8 +189,8 @@ import torchmetrics
 num_classes = 3
 
 # Note: here we are using 'torchmetrics' as a suggestion, but you can use whatever you like.
-accuracy_fn = torchmetrics.Accuracy(num_classes=num_classes)
-f1_fn = torchmetrics.F1Score(num_classes=num_classes)
+accuracy_fn = torchmetrics.Accuracy(num_classes=num_classes).to("cpu")
+f1_fn = torchmetrics.F1Score(num_classes=num_classes).to("cpu")
 
 def metrics_fn(logits: torch.Tensor, truth_labels: torch.Tensor) -> dict[str, float]:
     accuracy = accuracy_fn(logits, truth_labels).detach().cpu().item()
@@ -446,22 +446,71 @@ Be careful to not prune a required module, or else a `RuntimeError` should be ra
 
 ### Preconfigured probing tasks
 
-> :warning: Work in progress!
+This package provides a collection of preconfigured probing tasks for PT-br language following the descriptions in [(Conneau et. al, 2018)](https://aclanthology.org/P18-1198/). Preconfigured tasks enable easier probing setup, and standard train, evaluation and test data splits.
 
-This package will provide a collection of preconfigured probing tasks for Brazilian Portuguese language, based on tasks in [(Conneau et. al, 2018)](https://aclanthology.org/P18-1198/). By now, you need to use `ProbingTaskCustom` to set up your own probing tasks.
+To programatically list all available preconfigured probing tasks:
+```python
+probing_tasks = curiosidade.get_available_preconfigured_tasks()
+# Return format: sequence of (class name, class) pairs
+```
 
+The following preconfigured probing tasks are available in this package:
 ```python
 curiosidade.ProbingTaskSentenceLength
 curiosidade.ProbingTaskWordContent
 curiosidade.ProbingTaskBigramShift
 curiosidade.ProbingTaskTreeDepth
 curiosidade.ProbingTaskTopConstituent
-curiosidade.ProbingTaskTense
+curiosidade.ProbingTaskPastPresent
 curiosidade.ProbingTaskSubjectNumber
 curiosidade.ProbingTaskObjectNumber
 curiosidade.ProbingTaskSOMO
 curiosidade.ProbingTaskCoordinationInversion
 ```
+
+All preconfigured probing tasks follows a standard `__init__` API.
+
+```python
+import typing as t
+
+def fn_text_to_tensor_for_pytorch(
+    content: list[str],
+    labels: list[int],
+    split: t.Literal["train", "eval", "test"],
+) -> dict[str, torch.Tensor]:
+    """Transform raw text data into a PyTorch dataloader."""
+    X = torch.nn.utils.rnn.pad_sequence(
+        [torch.Tensor(inst.ids)[:32] for inst in tokenizer.encode_batch(content)],
+        batch_first=True,
+        padding_value=0.0,
+    )
+
+    y = torch.Tensor(labels)
+
+    X = X.long()
+    y = y.long()
+
+    return torch.utils.data.TensorDataset(X, y)
+
+
+def metrics_fn(logits, target):
+    _, cls_ids = logits.max(axis=-1)
+    return {"accuracy": (cls_ids == target).float().mean().item()}
+
+
+task = curiosidade.ProbingTaskSentenceLength(
+    fn_raw_data_to_tensor=fn_text_to_tensor_for_pytorch,
+    metrics_fn=metrics_fn,
+    data_domain="general-pt-br",  # PT-br wikipedia probing dataset
+    output_dir="probing_datasets",  # Directory to store downloaded probing datasets
+    batch_size_train=128,
+    batch_size_eval=256,
+)
+
+# Analogously to all other available preconfigured probing tasks.
+```
+
+You can check [a full example notebook](./examples/6_using_a_preconfigured_probing_task.ipynb) showcasing the use of preconfigured probing tasks.
 
 ---
 

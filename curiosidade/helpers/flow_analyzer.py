@@ -39,7 +39,9 @@ class _AnalyzerContainer:
         if torch.is_tensor(m_output):
             m_output = (m_output,)  # type: ignore
 
-        out_shapes: tuple[int, ...] = tuple(item.shape[-1] for item in m_output)
+        out_shapes: tuple[int, ...] = tuple(
+            item.shape[-1] for item in m_output if hasattr(item, "shape")
+        )
         self.probing_input_dims[module_name] = out_shapes
 
         return self

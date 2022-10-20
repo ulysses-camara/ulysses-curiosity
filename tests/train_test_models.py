@@ -1,4 +1,6 @@
 """Train test models to simulate pretrained models."""
+import typing as t
+
 import torch
 import torch.nn
 
@@ -13,13 +15,21 @@ def gen_random_dataset(
     num_dim: int = 3,
     num_labels: int = 4,
     random_seed: int = 16,
+    integer_data: bool = False,
+    vocab_size: int = 128,
 ) -> tuple[torch.utils.data.Dataset[tuple[torch.Tensor, ...]], ...]:
     with torch.random.fork_rng():
         torch.random.manual_seed(random_seed)
 
-        X_train = torch.randn(train_size, num_dim)
-        X_eval = torch.randn(eval_size, num_dim)
-        X_test = torch.randn(test_size, num_dim)
+        if integer_data:
+            X_train = torch.randint(low=1, high=vocab_size, size=(train_size, num_dim))
+            X_eval = torch.randint(low=1, high=vocab_size, size=(eval_size, num_dim))
+            X_test = torch.randint(low=1, high=vocab_size, size=(test_size, num_dim))
+
+        else:
+            X_train = torch.randn(train_size, num_dim)
+            X_eval = torch.randn(eval_size, num_dim)
+            X_test = torch.randn(test_size, num_dim)
 
     y_train = X_train.sum(axis=-1)
     y_eval = X_eval.sum(axis=-1)
@@ -51,10 +61,14 @@ def train(
     num_train_epochs: int = 100,
     lr: float = 0.01,
     save: bool = True,
+    integer_data: bool = False,
+    **kwargs: t.Any,
 ):
-    df_train, *_ = gen_random_dataset()
+    df_train, *_ = gen_random_dataset(
+        integer_data=integer_data, vocab_size=kwargs.get("vocab_size", -1)
+    )
 
-    model = architectures.AVAILABLE_MODELS[model_name](input_dim=3, output_dim=4)
+    model = architectures.AVAILABLE_MODELS[model_name](**kwargs)
     optim = torch.optim.Adam(model.parameters(), lr=lr)
     criterion = torch.nn.CrossEntropyLoss()
 
@@ -64,6 +78,10 @@ def train(
         for X, y in dataloader_train:
             optim.zero_grad()
             y_pred = model(X)
+
+            if y_pred.ndim == 3:
+                y_pred = y_pred[:, -1, :]
+
             loss = criterion(y_pred, y)
             loss.backward()
             optim.step()

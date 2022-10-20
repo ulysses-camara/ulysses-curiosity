@@ -12,6 +12,7 @@
 #
 import os
 import sys
+
 sys.path.insert(0, os.path.abspath("../../curiosidade"))
 
 
@@ -20,10 +21,10 @@ sys.path.insert(0, os.path.abspath("../../curiosidade"))
 project = "Ulysses Curiosity"
 copyright = "2022, Felipe Alves Siqueira"
 author = "Felipe Alves Siqueira"
-version = "0.1.0"
+version = "0.2.0"
 
 # The full version, including alpha/beta/rc tags
-release = "0.1.0"
+release = "0.2.0-beta"
 
 
 # -- General configuration ---------------------------------------------------

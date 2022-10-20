@@ -1,4 +1,13 @@
-"""Probing task classes."""
+"""Preconfigured probing tasks based on [1]_.
+
+References
+----------
+.. [1] Alexis Conneau, German Kruszewski, Guillaume Lample, Loïc Barrault, and Marco Baroni.
+   2018. What you can cram into a single $&!#* vector: Probing sentence embeddings for
+   linguistic properties. In Proceedings of the 56th Annual Meeting of the Association for
+   Computational Linguistics (Volume 1: Long Papers), pages 2126–2136, Melbourne, Australia.
+   Association for Computational Linguistics.
+"""
 import typing as t
 import inspect
 import sys
@@ -39,13 +48,11 @@ def get_available_preconfigured_tasks() -> tuple[tuple[str, base.BaseProbingTask
 
 
 class ProbingTaskSentenceLength(base.BaseProbingTask):
-    """Preconfigured Sentence length (SentLen) probing task.
-
-    Based on [1]_.
+    """Preconfigured Sentence length probing task.
 
     Parameters
     ----------
-    fn_raw_data_to_tensor : t.Callable[[list[str], list[int]], any]
+    fn_raw_data_to_tensor : t.Callable[[list[str], list[int]], t.Any]
         Function used to transform raw data into PyTorch tensors. The output of this function
         will be feed directly into a `torch.utils.data.DataLoader`.
 
@@ -86,15 +93,6 @@ class ProbingTaskSentenceLength(base.BaseProbingTask):
 
     timeout_limit_seconds : int, default=10
         Maximum time limit, in seconds, to try to download the probing dataset.
-
-    References
-    ----------
-    .. [1] Alexis Conneau, German Kruszewski, Guillaume Lample, Loïc Barrault, and Marco Baroni.
-       2018. What you can cram into a single $&!#* vector: Probing sentence embeddings for
-       linguistic properties. In Proceedings of the 56th Annual Meeting of the Association for
-       Computational Linguistics (Volume 1: Long Papers), pages 2126–2136, Melbourne, Australia.
-       Association for Computational Linguistics.
-    .. [2] Ulysses Fetcher: https://github.com/ulysses-camara/ulysses-fetcher
     """
 
     def __init__(
@@ -140,7 +138,52 @@ class ProbingTaskSentenceLength(base.BaseProbingTask):
 
 
 class ProbingTaskWordContent(base.BaseProbingTask):
-    """TODO"""
+    """Preconfigured Word Content probing task.
+
+    Parameters
+    ----------
+    fn_raw_data_to_tensor : t.Callable[[list[str], list[int]], t.Any]
+        Function used to transform raw data into PyTorch tensors. The output of this function
+        will be feed directly into a `torch.utils.data.DataLoader`.
+
+    batch_size_train : int, default=128
+        Batch size for train dataloader.
+
+    batch_size_eval : int, default=256
+        Batch size for train validation and test dataloaders.
+
+    data_domain : {"general-pt-br"}, default="general-pt-br"
+        Set the data domain for this probing task.
+
+        - `general-pt-br`: General PT-br data domain from PT-br Wikipedia.
+
+    output_dir : str, default="probing_datasets"
+        Output directory for probing datasets.
+
+    metrics_fn : base.ValidationFunctionType or None, default=None
+        Validation function to compute extra scores from training, validation and test batches.
+        As the first argument, it must receive a logit tensor of shape (batch_size, output_dim),
+        and as the second argument a ground-truth label tensor of shape (batch_size,).
+        The return value must always be a dictionary (or any other valid mapping) mapping the
+        metric name and its computed value.
+        If None, no extra validation metrics will be computed, and only the loss values will
+        be returned as result.
+
+    show_progress_bar : bool, default=True
+        If True, show progress bar while downloading probing datasets.
+
+    check_cached : bool, default=True
+        If True, check if probing datasets are available locally before downloading.
+
+    clean_compressed_files : bool, default=True
+        If True, delete compressed probing datasets after decompression.
+
+    check_resource_hash : bool, default=True
+        If True, verify downloaded probing dataset hash.
+
+    timeout_limit_seconds : int, default=10
+        Maximum time limit, in seconds, to try to download the probing dataset.
+    """
 
     def __init__(
         self,
@@ -185,7 +228,52 @@ class ProbingTaskWordContent(base.BaseProbingTask):
 
 
 class ProbingTaskBigramShift(base.BaseProbingTask):
-    """TODO"""
+    """Preconfigured Bigram Shift probing task.
+
+    Parameters
+    ----------
+    fn_raw_data_to_tensor : t.Callable[[list[str], list[int]], t.Any]
+        Function used to transform raw data into PyTorch tensors. The output of this function
+        will be feed directly into a `torch.utils.data.DataLoader`.
+
+    batch_size_train : int, default=128
+        Batch size for train dataloader.
+
+    batch_size_eval : int, default=256
+        Batch size for train validation and test dataloaders.
+
+    data_domain : {"general-pt-br"}, default="general-pt-br"
+        Set the data domain for this probing task.
+
+        - `general-pt-br`: General PT-br data domain from PT-br Wikipedia.
+
+    output_dir : str, default="probing_datasets"
+        Output directory for probing datasets.
+
+    metrics_fn : base.ValidationFunctionType or None, default=None
+        Validation function to compute extra scores from training, validation and test batches.
+        As the first argument, it must receive a logit tensor of shape (batch_size, output_dim),
+        and as the second argument a ground-truth label tensor of shape (batch_size,).
+        The return value must always be a dictionary (or any other valid mapping) mapping the
+        metric name and its computed value.
+        If None, no extra validation metrics will be computed, and only the loss values will
+        be returned as result.
+
+    show_progress_bar : bool, default=True
+        If True, show progress bar while downloading probing datasets.
+
+    check_cached : bool, default=True
+        If True, check if probing datasets are available locally before downloading.
+
+    clean_compressed_files : bool, default=True
+        If True, delete compressed probing datasets after decompression.
+
+    check_resource_hash : bool, default=True
+        If True, verify downloaded probing dataset hash.
+
+    timeout_limit_seconds : int, default=10
+        Maximum time limit, in seconds, to try to download the probing dataset.
+    """
 
     def __init__(
         self,
@@ -230,7 +318,52 @@ class ProbingTaskBigramShift(base.BaseProbingTask):
 
 
 class ProbingTaskTreeDepth(base.BaseProbingTask):
-    """TODO"""
+    """Preconfigured Tree Depth probing task.
+
+    Parameters
+    ----------
+    fn_raw_data_to_tensor : t.Callable[[list[str], list[int]], t.Any]
+        Function used to transform raw data into PyTorch tensors. The output of this function
+        will be feed directly into a `torch.utils.data.DataLoader`.
+
+    batch_size_train : int, default=128
+        Batch size for train dataloader.
+
+    batch_size_eval : int, default=256
+        Batch size for train validation and test dataloaders.
+
+    data_domain : {"general-pt-br"}, default="general-pt-br"
+        Set the data domain for this probing task.
+
+        - `general-pt-br`: General PT-br data domain from PT-br Wikipedia.
+
+    output_dir : str, default="probing_datasets"
+        Output directory for probing datasets.
+
+    metrics_fn : base.ValidationFunctionType or None, default=None
+        Validation function to compute extra scores from training, validation and test batches.
+        As the first argument, it must receive a logit tensor of shape (batch_size, output_dim),
+        and as the second argument a ground-truth label tensor of shape (batch_size,).
+        The return value must always be a dictionary (or any other valid mapping) mapping the
+        metric name and its computed value.
+        If None, no extra validation metrics will be computed, and only the loss values will
+        be returned as result.
+
+    show_progress_bar : bool, default=True
+        If True, show progress bar while downloading probing datasets.
+
+    check_cached : bool, default=True
+        If True, check if probing datasets are available locally before downloading.
+
+    clean_compressed_files : bool, default=True
+        If True, delete compressed probing datasets after decompression.
+
+    check_resource_hash : bool, default=True
+        If True, verify downloaded probing dataset hash.
+
+    timeout_limit_seconds : int, default=10
+        Maximum time limit, in seconds, to try to download the probing dataset.
+    """
 
     def __init__(
         self,
@@ -275,7 +408,52 @@ class ProbingTaskTreeDepth(base.BaseProbingTask):
 
 
 class ProbingTaskTopConstituent(base.BaseProbingTask):
-    """TODO"""
+    """Preconfigured Top Constituent probing task.
+
+    Parameters
+    ----------
+    fn_raw_data_to_tensor : t.Callable[[list[str], list[int]], t.Any]
+        Function used to transform raw data into PyTorch tensors. The output of this function
+        will be feed directly into a `torch.utils.data.DataLoader`.
+
+    batch_size_train : int, default=128
+        Batch size for train dataloader.
+
+    batch_size_eval : int, default=256
+        Batch size for train validation and test dataloaders.
+
+    data_domain : {"general-pt-br"}, default="general-pt-br"
+        Set the data domain for this probing task.
+
+        - `general-pt-br`: General PT-br data domain from PT-br Wikipedia.
+
+    output_dir : str, default="probing_datasets"
+        Output directory for probing datasets.
+
+    metrics_fn : base.ValidationFunctionType or None, default=None
+        Validation function to compute extra scores from training, validation and test batches.
+        As the first argument, it must receive a logit tensor of shape (batch_size, output_dim),
+        and as the second argument a ground-truth label tensor of shape (batch_size,).
+        The return value must always be a dictionary (or any other valid mapping) mapping the
+        metric name and its computed value.
+        If None, no extra validation metrics will be computed, and only the loss values will
+        be returned as result.
+
+    show_progress_bar : bool, default=True
+        If True, show progress bar while downloading probing datasets.
+
+    check_cached : bool, default=True
+        If True, check if probing datasets are available locally before downloading.
+
+    clean_compressed_files : bool, default=True
+        If True, delete compressed probing datasets after decompression.
+
+    check_resource_hash : bool, default=True
+        If True, verify downloaded probing dataset hash.
+
+    timeout_limit_seconds : int, default=10
+        Maximum time limit, in seconds, to try to download the probing dataset.
+    """
 
     def __init__(
         self,
@@ -320,7 +498,52 @@ class ProbingTaskTopConstituent(base.BaseProbingTask):
 
 
 class ProbingTaskPastPresent(base.BaseProbingTask):
-    """TODO"""
+    """Preconfigured Past Present (or Sentence Tense) probing task.
+
+    Parameters
+    ----------
+    fn_raw_data_to_tensor : t.Callable[[list[str], list[int]], t.Any]
+        Function used to transform raw data into PyTorch tensors. The output of this function
+        will be feed directly into a `torch.utils.data.DataLoader`.
+
+    batch_size_train : int, default=128
+        Batch size for train dataloader.
+
+    batch_size_eval : int, default=256
+        Batch size for train validation and test dataloaders.
+
+    data_domain : {"general-pt-br"}, default="general-pt-br"
+        Set the data domain for this probing task.
+
+        - `general-pt-br`: General PT-br data domain from PT-br Wikipedia.
+
+    output_dir : str, default="probing_datasets"
+        Output directory for probing datasets.
+
+    metrics_fn : base.ValidationFunctionType or None, default=None
+        Validation function to compute extra scores from training, validation and test batches.
+        As the first argument, it must receive a logit tensor of shape (batch_size, output_dim),
+        and as the second argument a ground-truth label tensor of shape (batch_size,).
+        The return value must always be a dictionary (or any other valid mapping) mapping the
+        metric name and its computed value.
+        If None, no extra validation metrics will be computed, and only the loss values will
+        be returned as result.
+
+    show_progress_bar : bool, default=True
+        If True, show progress bar while downloading probing datasets.
+
+    check_cached : bool, default=True
+        If True, check if probing datasets are available locally before downloading.
+
+    clean_compressed_files : bool, default=True
+        If True, delete compressed probing datasets after decompression.
+
+    check_resource_hash : bool, default=True
+        If True, verify downloaded probing dataset hash.
+
+    timeout_limit_seconds : int, default=10
+        Maximum time limit, in seconds, to try to download the probing dataset.
+    """
 
     def __init__(
         self,
@@ -365,7 +588,52 @@ class ProbingTaskPastPresent(base.BaseProbingTask):
 
 
 class ProbingTaskSubjectNumber(base.BaseProbingTask):
-    """TODO"""
+    """Preconfigured Subject Number probing task.
+
+    Parameters
+    ----------
+    fn_raw_data_to_tensor : t.Callable[[list[str], list[int]], t.Any]
+        Function used to transform raw data into PyTorch tensors. The output of this function
+        will be feed directly into a `torch.utils.data.DataLoader`.
+
+    batch_size_train : int, default=128
+        Batch size for train dataloader.
+
+    batch_size_eval : int, default=256
+        Batch size for train validation and test dataloaders.
+
+    data_domain : {"general-pt-br"}, default="general-pt-br"
+        Set the data domain for this probing task.
+
+        - `general-pt-br`: General PT-br data domain from PT-br Wikipedia.
+
+    output_dir : str, default="probing_datasets"
+        Output directory for probing datasets.
+
+    metrics_fn : base.ValidationFunctionType or None, default=None
+        Validation function to compute extra scores from training, validation and test batches.
+        As the first argument, it must receive a logit tensor of shape (batch_size, output_dim),
+        and as the second argument a ground-truth label tensor of shape (batch_size,).
+        The return value must always be a dictionary (or any other valid mapping) mapping the
+        metric name and its computed value.
+        If None, no extra validation metrics will be computed, and only the loss values will
+        be returned as result.
+
+    show_progress_bar : bool, default=True
+        If True, show progress bar while downloading probing datasets.
+
+    check_cached : bool, default=True
+        If True, check if probing datasets are available locally before downloading.
+
+    clean_compressed_files : bool, default=True
+        If True, delete compressed probing datasets after decompression.
+
+    check_resource_hash : bool, default=True
+        If True, verify downloaded probing dataset hash.
+
+    timeout_limit_seconds : int, default=10
+        Maximum time limit, in seconds, to try to download the probing dataset.
+    """
 
     def __init__(
         self,
@@ -410,7 +678,52 @@ class ProbingTaskSubjectNumber(base.BaseProbingTask):
 
 
 class ProbingTaskObjectNumber(base.BaseProbingTask):
-    """TODO"""
+    """Preconfigured Object Number probing task.
+
+    Parameters
+    ----------
+    fn_raw_data_to_tensor : t.Callable[[list[str], list[int]], t.Any]
+        Function used to transform raw data into PyTorch tensors. The output of this function
+        will be feed directly into a `torch.utils.data.DataLoader`.
+
+    batch_size_train : int, default=128
+        Batch size for train dataloader.
+
+    batch_size_eval : int, default=256
+        Batch size for train validation and test dataloaders.
+
+    data_domain : {"general-pt-br"}, default="general-pt-br"
+        Set the data domain for this probing task.
+
+        - `general-pt-br`: General PT-br data domain from PT-br Wikipedia.
+
+    output_dir : str, default="probing_datasets"
+        Output directory for probing datasets.
+
+    metrics_fn : base.ValidationFunctionType or None, default=None
+        Validation function to compute extra scores from training, validation and test batches.
+        As the first argument, it must receive a logit tensor of shape (batch_size, output_dim),
+        and as the second argument a ground-truth label tensor of shape (batch_size,).
+        The return value must always be a dictionary (or any other valid mapping) mapping the
+        metric name and its computed value.
+        If None, no extra validation metrics will be computed, and only the loss values will
+        be returned as result.
+
+    show_progress_bar : bool, default=True
+        If True, show progress bar while downloading probing datasets.
+
+    check_cached : bool, default=True
+        If True, check if probing datasets are available locally before downloading.
+
+    clean_compressed_files : bool, default=True
+        If True, delete compressed probing datasets after decompression.
+
+    check_resource_hash : bool, default=True
+        If True, verify downloaded probing dataset hash.
+
+    timeout_limit_seconds : int, default=10
+        Maximum time limit, in seconds, to try to download the probing dataset.
+    """
 
     def __init__(
         self,
@@ -455,7 +768,52 @@ class ProbingTaskObjectNumber(base.BaseProbingTask):
 
 
 class ProbingTaskSOMO(base.BaseProbingTask):
-    """TODO"""
+    """Preconfigured Sentence Odd Man Out (SOMO) probing task.
+
+    Parameters
+    ----------
+    fn_raw_data_to_tensor : t.Callable[[list[str], list[int]], t.Any]
+        Function used to transform raw data into PyTorch tensors. The output of this function
+        will be feed directly into a `torch.utils.data.DataLoader`.
+
+    batch_size_train : int, default=128
+        Batch size for train dataloader.
+
+    batch_size_eval : int, default=256
+        Batch size for train validation and test dataloaders.
+
+    data_domain : {"general-pt-br"}, default="general-pt-br"
+        Set the data domain for this probing task.
+
+        - `general-pt-br`: General PT-br data domain from PT-br Wikipedia.
+
+    output_dir : str, default="probing_datasets"
+        Output directory for probing datasets.
+
+    metrics_fn : base.ValidationFunctionType or None, default=None
+        Validation function to compute extra scores from training, validation and test batches.
+        As the first argument, it must receive a logit tensor of shape (batch_size, output_dim),
+        and as the second argument a ground-truth label tensor of shape (batch_size,).
+        The return value must always be a dictionary (or any other valid mapping) mapping the
+        metric name and its computed value.
+        If None, no extra validation metrics will be computed, and only the loss values will
+        be returned as result.
+
+    show_progress_bar : bool, default=True
+        If True, show progress bar while downloading probing datasets.
+
+    check_cached : bool, default=True
+        If True, check if probing datasets are available locally before downloading.
+
+    clean_compressed_files : bool, default=True
+        If True, delete compressed probing datasets after decompression.
+
+    check_resource_hash : bool, default=True
+        If True, verify downloaded probing dataset hash.
+
+    timeout_limit_seconds : int, default=10
+        Maximum time limit, in seconds, to try to download the probing dataset.
+    """
 
     def __init__(
         self,
@@ -500,7 +858,52 @@ class ProbingTaskSOMO(base.BaseProbingTask):
 
 
 class ProbingTaskCoordinationInversion(base.BaseProbingTask):
-    """TODO"""
+    """Preconfigured Coordination Inversion probing task.
+
+    Parameters
+    ----------
+    fn_raw_data_to_tensor : t.Callable[[list[str], list[int]], t.Any]
+        Function used to transform raw data into PyTorch tensors. The output of this function
+        will be feed directly into a `torch.utils.data.DataLoader`.
+
+    batch_size_train : int, default=128
+        Batch size for train dataloader.
+
+    batch_size_eval : int, default=256
+        Batch size for train validation and test dataloaders.
+
+    data_domain : {"general-pt-br"}, default="general-pt-br"
+        Set the data domain for this probing task.
+
+        - `general-pt-br`: General PT-br data domain from PT-br Wikipedia.
+
+    output_dir : str, default="probing_datasets"
+        Output directory for probing datasets.
+
+    metrics_fn : base.ValidationFunctionType or None, default=None
+        Validation function to compute extra scores from training, validation and test batches.
+        As the first argument, it must receive a logit tensor of shape (batch_size, output_dim),
+        and as the second argument a ground-truth label tensor of shape (batch_size,).
+        The return value must always be a dictionary (or any other valid mapping) mapping the
+        metric name and its computed value.
+        If None, no extra validation metrics will be computed, and only the loss values will
+        be returned as result.
+
+    show_progress_bar : bool, default=True
+        If True, show progress bar while downloading probing datasets.
+
+    check_cached : bool, default=True
+        If True, check if probing datasets are available locally before downloading.
+
+    clean_compressed_files : bool, default=True
+        If True, delete compressed probing datasets after decompression.
+
+    check_resource_hash : bool, default=True
+        If True, verify downloaded probing dataset hash.
+
+    timeout_limit_seconds : int, default=10
+        Maximum time limit, in seconds, to try to download the probing dataset.
+    """
 
     def __init__(
         self,

@@ -18,6 +18,7 @@ __all__ = [
     "ProbingTaskCoordinationInversion",
     "ProbingTaskWordContent",
     "ProbingTaskTopConstituent",
+    "ProbingTaskCustom",
 ]
 
 
@@ -41,7 +42,7 @@ class ProbingTaskSentenceLength(base.BaseProbingTask):
     data_domain : {"general-pt-br"}, default="general-pt-br"
         Set the data domain for this probing task.
 
-        - `general-pt-br`: General PT-br data domain from Portuguese Wikipedia.
+        - `general-pt-br`: General PT-br data domain from PT-br Wikipedia.
 
     output_dir : str, default="probing_datasets"
         Output directory for probing datasets.

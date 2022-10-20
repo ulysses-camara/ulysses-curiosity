@@ -1,5 +1,7 @@
 """Probing task classes."""
 import typing as t
+import inspect
+import sys
 
 import torch
 import torch.nn
@@ -19,7 +21,21 @@ __all__ = [
     "ProbingTaskWordContent",
     "ProbingTaskTopConstituent",
     "ProbingTaskCustom",
+    "get_available_preconfigured_tasks",
 ]
+
+
+def get_available_preconfigured_tasks() -> tuple[tuple[str, base.BaseProbingTask], ...]:
+    """Return all available preconfigured probing task classes."""
+    tasks = tuple(
+        inspect.getmembers(
+            sys.modules[__name__],
+            predicate=lambda x: inspect.isclass(x)
+            and issubclass(x, base.BaseProbingTask)
+            and x.__name__ != "ProbingTaskCustom",
+        )
+    )
+    return tasks
 
 
 class ProbingTaskSentenceLength(base.BaseProbingTask):

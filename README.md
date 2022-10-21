@@ -64,15 +64,15 @@ The rationale behind this method is that, since the probing task is related to t
 
 This frameworks provides all resources needed to train and validate your probing task. We support pretrained [PyTorch](https://pytorch.org/) (`torch.nn.Module`) and [Huggingface Transformer](https://huggingface.co/docs/transformers/index) models. In order to properly set up and train your probing tasks, you'll need:
 
-- A custom probing dataset (preconfigured probing tasks is a work in progress);
+- A probing dataset  &mdash; either from a [preconfigured probing task](#preconfigured-probing-tasks) or your own (a probing task is by definition a *simple classification problem with interpretable results*);
 - A pretrained model to probe; and
-- A probing model architecture in mind (we provide some simple suggestions).
+- A probing model architecture in mind (we provide some simple suggestions, such as MLPs).
 
 With these basic ingredients, the setup using Curiosity is as follows:
 
 1. Load a pretrained model;
 2. Load a probing dataset in dataloaders (`torch.utils.data.DataLoader`);
-3. Set up a Task (Dataloaders + loss function + validation metrics) with `curiosidade.ProbingTaskCustom`;
+3. Set up a Task (probing dataloaders + loss function + validation metrics) either preconfigured or with `curiosidade.ProbingTaskCustom`;
 4. Set up your Probing Model (any `torch.nn.Module` will do);
 5. Combine your Probing Model and your Task with a `ProbingModelFactory`;
 6. Attach probers into your pretrained model by using `ProbingModelFactory.attach_probers`;

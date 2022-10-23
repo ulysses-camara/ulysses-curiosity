@@ -71,7 +71,8 @@ class ProbingTaskSentenceLength(base.BaseProbingTask):
     data_domain : {"wikipedia-ptbr"}, default="wikipedia-ptbr"
         Set the data domain for this probing task.
 
-        - `wikipedia-ptbr`: General PT-br data domain from PT-br Wikipedia.
+        - `wikipedia-ptbr`: General PT-br data domain from PT-br Wikipedia;
+        - `sp-court-cases`: São Paulo (Brazil) Court cases.
 
     output_dir : str, default="probing_datasets"
         Output directory for probing datasets.
@@ -120,6 +121,9 @@ class ProbingTaskSentenceLength(base.BaseProbingTask):
         if data_domain == "wikipedia-ptbr":
             resource_name = "dataset_wikipedia_ptbr_sentence_length_v1"
 
+        if data_domain == "sp-court-cases":
+            resource_name = "dataset_sp_court_cases_sentence_length_v1"
+
         resource_uris = base.get_resource_from_ulysses_fetcher(
             resource_name=resource_name,
             output_dir=output_dir,
@@ -161,7 +165,8 @@ class ProbingTaskWordContent(base.BaseProbingTask):
     data_domain : {"wikipedia-ptbr"}, default="wikipedia-ptbr"
         Set the data domain for this probing task.
 
-        - `wikipedia-ptbr`: General PT-br data domain from PT-br Wikipedia.
+        - `wikipedia-ptbr`: General PT-br data domain from PT-br Wikipedia;
+        - `sp-court-cases`: São Paulo (Brazil) Court cases.
 
     output_dir : str, default="probing_datasets"
         Output directory for probing datasets.
@@ -210,6 +215,9 @@ class ProbingTaskWordContent(base.BaseProbingTask):
         if data_domain == "wikipedia-ptbr":
             resource_name = "dataset_wikipedia_ptbr_word_content_v1"
 
+        if data_domain == "sp-court-cases":
+            resource_name = "dataset_sp_court_cases_word_content_v1"
+
         resource_uris = base.get_resource_from_ulysses_fetcher(
             resource_name=resource_name,
             output_dir=output_dir,
@@ -251,7 +259,8 @@ class ProbingTaskBigramShift(base.BaseProbingTask):
     data_domain : {"wikipedia-ptbr"}, default="wikipedia-ptbr"
         Set the data domain for this probing task.
 
-        - `wikipedia-ptbr`: General PT-br data domain from PT-br Wikipedia.
+        - `wikipedia-ptbr`: General PT-br data domain from PT-br Wikipedia;
+        - `sp-court-cases`: São Paulo (Brazil) Court cases.
 
     output_dir : str, default="probing_datasets"
         Output directory for probing datasets.
@@ -300,6 +309,9 @@ class ProbingTaskBigramShift(base.BaseProbingTask):
         if data_domain == "wikipedia-ptbr":
             resource_name = "dataset_wikipedia_ptbr_bigram_shift_v1"
 
+        if data_domain == "sp-court-cases":
+            resource_name = "dataset_sp_court_cases_bigram_shift_v1"
+
         resource_uris = base.get_resource_from_ulysses_fetcher(
             resource_name=resource_name,
             output_dir=output_dir,
@@ -341,7 +353,8 @@ class ProbingTaskTreeDepth(base.BaseProbingTask):
     data_domain : {"wikipedia-ptbr"}, default="wikipedia-ptbr"
         Set the data domain for this probing task.
 
-        - `wikipedia-ptbr`: General PT-br data domain from PT-br Wikipedia.
+        - `wikipedia-ptbr`: General PT-br data domain from PT-br Wikipedia;
+        - `sp-court-cases`: São Paulo (Brazil) Court cases.
 
     output_dir : str, default="probing_datasets"
         Output directory for probing datasets.
@@ -390,6 +403,9 @@ class ProbingTaskTreeDepth(base.BaseProbingTask):
         if data_domain == "wikipedia-ptbr":
             resource_name = "dataset_wikipedia_ptbr_tree_depth_v1"
 
+        if data_domain == "sp-court-cases":
+            resource_name = "dataset_sp_court_cases_tree_depth_v1"
+
         resource_uris = base.get_resource_from_ulysses_fetcher(
             resource_name=resource_name,
             output_dir=output_dir,
@@ -431,7 +447,8 @@ class ProbingTaskTopConstituent(base.BaseProbingTask):
     data_domain : {"wikipedia-ptbr"}, default="wikipedia-ptbr"
         Set the data domain for this probing task.
 
-        - `wikipedia-ptbr`: General PT-br data domain from PT-br Wikipedia.
+        - `wikipedia-ptbr`: General PT-br data domain from PT-br Wikipedia;
+        - `sp-court-cases`: São Paulo (Brazil) Court cases.
 
     output_dir : str, default="probing_datasets"
         Output directory for probing datasets.
@@ -480,6 +497,9 @@ class ProbingTaskTopConstituent(base.BaseProbingTask):
         if data_domain == "wikipedia-ptbr":
             resource_name = "dataset_wikipedia_ptbr_top_constituents_v1"
 
+        if data_domain == "sp-court-cases":
+            resource_name = "dataset_sp_court_cases_top_constituents_v1"
+
         resource_uris = base.get_resource_from_ulysses_fetcher(
             resource_name=resource_name,
             output_dir=output_dir,
@@ -521,7 +541,8 @@ class ProbingTaskPastPresent(base.BaseProbingTask):
     data_domain : {"wikipedia-ptbr"}, default="wikipedia-ptbr"
         Set the data domain for this probing task.
 
-        - `wikipedia-ptbr`: General PT-br data domain from PT-br Wikipedia.
+        - `wikipedia-ptbr`: General PT-br data domain from PT-br Wikipedia;
+        - `sp-court-cases`: São Paulo (Brazil) Court cases.
 
     output_dir : str, default="probing_datasets"
         Output directory for probing datasets.
@@ -570,6 +591,9 @@ class ProbingTaskPastPresent(base.BaseProbingTask):
         if data_domain == "wikipedia-ptbr":
             resource_name = "dataset_wikipedia_ptbr_past_present_v1"
 
+        if data_domain == "sp-court-cases":
+            resource_name = "dataset_sp_court_cases_past_present_v1"
+
         resource_uris = base.get_resource_from_ulysses_fetcher(
             resource_name=resource_name,
             output_dir=output_dir,
@@ -611,7 +635,8 @@ class ProbingTaskSubjectNumber(base.BaseProbingTask):
     data_domain : {"wikipedia-ptbr"}, default="wikipedia-ptbr"
         Set the data domain for this probing task.
 
-        - `wikipedia-ptbr`: General PT-br data domain from PT-br Wikipedia.
+        - `wikipedia-ptbr`: General PT-br data domain from PT-br Wikipedia;
+        - `sp-court-cases`: São Paulo (Brazil) Court cases.
 
     output_dir : str, default="probing_datasets"
         Output directory for probing datasets.
@@ -660,6 +685,9 @@ class ProbingTaskSubjectNumber(base.BaseProbingTask):
         if data_domain == "wikipedia-ptbr":
             resource_name = "dataset_wikipedia_ptbr_subj_number_v1"
 
+        if data_domain == "sp-court-cases":
+            resource_name = "dataset_sp_court_cases_subj_number_v1"
+
         resource_uris = base.get_resource_from_ulysses_fetcher(
             resource_name=resource_name,
             output_dir=output_dir,
@@ -701,7 +729,8 @@ class ProbingTaskObjectNumber(base.BaseProbingTask):
     data_domain : {"wikipedia-ptbr"}, default="wikipedia-ptbr"
         Set the data domain for this probing task.
 
-        - `wikipedia-ptbr`: General PT-br data domain from PT-br Wikipedia.
+        - `wikipedia-ptbr`: General PT-br data domain from PT-br Wikipedia;
+        - `sp-court-cases`: São Paulo (Brazil) Court cases.
 
     output_dir : str, default="probing_datasets"
         Output directory for probing datasets.
@@ -750,6 +779,9 @@ class ProbingTaskObjectNumber(base.BaseProbingTask):
         if data_domain == "wikipedia-ptbr":
             resource_name = "dataset_wikipedia_ptbr_obj_number_v1"
 
+        if data_domain == "sp-court-cases":
+            resource_name = "dataset_sp_court_cases_obj_number_v1"
+
         resource_uris = base.get_resource_from_ulysses_fetcher(
             resource_name=resource_name,
             output_dir=output_dir,
@@ -791,7 +823,8 @@ class ProbingTaskSOMO(base.BaseProbingTask):
     data_domain : {"wikipedia-ptbr"}, default="wikipedia-ptbr"
         Set the data domain for this probing task.
 
-        - `wikipedia-ptbr`: General PT-br data domain from PT-br Wikipedia.
+        - `wikipedia-ptbr`: General PT-br data domain from PT-br Wikipedia;
+        - `sp-court-cases`: São Paulo (Brazil) Court cases.
 
     output_dir : str, default="probing_datasets"
         Output directory for probing datasets.
@@ -840,6 +873,9 @@ class ProbingTaskSOMO(base.BaseProbingTask):
         if data_domain == "wikipedia-ptbr":
             resource_name = "dataset_wikipedia_ptbr_odd_man_out_v1"
 
+        if data_domain == "sp-court-cases":
+            resource_name = "dataset_sp_court_cases_odd_man_out_v1"
+
         resource_uris = base.get_resource_from_ulysses_fetcher(
             resource_name=resource_name,
             output_dir=output_dir,
@@ -881,7 +917,8 @@ class ProbingTaskCoordinationInversion(base.BaseProbingTask):
     data_domain : {"wikipedia-ptbr"}, default="wikipedia-ptbr"
         Set the data domain for this probing task.
 
-        - `wikipedia-ptbr`: General PT-br data domain from PT-br Wikipedia.
+        - `wikipedia-ptbr`: General PT-br data domain from PT-br Wikipedia;
+        - `sp-court-cases`: São Paulo (Brazil) Court cases.
 
     output_dir : str, default="probing_datasets"
         Output directory for probing datasets.
@@ -929,6 +966,9 @@ class ProbingTaskCoordinationInversion(base.BaseProbingTask):
 
         if data_domain == "wikipedia-ptbr":
             resource_name = "dataset_wikipedia_ptbr_coordination_inversion_v1"
+
+        if data_domain == "sp-court-cases":
+            resource_name = "dataset_sp_court_cases_coordination_inversion_v1"
 
         resource_uris = base.get_resource_from_ulysses_fetcher(
             resource_name=resource_name,

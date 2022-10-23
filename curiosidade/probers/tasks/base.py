@@ -67,6 +67,9 @@ class BaseProbingTask(abc.ABC):
     task_name : str, default="unnamed_task"
         Probing task name.
 
+    data_domain : str or None, default=None
+        Probing data domain.
+
     task_type : {'classification', 'regression', 'mixed'}, default='classification'
         Type of task. Used only as reference, since it is the `loss_fn` that dictates
         how exactly the labels must be formatted.
@@ -91,6 +94,7 @@ class BaseProbingTask(abc.ABC):
         metrics_fn: t.Optional[ValidationFunctionType] = None,
         fn_raw_data_to_tensor: t.Optional[t.Callable[[list[str], list[int]], t.Any]] = None,
         task_name: str = "unnamed_task",
+        data_domain: t.Optional[str] = None,
         task_type: t.Literal["classification", "regression", "mixed"] = "classification",
         batch_size_train: int = 64,
         batch_size_eval: int = 128,
@@ -101,11 +105,15 @@ class BaseProbingTask(abc.ABC):
                 "'classification', 'regression' or 'mixed'."
             )
 
-        self.task_name = task_name
         self.metrics_fn = metrics_fn
         self.fn_raw_data_to_tensor = fn_raw_data_to_tensor
         self.loss_fn = loss_fn
         self.task_type = task_type
+
+        self.task_name = task_name
+
+        if data_domain:
+            self.task_name = f"{self.task_name}_{data_domain}"
 
         dl_train: DataLoaderType
         dl_eval: t.Optional[DataLoaderType]
@@ -117,7 +125,7 @@ class BaseProbingTask(abc.ABC):
 
         elif isinstance(labels_uri_or_map, (str, pathlib.Path)):
             with open(labels_uri_or_map, "r", encoding="utf-8") as f_in:
-                labels = json.load(f_in)[self.task_name]
+                labels = json.load(f_in)[task_name]
 
             self.labels = {cls: ind for ind, cls in enumerate(labels)}
 

@@ -1038,16 +1038,16 @@ class ProbingTaskCustom(base.BaseProbingTask):
     labels_uri_or_map : str or t.Sequence[str] or dict[str, int] or None, default=None
         Map labels to indices.
 
-        If str, assume it is an URI to a JSON file containing the mapping;
-        If sequence, assume that the sequence[i] corresponds to the `i`-th label;
-        If dict, assume that dict[label] = index;
-        If None, assume that labels are integers ranging from `0` to ``output_dim`` if \
-                ``output_dim >= 2``, else [0, 1].
+        - If str, assume it is an URI to a JSON file containing the mapping;
+        - If sequence, assume that the sequence[i] corresponds to the `i`-th label;
+        - If dict, assume that dict[label] = index;
+        - If None, assume that labels are integers ranging from `0` to ``output_dim`` if \
+          ``output_dim >= 2``, else [0, 1].
 
-    task_name : str, default='unnamed_task'
+    task_name : str, default="unnamed_task"
         Probing task name.
 
-    task_type : {'classification', 'regression', 'mixed'}, default='classification'
+    task_type : {"classification", "regression", "mixed"}, default="classification"
         Type of task. Used only as reference, since it is the `loss_fn` that dictates
         how exactly the labels must be formatted.
     """

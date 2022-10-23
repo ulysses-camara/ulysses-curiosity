@@ -78,7 +78,7 @@ class BaseProbingTask(abc.ABC):
         Batch size for eval and test dataloader (if any).
     """
 
-    VALID_DATA_DOMAINS: t.Final[frozenset[str]] = frozenset(("general-pt-br",))
+    VALID_DATA_DOMAINS: t.Final[frozenset[str]] = frozenset(("wikipedia-ptbr",))
 
     def __init__(
         self,

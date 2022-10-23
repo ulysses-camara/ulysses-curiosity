@@ -501,7 +501,7 @@ def metrics_fn(logits, target):
 task = curiosidade.ProbingTaskSentenceLength(
     fn_raw_data_to_tensor=fn_text_to_tensor_for_pytorch,
     metrics_fn=metrics_fn,
-    data_domain="general-pt-br",  # PT-br wikipedia probing dataset
+    data_domain="wikipedia-ptbr",  # PT-br wikipedia probing dataset
     output_dir="probing_datasets",  # Directory to store downloaded probing datasets
     batch_size_train=128,
     batch_size_eval=256,

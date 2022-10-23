@@ -31,6 +31,7 @@ __all__ = [
     "ProbingTaskTopConstituent",
     "ProbingTaskCustom",
     "get_available_preconfigured_tasks",
+    "get_available_data_domains",
 ]
 
 
@@ -45,6 +46,11 @@ def get_available_preconfigured_tasks() -> tuple[tuple[str, base.BaseProbingTask
         )
     )
     return tasks
+
+
+def get_available_data_domains() -> tuple[str, ...]:
+    """Return all available probing data domains."""
+    return tuple(base.BaseProbingTask.VALID_DATA_DOMAINS)
 
 
 class ProbingTaskSentenceLength(base.BaseProbingTask):

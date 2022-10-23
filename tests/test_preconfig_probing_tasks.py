@@ -14,18 +14,28 @@ import curiosidade
 
 
 @pytest.mark.parametrize(
-    "fn_custom_probing_task,num_classes",
+    "fn_custom_probing_task,num_classes,data_domain",
     (
-        (curiosidade.ProbingTaskSentenceLength, 6),
-        (curiosidade.ProbingTaskWordContent, 1000),
-        (curiosidade.ProbingTaskBigramShift, 2),
-        (curiosidade.ProbingTaskTreeDepth, 6),
-        (curiosidade.ProbingTaskTopConstituent, 20),
-        (curiosidade.ProbingTaskPastPresent, 2),
-        (curiosidade.ProbingTaskSubjectNumber, 2),
-        (curiosidade.ProbingTaskObjectNumber, 2),
-        (curiosidade.ProbingTaskSOMO, 2),
-        (curiosidade.ProbingTaskCoordinationInversion, 2),
+        (curiosidade.ProbingTaskSentenceLength, 6, "wikipedia-ptbr"),
+        (curiosidade.ProbingTaskWordContent, 1000, "wikipedia-ptbr"),
+        (curiosidade.ProbingTaskBigramShift, 2, "wikipedia-ptbr"),
+        (curiosidade.ProbingTaskTreeDepth, 6, "wikipedia-ptbr"),
+        (curiosidade.ProbingTaskTopConstituent, 20, "wikipedia-ptbr"),
+        (curiosidade.ProbingTaskPastPresent, 2, "wikipedia-ptbr"),
+        (curiosidade.ProbingTaskSubjectNumber, 2, "wikipedia-ptbr"),
+        (curiosidade.ProbingTaskObjectNumber, 2, "wikipedia-ptbr"),
+        (curiosidade.ProbingTaskSOMO, 2, "wikipedia-ptbr"),
+        (curiosidade.ProbingTaskCoordinationInversion, 2, "wikipedia-ptbr"),
+        (curiosidade.ProbingTaskSentenceLength, 5, "sp-court-cases"),
+        (curiosidade.ProbingTaskWordContent, 298, "sp-court-cases"),
+        (curiosidade.ProbingTaskBigramShift, 2, "sp-court-cases"),
+        (curiosidade.ProbingTaskTreeDepth, 4, "sp-court-cases"),
+        (curiosidade.ProbingTaskTopConstituent, 10, "sp-court-cases"),
+        (curiosidade.ProbingTaskPastPresent, 2, "sp-court-cases"),
+        (curiosidade.ProbingTaskSubjectNumber, 2, "sp-court-cases"),
+        (curiosidade.ProbingTaskObjectNumber, 2, "sp-court-cases"),
+        (curiosidade.ProbingTaskSOMO, 2, "sp-court-cases"),
+        (curiosidade.ProbingTaskCoordinationInversion, 2, "sp-court-cases"),
     ),
 )
 def test_custom_probing_task(
@@ -33,10 +43,10 @@ def test_custom_probing_task(
     fixture_pretrained_bertimbau_tokenizer: transformers.AutoTokenizer,
     fn_custom_probing_task: curiosidade.probers.tasks.base.BaseProbingTask,
     num_classes: int,
+    data_domain: str,
 ):
     torch.manual_seed(127)
     np.random.seed(89)
-    torch.use_deterministic_algorithms(True)
 
     ProbingModel = curiosidade.probers.utils.get_probing_model_for_sequences(
         hidden_layer_dims=[128],
@@ -90,7 +100,9 @@ def test_custom_probing_task(
     task = fn_custom_probing_task(
         fn_raw_data_to_tensor=fn_text_to_tensor_for_pytorch,
         metrics_fn=metrics_fn,
+        data_domain=data_domain,
         output_dir=os.path.join(os.path.dirname(__file__), "test_probing_datasets"),
+        check_cached=False,
     )
 
     probing_factory = curiosidade.ProbingModelFactory(
@@ -120,6 +132,6 @@ def test_custom_probing_task(
     ].tolist()
     f1_train = df_train.loc[df_train["metric_name"] == "f1", ("metric", "amax")].tolist()
 
-    assert loss_train[-1] <= loss_train[0] * 0.60
+    assert loss_train[-1] <= loss_train[0] * 0.85
     assert accuracy_train[-1] >= accuracy_train[0] * 1.10
     assert f1_train[-1] >= f1_train[0] * 1.10

@@ -107,7 +107,7 @@ def test_custom_probing_task(
 
     probing_factory = curiosidade.ProbingModelFactory(
         probing_model_fn=ProbingModel,
-        optim_fn=functools.partial(torch.optim.Adam, lr=0.025),
+        optim_fn=functools.partial(torch.optim.Adam, lr=0.005),
         task=task,
     )
 
@@ -119,7 +119,7 @@ def test_custom_probing_task(
         device="cpu",
     )
 
-    probing_results = prober_container.train(num_epochs=30)
+    probing_results = prober_container.train(num_epochs=60)
 
     df_train, _, _ = probing_results.to_pandas(
         aggregate_by=["batch_index"],

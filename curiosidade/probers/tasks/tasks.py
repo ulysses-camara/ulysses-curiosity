@@ -68,13 +68,13 @@ class ProbingTaskSentenceLength(base.BaseProbingTask):
     batch_size_eval : int, default=256
         Batch size for train validation and test dataloaders.
 
-    data_domain : {"wikipedia-ptbr"}, default="wikipedia-ptbr"
+    data_domain : str, default='wikipedia-ptbr'
         Set the data domain for this probing task.
 
         - `wikipedia-ptbr`: General PT-br data domain from PT-br Wikipedia;
         - `sp-court-cases`: São Paulo (Brazil) Court cases.
 
-    output_dir : str, default="probing_datasets"
+    output_dir : str, default='probing_datasets'
         Output directory for probing datasets.
 
     metrics_fn : base.ValidationFunctionType or None, default=None
@@ -163,13 +163,13 @@ class ProbingTaskWordContent(base.BaseProbingTask):
     batch_size_eval : int, default=256
         Batch size for train validation and test dataloaders.
 
-    data_domain : {"wikipedia-ptbr"}, default="wikipedia-ptbr"
+    data_domain : str, default='wikipedia-ptbr'
         Set the data domain for this probing task.
 
         - `wikipedia-ptbr`: General PT-br data domain from PT-br Wikipedia;
         - `sp-court-cases`: São Paulo (Brazil) Court cases.
 
-    output_dir : str, default="probing_datasets"
+    output_dir : str, default='probing_datasets'
         Output directory for probing datasets.
 
     metrics_fn : base.ValidationFunctionType or None, default=None
@@ -258,13 +258,13 @@ class ProbingTaskBigramShift(base.BaseProbingTask):
     batch_size_eval : int, default=256
         Batch size for train validation and test dataloaders.
 
-    data_domain : {"wikipedia-ptbr"}, default="wikipedia-ptbr"
+    data_domain : str, default='wikipedia-ptbr'
         Set the data domain for this probing task.
 
         - `wikipedia-ptbr`: General PT-br data domain from PT-br Wikipedia;
         - `sp-court-cases`: São Paulo (Brazil) Court cases.
 
-    output_dir : str, default="probing_datasets"
+    output_dir : str, default='probing_datasets'
         Output directory for probing datasets.
 
     metrics_fn : base.ValidationFunctionType or None, default=None
@@ -353,13 +353,13 @@ class ProbingTaskTreeDepth(base.BaseProbingTask):
     batch_size_eval : int, default=256
         Batch size for train validation and test dataloaders.
 
-    data_domain : {"wikipedia-ptbr"}, default="wikipedia-ptbr"
+    data_domain : str, default='wikipedia-ptbr'
         Set the data domain for this probing task.
 
         - `wikipedia-ptbr`: General PT-br data domain from PT-br Wikipedia;
         - `sp-court-cases`: São Paulo (Brazil) Court cases.
 
-    output_dir : str, default="probing_datasets"
+    output_dir : str, default='probing_datasets'
         Output directory for probing datasets.
 
     metrics_fn : base.ValidationFunctionType or None, default=None
@@ -448,13 +448,13 @@ class ProbingTaskTopConstituent(base.BaseProbingTask):
     batch_size_eval : int, default=256
         Batch size for train validation and test dataloaders.
 
-    data_domain : {"wikipedia-ptbr"}, default="wikipedia-ptbr"
+    data_domain : str, default='wikipedia-ptbr'
         Set the data domain for this probing task.
 
         - `wikipedia-ptbr`: General PT-br data domain from PT-br Wikipedia;
         - `sp-court-cases`: São Paulo (Brazil) Court cases.
 
-    output_dir : str, default="probing_datasets"
+    output_dir : str, default='probing_datasets'
         Output directory for probing datasets.
 
     metrics_fn : base.ValidationFunctionType or None, default=None
@@ -543,13 +543,13 @@ class ProbingTaskPastPresent(base.BaseProbingTask):
     batch_size_eval : int, default=256
         Batch size for train validation and test dataloaders.
 
-    data_domain : {"wikipedia-ptbr"}, default="wikipedia-ptbr"
+    data_domain : str, default='wikipedia-ptbr'
         Set the data domain for this probing task.
 
         - `wikipedia-ptbr`: General PT-br data domain from PT-br Wikipedia;
         - `sp-court-cases`: São Paulo (Brazil) Court cases.
 
-    output_dir : str, default="probing_datasets"
+    output_dir : str, default='probing_datasets'
         Output directory for probing datasets.
 
     metrics_fn : base.ValidationFunctionType or None, default=None
@@ -638,13 +638,13 @@ class ProbingTaskSubjectNumber(base.BaseProbingTask):
     batch_size_eval : int, default=256
         Batch size for train validation and test dataloaders.
 
-    data_domain : {"wikipedia-ptbr"}, default="wikipedia-ptbr"
+    data_domain : str, default='wikipedia-ptbr'
         Set the data domain for this probing task.
 
         - `wikipedia-ptbr`: General PT-br data domain from PT-br Wikipedia;
         - `sp-court-cases`: São Paulo (Brazil) Court cases.
 
-    output_dir : str, default="probing_datasets"
+    output_dir : str, default='probing_datasets'
         Output directory for probing datasets.
 
     metrics_fn : base.ValidationFunctionType or None, default=None
@@ -733,13 +733,13 @@ class ProbingTaskObjectNumber(base.BaseProbingTask):
     batch_size_eval : int, default=256
         Batch size for train validation and test dataloaders.
 
-    data_domain : {"wikipedia-ptbr"}, default="wikipedia-ptbr"
+    data_domain : str, default='wikipedia-ptbr'
         Set the data domain for this probing task.
 
         - `wikipedia-ptbr`: General PT-br data domain from PT-br Wikipedia;
         - `sp-court-cases`: São Paulo (Brazil) Court cases.
 
-    output_dir : str, default="probing_datasets"
+    output_dir : str, default='probing_datasets'
         Output directory for probing datasets.
 
     metrics_fn : base.ValidationFunctionType or None, default=None
@@ -828,13 +828,13 @@ class ProbingTaskSOMO(base.BaseProbingTask):
     batch_size_eval : int, default=256
         Batch size for train validation and test dataloaders.
 
-    data_domain : {"wikipedia-ptbr"}, default="wikipedia-ptbr"
+    data_domain : str, default='wikipedia-ptbr'
         Set the data domain for this probing task.
 
         - `wikipedia-ptbr`: General PT-br data domain from PT-br Wikipedia;
         - `sp-court-cases`: São Paulo (Brazil) Court cases.
 
-    output_dir : str, default="probing_datasets"
+    output_dir : str, default='probing_datasets'
         Output directory for probing datasets.
 
     metrics_fn : base.ValidationFunctionType or None, default=None
@@ -923,13 +923,13 @@ class ProbingTaskCoordinationInversion(base.BaseProbingTask):
     batch_size_eval : int, default=256
         Batch size for train validation and test dataloaders.
 
-    data_domain : {"wikipedia-ptbr"}, default="wikipedia-ptbr"
+    data_domain : str, default='wikipedia-ptbr'
         Set the data domain for this probing task.
 
         - `wikipedia-ptbr`: General PT-br data domain from PT-br Wikipedia;
         - `sp-court-cases`: São Paulo (Brazil) Court cases.
 
-    output_dir : str, default="probing_datasets"
+    output_dir : str, default='probing_datasets'
         Output directory for probing datasets.
 
     metrics_fn : base.ValidationFunctionType or None, default=None
@@ -1044,10 +1044,10 @@ class ProbingTaskCustom(base.BaseProbingTask):
         - If None, assume that labels are integers ranging from `0` to ``output_dim`` if \
           ``output_dim >= 2``, else [0, 1].
 
-    task_name : str, default="unnamed_task"
+    task_name : str, default='unnamed_task'
         Probing task name.
 
-    task_type : {"classification", "regression", "mixed"}, default="classification"
+    task_type : {'classification', 'regression', 'mixed'}, default='classification'
         Type of task. Used only as reference, since it is the `loss_fn` that dictates
         how exactly the labels must be formatted.
     """

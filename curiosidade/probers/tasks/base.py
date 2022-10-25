@@ -5,6 +5,7 @@ import abc
 import json
 import os
 import inspect
+import csv
 
 import torch
 import torch.nn
@@ -214,6 +215,8 @@ class BaseProbingTask(abc.ABC):
             dataset_split_uri,
             sep="\t",
             header=0,
+            quoting=csv.QUOTE_NONE,
+            encoding="utf-8",
             usecols=["label", "content"],
             dtype=str,
         )

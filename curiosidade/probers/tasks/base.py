@@ -65,7 +65,7 @@ class BaseProbingTask(abc.ABC):
         only if any dataset `dataloader` is actually a file URI, as the data read from disk
         must be transformed into tensors.
 
-    task_name : str, default="unnamed_task"
+    task_name : str, default='unnamed_task'
         Probing task name.
 
     data_domain : str or None, default=None
@@ -82,7 +82,15 @@ class BaseProbingTask(abc.ABC):
         Batch size for eval and test dataloader (if any).
     """
 
-    VALID_DATA_DOMAINS: t.Final[frozenset[str]] = frozenset(("wikipedia-ptbr", "sp-court-cases"))
+    VALID_DATA_DOMAINS: t.Final[frozenset[str]] = frozenset(
+        (
+            "wikipedia-ptbr",
+            "sp-court-cases",
+            "leg-docs-ptbr",
+            "leg-pop-comments-ptbr",
+            "political-speeches-ptbr",
+        )
+    )
 
     def __init__(
         self,

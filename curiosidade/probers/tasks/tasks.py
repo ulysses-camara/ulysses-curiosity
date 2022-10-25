@@ -72,7 +72,10 @@ class ProbingTaskSentenceLength(base.BaseProbingTask):
         Set the data domain for this probing task.
 
         - `wikipedia-ptbr`: General PT-br data domain from PT-br Wikipedia;
-        - `sp-court-cases`: São Paulo (Brazil) Court cases.
+        - `sp-court-cases`: São Paulo (Brazil) Court cases;
+        - `leg-docs-ptbr`: Brazilian legislative proposals;
+        - `leg-pop-comments-ptbr`: Brazilian population comments regarding legislative proposals;
+        - `political-speeches-ptbr`: Brazilian political speeches.
 
     output_dir : str, default='probing_datasets'
         Output directory for probing datasets.
@@ -121,8 +124,17 @@ class ProbingTaskSentenceLength(base.BaseProbingTask):
         if data_domain == "wikipedia-ptbr":
             resource_name = "dataset_wikipedia_ptbr_sentence_length_v1"
 
-        if data_domain == "sp-court-cases":
+        elif data_domain == "sp-court-cases":
             resource_name = "dataset_sp_court_cases_sentence_length_v1"
+
+        elif data_domain == "leg-docs-ptbr":
+            resource_name = "dataset_leg_docs_ptbr_sentence_length_v1"
+
+        elif data_domain == "leg-pop-comments-ptbr":
+            resource_name = "dataset_leg_pop_comments_ptbr_sentence_length_v1"
+
+        elif data_domain == "political-speeches-ptbr":
+            resource_name = "dataset_political_speeches_ptbr_sentence_length_v1"
 
         resource_uris = base.get_resource_from_ulysses_fetcher(
             resource_name=resource_name,
@@ -167,7 +179,10 @@ class ProbingTaskWordContent(base.BaseProbingTask):
         Set the data domain for this probing task.
 
         - `wikipedia-ptbr`: General PT-br data domain from PT-br Wikipedia;
-        - `sp-court-cases`: São Paulo (Brazil) Court cases.
+        - `sp-court-cases`: São Paulo (Brazil) Court cases;
+        - `leg-docs-ptbr`: Brazilian legislative proposals;
+        - `leg-pop-comments-ptbr`: Brazilian population comments regarding legislative proposals;
+        - `political-speeches-ptbr`: Brazilian political speeches.
 
     output_dir : str, default='probing_datasets'
         Output directory for probing datasets.
@@ -216,8 +231,17 @@ class ProbingTaskWordContent(base.BaseProbingTask):
         if data_domain == "wikipedia-ptbr":
             resource_name = "dataset_wikipedia_ptbr_word_content_v1"
 
-        if data_domain == "sp-court-cases":
+        elif data_domain == "sp-court-cases":
             resource_name = "dataset_sp_court_cases_word_content_v1"
+
+        elif data_domain == "leg-docs-ptbr":
+            resource_name = "dataset_leg_docs_ptbr_word_content_v1"
+
+        elif data_domain == "leg-pop-comments-ptbr":
+            resource_name = "dataset_leg_pop_comments_ptbr_word_content_v1"
+
+        elif data_domain == "political-speeches-ptbr":
+            resource_name = "dataset_political_speeches_ptbr_word_content_v1"
 
         resource_uris = base.get_resource_from_ulysses_fetcher(
             resource_name=resource_name,
@@ -262,7 +286,10 @@ class ProbingTaskBigramShift(base.BaseProbingTask):
         Set the data domain for this probing task.
 
         - `wikipedia-ptbr`: General PT-br data domain from PT-br Wikipedia;
-        - `sp-court-cases`: São Paulo (Brazil) Court cases.
+        - `sp-court-cases`: São Paulo (Brazil) Court cases;
+        - `leg-docs-ptbr`: Brazilian legislative proposals;
+        - `leg-pop-comments-ptbr`: Brazilian population comments regarding legislative proposals;
+        - `political-speeches-ptbr`: Brazilian political speeches.
 
     output_dir : str, default='probing_datasets'
         Output directory for probing datasets.
@@ -311,8 +338,17 @@ class ProbingTaskBigramShift(base.BaseProbingTask):
         if data_domain == "wikipedia-ptbr":
             resource_name = "dataset_wikipedia_ptbr_bigram_shift_v1"
 
-        if data_domain == "sp-court-cases":
+        elif data_domain == "sp-court-cases":
             resource_name = "dataset_sp_court_cases_bigram_shift_v1"
+
+        elif data_domain == "leg-docs-ptbr":
+            resource_name = "dataset_leg_docs_ptbr_bigram_shift_v1"
+
+        elif data_domain == "leg-pop-comments-ptbr":
+            resource_name = "dataset_leg_pop_comments_ptbr_bigram_shift_v1"
+
+        elif data_domain == "political-speeches-ptbr":
+            resource_name = "dataset_political_speeches_ptbr_bigram_shift_v1"
 
         resource_uris = base.get_resource_from_ulysses_fetcher(
             resource_name=resource_name,
@@ -357,7 +393,10 @@ class ProbingTaskTreeDepth(base.BaseProbingTask):
         Set the data domain for this probing task.
 
         - `wikipedia-ptbr`: General PT-br data domain from PT-br Wikipedia;
-        - `sp-court-cases`: São Paulo (Brazil) Court cases.
+        - `sp-court-cases`: São Paulo (Brazil) Court cases;
+        - `leg-docs-ptbr`: Brazilian legislative proposals;
+        - `leg-pop-comments-ptbr`: Brazilian population comments regarding legislative proposals;
+        - `political-speeches-ptbr`: Brazilian political speeches.
 
     output_dir : str, default='probing_datasets'
         Output directory for probing datasets.
@@ -406,8 +445,17 @@ class ProbingTaskTreeDepth(base.BaseProbingTask):
         if data_domain == "wikipedia-ptbr":
             resource_name = "dataset_wikipedia_ptbr_tree_depth_v1"
 
-        if data_domain == "sp-court-cases":
+        elif data_domain == "sp-court-cases":
             resource_name = "dataset_sp_court_cases_tree_depth_v1"
+
+        elif data_domain == "leg-docs-ptbr":
+            resource_name = "dataset_leg_docs_ptbr_tree_depth_v1"
+
+        elif data_domain == "leg-pop-comments-ptbr":
+            resource_name = "dataset_leg_pop_comments_ptbr_tree_depth_v1"
+
+        elif data_domain == "political-speeches-ptbr":
+            resource_name = "dataset_political_speeches_ptbr_tree_depth_v1"
 
         resource_uris = base.get_resource_from_ulysses_fetcher(
             resource_name=resource_name,
@@ -452,7 +500,10 @@ class ProbingTaskTopConstituent(base.BaseProbingTask):
         Set the data domain for this probing task.
 
         - `wikipedia-ptbr`: General PT-br data domain from PT-br Wikipedia;
-        - `sp-court-cases`: São Paulo (Brazil) Court cases.
+        - `sp-court-cases`: São Paulo (Brazil) Court cases;
+        - `leg-docs-ptbr`: Brazilian legislative proposals;
+        - `leg-pop-comments-ptbr`: Brazilian population comments regarding legislative proposals;
+        - `political-speeches-ptbr`: Brazilian political speeches.
 
     output_dir : str, default='probing_datasets'
         Output directory for probing datasets.
@@ -501,8 +552,17 @@ class ProbingTaskTopConstituent(base.BaseProbingTask):
         if data_domain == "wikipedia-ptbr":
             resource_name = "dataset_wikipedia_ptbr_top_constituents_v1"
 
-        if data_domain == "sp-court-cases":
+        elif data_domain == "sp-court-cases":
             resource_name = "dataset_sp_court_cases_top_constituents_v1"
+
+        elif data_domain == "leg-docs-ptbr":
+            resource_name = "dataset_leg_docs_ptbr_top_constituents_v1"
+
+        elif data_domain == "leg-pop-comments-ptbr":
+            resource_name = "dataset_leg_pop_comments_ptbr_top_constituents_v1"
+
+        elif data_domain == "political-speeches-ptbr":
+            resource_name = "dataset_political_speeches_ptbr_top_constituents_v1"
 
         resource_uris = base.get_resource_from_ulysses_fetcher(
             resource_name=resource_name,
@@ -547,7 +607,10 @@ class ProbingTaskPastPresent(base.BaseProbingTask):
         Set the data domain for this probing task.
 
         - `wikipedia-ptbr`: General PT-br data domain from PT-br Wikipedia;
-        - `sp-court-cases`: São Paulo (Brazil) Court cases.
+        - `sp-court-cases`: São Paulo (Brazil) Court cases;
+        - `leg-docs-ptbr`: Brazilian legislative proposals;
+        - `leg-pop-comments-ptbr`: Brazilian population comments regarding legislative proposals;
+        - `political-speeches-ptbr`: Brazilian political speeches.
 
     output_dir : str, default='probing_datasets'
         Output directory for probing datasets.
@@ -596,8 +659,17 @@ class ProbingTaskPastPresent(base.BaseProbingTask):
         if data_domain == "wikipedia-ptbr":
             resource_name = "dataset_wikipedia_ptbr_past_present_v1"
 
-        if data_domain == "sp-court-cases":
+        elif data_domain == "sp-court-cases":
             resource_name = "dataset_sp_court_cases_past_present_v1"
+
+        elif data_domain == "leg-docs-ptbr":
+            resource_name = "dataset_leg_docs_ptbr_past_present_v1"
+
+        elif data_domain == "leg-pop-comments-ptbr":
+            resource_name = "dataset_leg_pop_comments_ptbr_past_present_v1"
+
+        elif data_domain == "political-speeches-ptbr":
+            resource_name = "dataset_political_speeches_ptbr_past_present_v1"
 
         resource_uris = base.get_resource_from_ulysses_fetcher(
             resource_name=resource_name,
@@ -642,7 +714,10 @@ class ProbingTaskSubjectNumber(base.BaseProbingTask):
         Set the data domain for this probing task.
 
         - `wikipedia-ptbr`: General PT-br data domain from PT-br Wikipedia;
-        - `sp-court-cases`: São Paulo (Brazil) Court cases.
+        - `sp-court-cases`: São Paulo (Brazil) Court cases;
+        - `leg-docs-ptbr`: Brazilian legislative proposals;
+        - `leg-pop-comments-ptbr`: Brazilian population comments regarding legislative proposals;
+        - `political-speeches-ptbr`: Brazilian political speeches.
 
     output_dir : str, default='probing_datasets'
         Output directory for probing datasets.
@@ -691,8 +766,17 @@ class ProbingTaskSubjectNumber(base.BaseProbingTask):
         if data_domain == "wikipedia-ptbr":
             resource_name = "dataset_wikipedia_ptbr_subj_number_v1"
 
-        if data_domain == "sp-court-cases":
+        elif data_domain == "sp-court-cases":
             resource_name = "dataset_sp_court_cases_subj_number_v1"
+
+        elif data_domain == "leg-docs-ptbr":
+            resource_name = "dataset_leg_docs_ptbr_subj_number_v1"
+
+        elif data_domain == "leg-pop-comments-ptbr":
+            resource_name = "dataset_leg_pop_comments_ptbr_subj_number_v1"
+
+        elif data_domain == "political-speeches-ptbr":
+            resource_name = "dataset_political_speeches_ptbr_subj_number_v1"
 
         resource_uris = base.get_resource_from_ulysses_fetcher(
             resource_name=resource_name,
@@ -737,7 +821,10 @@ class ProbingTaskObjectNumber(base.BaseProbingTask):
         Set the data domain for this probing task.
 
         - `wikipedia-ptbr`: General PT-br data domain from PT-br Wikipedia;
-        - `sp-court-cases`: São Paulo (Brazil) Court cases.
+        - `sp-court-cases`: São Paulo (Brazil) Court cases;
+        - `leg-docs-ptbr`: Brazilian legislative proposals;
+        - `leg-pop-comments-ptbr`: Brazilian population comments regarding legislative proposals;
+        - `political-speeches-ptbr`: Brazilian political speeches.
 
     output_dir : str, default='probing_datasets'
         Output directory for probing datasets.
@@ -786,8 +873,17 @@ class ProbingTaskObjectNumber(base.BaseProbingTask):
         if data_domain == "wikipedia-ptbr":
             resource_name = "dataset_wikipedia_ptbr_obj_number_v1"
 
-        if data_domain == "sp-court-cases":
+        elif data_domain == "sp-court-cases":
             resource_name = "dataset_sp_court_cases_obj_number_v1"
+
+        elif data_domain == "leg-docs-ptbr":
+            resource_name = "dataset_leg_docs_ptbr_obj_number_v1"
+
+        elif data_domain == "leg-pop-comments-ptbr":
+            resource_name = "dataset_leg_pop_comments_ptbr_obj_number_v1"
+
+        elif data_domain == "political-speeches-ptbr":
+            resource_name = "dataset_political_speeches_ptbr_obj_number_v1"
 
         resource_uris = base.get_resource_from_ulysses_fetcher(
             resource_name=resource_name,
@@ -832,7 +928,10 @@ class ProbingTaskSOMO(base.BaseProbingTask):
         Set the data domain for this probing task.
 
         - `wikipedia-ptbr`: General PT-br data domain from PT-br Wikipedia;
-        - `sp-court-cases`: São Paulo (Brazil) Court cases.
+        - `sp-court-cases`: São Paulo (Brazil) Court cases;
+        - `leg-docs-ptbr`: Brazilian legislative proposals;
+        - `leg-pop-comments-ptbr`: Brazilian population comments regarding legislative proposals;
+        - `political-speeches-ptbr`: Brazilian political speeches.
 
     output_dir : str, default='probing_datasets'
         Output directory for probing datasets.
@@ -881,8 +980,17 @@ class ProbingTaskSOMO(base.BaseProbingTask):
         if data_domain == "wikipedia-ptbr":
             resource_name = "dataset_wikipedia_ptbr_odd_man_out_v1"
 
-        if data_domain == "sp-court-cases":
+        elif data_domain == "sp-court-cases":
             resource_name = "dataset_sp_court_cases_odd_man_out_v1"
+
+        elif data_domain == "leg-docs-ptbr":
+            resource_name = "dataset_leg_docs_ptbr_odd_man_out_v1"
+
+        elif data_domain == "leg-pop-comments-ptbr":
+            resource_name = "dataset_leg_pop_comments_ptbr_odd_man_out_v1"
+
+        elif data_domain == "political-speeches-ptbr":
+            resource_name = "dataset_political_speeches_ptbr_odd_man_out_v1"
 
         resource_uris = base.get_resource_from_ulysses_fetcher(
             resource_name=resource_name,
@@ -927,7 +1035,10 @@ class ProbingTaskCoordinationInversion(base.BaseProbingTask):
         Set the data domain for this probing task.
 
         - `wikipedia-ptbr`: General PT-br data domain from PT-br Wikipedia;
-        - `sp-court-cases`: São Paulo (Brazil) Court cases.
+        - `sp-court-cases`: São Paulo (Brazil) Court cases;
+        - `leg-docs-ptbr`: Brazilian legislative proposals;
+        - `leg-pop-comments-ptbr`: Brazilian population comments regarding legislative proposals;
+        - `political-speeches-ptbr`: Brazilian political speeches.
 
     output_dir : str, default='probing_datasets'
         Output directory for probing datasets.
@@ -976,8 +1087,17 @@ class ProbingTaskCoordinationInversion(base.BaseProbingTask):
         if data_domain == "wikipedia-ptbr":
             resource_name = "dataset_wikipedia_ptbr_coordination_inversion_v1"
 
-        if data_domain == "sp-court-cases":
+        elif data_domain == "sp-court-cases":
             resource_name = "dataset_sp_court_cases_coordination_inversion_v1"
+
+        elif data_domain == "leg-docs-ptbr":
+            resource_name = "dataset_leg_docs_ptbr_coordination_inversion_v1"
+
+        elif data_domain == "leg-pop-comments-ptbr":
+            resource_name = "dataset_leg_pop_comments_ptbr_coordination_inversion_v1"
+
+        elif data_domain == "political-speeches-ptbr":
+            resource_name = "dataset_political_speeches_ptbr_coordination_inversion_v1"
 
         resource_uris = base.get_resource_from_ulysses_fetcher(
             resource_name=resource_name,

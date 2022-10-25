@@ -38,13 +38,13 @@ class ProbingModelFeedforward(torch.nn.Module):
         Output dimension of probing model, which depends on the probing task specification.
 
     hidden_layer_dims : t.Sequence[int]
-        Dimension of hidden layers.
+        Number of units in each hidden layer.
 
     include_batch_norm : bool, default=False
         If True, include Batch Normalization between Linear and ReLU modules.
 
     dropout : float, default=0.0
-        Amount of dropout per layer.
+        Dropout probability per hidden layer.
     """
 
     def __init__(
@@ -115,21 +115,31 @@ class ProbingModelForSequences(ProbingModelFeedforward):
 
     output_dim : int
         Output dimension of probing model, which depends on the probing task specification.
+        Must match exactly the number of labels of the probing task.
 
     hidden_layer_dims : t.Sequence[int]
-        Dimension of hidden layers.
+        Number of units in each hidden layer.
 
-    pooling_strategy : {'max', 'mean'}, default='max'
+    pooling_strategy : {'max', 'mean', 'keep_single_index'}, default='max'
         Pooling strategy, to transform variable-length tensors into fixed-length tensors.
 
+        - `max`: select element-wise maxima on elements along `pooling_axis`;
+        - `mean`: compute element-wise averages on elements along `pooling_axis`; or
+        - `keep_single_index`: keep a single vector along `pooling_axis` at the index\
+                `embedding_index_to_keep` (see argument below), and discard everything else.
+
     pooling_axis : int, default=1
-        Axis to apply pooling.
+        Axis to apply pooling (specified in `pooling_strategy`).
+
+    embedding_index_to_keep : int, default=0
+        Embedding index to keep when `pooling_strategy='keep_single_index`'. This argument
+        has no effect for other pooling strategies.
 
     include_batch_norm : bool, default=False
         If True, include Batch Normalization between Linear and ReLU modules.
 
     dropout : float, default=0.0
-        Amount of dropout per layer.
+        Dropout probability per hidden layer.
     """
 
     def __init__(
@@ -137,14 +147,16 @@ class ProbingModelForSequences(ProbingModelFeedforward):
         input_dim: int,
         output_dim: int,
         hidden_layer_dims: t.Sequence[int],
-        pooling_strategy: t.Literal["max", "mean"] = "max",
+        pooling_strategy: t.Literal["max", "mean", "keep_single_index"] = "max",
         pooling_axis: int = 1,
+        embedding_index_to_keep: int = 0,
         include_batch_norm: bool = False,
         dropout: float = 0.0,
     ):
-        if pooling_strategy not in {"max", "mean"}:
+        if pooling_strategy not in {"max", "mean", "keep_single_index"}:
             raise ValueError(
-                f"Pooling strategy must be either 'max' ou 'mean' (got {pooling_strategy})."
+                "Pooling strategy must be 'max', 'mean' or 'keep_single_index' "
+                f"(got '{pooling_strategy}')."
             )
 
         super().__init__(
@@ -164,11 +176,27 @@ class ProbingModelForSequences(ProbingModelFeedforward):
 
             self.pooling_fn = pooling_fn
 
-        else:
+        elif pooling_strategy == "mean":
             self.pooling_fn = functools.partial(torch.mean, axis=pooling_axis)
 
+        else:
+            # Note: torch.index_select(..., 'index') argument must be a tensor.
+            index_tensor = torch.tensor(
+                embedding_index_to_keep,
+                requires_grad=False,
+                dtype=torch.long,
+            )
+
+            def pooling_fn(inp: torch.Tensor) -> torch.Tensor:
+                out: torch.Tensor
+                out = torch.index_select(inp, dim=pooling_axis, index=index_tensor)
+                out = torch.squeeze(out)
+                return out
+
+            self.pooling_fn = pooling_fn
+
     def forward(self, *args: torch.Tensor) -> torch.Tensor:
-        out = args[0]  # shape: (batch_size, max_sequence_length, embed_dim)
+        out = args[0]  # shape: (batch_size, max_sequence_length, embed_dim) when pooling_axis=1
         out = self.pooling_fn(out)  # shape: (batch_size, embed_dim)
         out = self.params(out)  # shape: (batch_size, output_dim)
         out = out.squeeze(-1)  # shape: (batch_size, output_dim?)
@@ -183,7 +211,7 @@ def get_probing_model_feedforward(
     Parameters
     ----------
     hidden_layer_dims : t.Sequence[int]
-        Dimension of hidden layers.
+        Number of units in each hidden layer.
 
     include_batch_norm : bool, default=False
         If True, include Batch Normalization between Linear and ReLU modules.
@@ -206,7 +234,7 @@ def get_probing_model_feedforward(
 
 def get_probing_model_for_sequences(
     hidden_layer_dims: t.Sequence[int],
-    pooling_strategy: t.Literal["max", "mean"] = "max",
+    pooling_strategy: t.Literal["max", "mean", "keep_single_index"] = "max",
     pooling_axis: int = 1,
     include_batch_norm: bool = False,
     dropout: float = 0.0,
@@ -220,10 +248,15 @@ def get_probing_model_for_sequences(
     Parameters
     ----------
     hidden_layer_dims : t.Sequence[int]
-        Dimension of hidden layers.
+        Number of units in each hidden layer.
 
-    pooling_strategy : {'max', 'mean'}, default='max'
+    pooling_strategy : {'max', 'mean', 'keep_single_index'}, default='max'
         Pooling strategy, to transform variable-length tensors into fixed-length tensors.
+
+        - `max`: select element-wise maxima on elements along `pooling_axis`;
+        - `mean`: compute element-wise averages on elements along `pooling_axis`; or
+        - `keep_single_index`: keep a single vector along `pooling_axis` at the index\
+                `embedding_index_to_keep` (see argument below), and discard everything else.
 
     pooling_axis : int, default=1
         Axis to apply pooling.
@@ -232,7 +265,7 @@ def get_probing_model_for_sequences(
         If True, include Batch Normalization between Linear and ReLU modules.
 
     dropout : float, default=0.0
-        Amount of dropout per layer.
+        Dropout probability per hidden layer.
 
     Returns
     -------

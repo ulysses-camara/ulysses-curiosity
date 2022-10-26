@@ -27,21 +27,22 @@ def gen_random_dataset(
             X_test = torch.randint(low=1, high=vocab_size, size=(test_size, num_dim))
 
         else:
-            X_train = torch.randn(train_size, num_dim)
-            X_eval = torch.randn(eval_size, num_dim)
-            X_test = torch.randn(test_size, num_dim)
+            X_train = torch.rand(train_size, num_dim)
+            X_eval = torch.rand(eval_size, num_dim)
+            X_test = torch.rand(test_size, num_dim)
 
     y_train = X_train.sum(axis=-1)
     y_eval = X_eval.sum(axis=-1)
     y_test = X_test.sum(axis=-1)
 
-    y_max = y_train.max().item() - 1e-8
-    y_min = y_train.min().item()
+    y_max = float(y_train.max().item())
+    y_min = float(y_train.min().item())
 
     def sum_to_labels(y: torch.Tensor) -> torch.Tensor:
-        y = ((y - y_min) / (y_max - y_min) * num_labels).floor().long()
-        torch.maximum(y, torch.full_like(y, num_labels), out=y)
-        torch.minimum(y, torch.zeros_like(y), out=y)
+        norm_factor = 1.0 if np.isclose(y_min, y_max) else (y_max - y_min)
+        y = ((y - y_min) / norm_factor * num_labels).floor().long()
+        torch.minimum(y, torch.full_like(y, num_labels), out=y)
+        torch.maximum(y, torch.zeros_like(y), out=y)
         return y
 
     y_train = sum_to_labels(y_train)

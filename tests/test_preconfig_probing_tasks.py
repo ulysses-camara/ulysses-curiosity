@@ -18,9 +18,9 @@ import curiosidade
     (
         (curiosidade.ProbingTaskSentenceLength, 6, "wikipedia-ptbr"),
         (curiosidade.ProbingTaskWordContent, 1000, "wikipedia-ptbr"),
-        (curiosidade.ProbingTaskBigramShift, 2, "wikipedia-ptbr"),
         (curiosidade.ProbingTaskTreeDepth, 6, "wikipedia-ptbr"),
         (curiosidade.ProbingTaskTopConstituent, 20, "wikipedia-ptbr"),
+        (curiosidade.ProbingTaskBigramShift, 2, "wikipedia-ptbr"),
         (curiosidade.ProbingTaskPastPresent, 2, "wikipedia-ptbr"),
         (curiosidade.ProbingTaskSubjectNumber, 2, "wikipedia-ptbr"),
         (curiosidade.ProbingTaskObjectNumber, 2, "wikipedia-ptbr"),
@@ -28,17 +28,47 @@ import curiosidade
         (curiosidade.ProbingTaskCoordinationInversion, 2, "wikipedia-ptbr"),
         (curiosidade.ProbingTaskSentenceLength, 5, "sp-court-cases"),
         (curiosidade.ProbingTaskWordContent, 298, "sp-court-cases"),
-        (curiosidade.ProbingTaskBigramShift, 2, "sp-court-cases"),
         (curiosidade.ProbingTaskTreeDepth, 4, "sp-court-cases"),
         (curiosidade.ProbingTaskTopConstituent, 10, "sp-court-cases"),
+        (curiosidade.ProbingTaskBigramShift, 2, "sp-court-cases"),
         (curiosidade.ProbingTaskPastPresent, 2, "sp-court-cases"),
         (curiosidade.ProbingTaskSubjectNumber, 2, "sp-court-cases"),
         (curiosidade.ProbingTaskObjectNumber, 2, "sp-court-cases"),
         (curiosidade.ProbingTaskSOMO, 2, "sp-court-cases"),
         (curiosidade.ProbingTaskCoordinationInversion, 2, "sp-court-cases"),
+        (curiosidade.ProbingTaskSentenceLength, 5, "leg-docs-ptbr"),
+        (curiosidade.ProbingTaskWordContent, 300, "leg-docs-ptbr"),
+        (curiosidade.ProbingTaskTreeDepth, 4, "leg-docs-ptbr"),
+        (curiosidade.ProbingTaskTopConstituent, 10, "leg-docs-ptbr"),
+        (curiosidade.ProbingTaskBigramShift, 2, "leg-docs-ptbr"),
+        (curiosidade.ProbingTaskPastPresent, 2, "leg-docs-ptbr"),
+        (curiosidade.ProbingTaskSubjectNumber, 2, "leg-docs-ptbr"),
+        (curiosidade.ProbingTaskObjectNumber, 2, "leg-docs-ptbr"),
+        (curiosidade.ProbingTaskSOMO, 2, "leg-docs-ptbr"),
+        (curiosidade.ProbingTaskCoordinationInversion, 2, "leg-docs-ptbr"),
+        (curiosidade.ProbingTaskSentenceLength, 5, "leg-pop-comments-ptbr"),
+        (curiosidade.ProbingTaskWordContent, 300, "leg-pop-comments-ptbr"),
+        (curiosidade.ProbingTaskTreeDepth, 4, "leg-pop-comments-ptbr"),
+        (curiosidade.ProbingTaskTopConstituent, 10, "leg-pop-comments-ptbr"),
+        (curiosidade.ProbingTaskBigramShift, 2, "leg-pop-comments-ptbr"),
+        (curiosidade.ProbingTaskPastPresent, 2, "leg-pop-comments-ptbr"),
+        (curiosidade.ProbingTaskSubjectNumber, 2, "leg-pop-comments-ptbr"),
+        (curiosidade.ProbingTaskObjectNumber, 2, "leg-pop-comments-ptbr"),
+        (curiosidade.ProbingTaskSOMO, 2, "leg-pop-comments-ptbr"),
+        (curiosidade.ProbingTaskCoordinationInversion, 2, "leg-pop-comments-ptbr"),
+        (curiosidade.ProbingTaskSentenceLength, 5, "political-speeches-ptbr"),
+        (curiosidade.ProbingTaskWordContent, 300, "political-speeches-ptbr"),
+        (curiosidade.ProbingTaskTreeDepth, 4, "political-speeches-ptbr"),
+        (curiosidade.ProbingTaskTopConstituent, 10, "political-speeches-ptbr"),
+        (curiosidade.ProbingTaskBigramShift, 2, "political-speeches-ptbr"),
+        (curiosidade.ProbingTaskPastPresent, 2, "political-speeches-ptbr"),
+        (curiosidade.ProbingTaskSubjectNumber, 2, "political-speeches-ptbr"),
+        (curiosidade.ProbingTaskObjectNumber, 2, "political-speeches-ptbr"),
+        (curiosidade.ProbingTaskSOMO, 2, "political-speeches-ptbr"),
+        (curiosidade.ProbingTaskCoordinationInversion, 2, "political-speeches-ptbr"),
     ),
 )
-def test_custom_probing_task(
+def test_preconfigured_probing_task(
     fixture_pretrained_torch_lstm_onedir_1_layer: torch.nn.Module,
     fixture_pretrained_bertimbau_tokenizer: transformers.AutoTokenizer,
     fn_custom_probing_task: curiosidade.probers.tasks.base.BaseProbingTask,
@@ -79,16 +109,23 @@ def test_custom_probing_task(
         X %= fixture_pretrained_torch_lstm_onedir_1_layer.vocab_size
         X = X.long()
 
-        y = torch.Tensor(labels)
-        y = y.long()
+        assert all([item >= 0.0 for item in labels]), labels
 
-        if num_classes == 2:
-            y = y.float()
+        y = torch.Tensor(labels)
+        y = y.float() if num_classes == 2 else y.long()
 
         return torch.utils.data.TensorDataset(X, y)
 
-    acc_fn = torchmetrics.Accuracy(num_classes=num_classes if num_classes >= 3 else 1).to("cpu")
-    f1_fn = torchmetrics.F1Score(num_classes=num_classes if num_classes >= 3 else 1).to("cpu")
+    if num_classes >= 3:
+        acc_fn = torchmetrics.classification.MulticlassAccuracy(num_classes=num_classes)
+        f1_fn = torchmetrics.classification.MulticlassF1Score(num_classes=num_classes)
+
+    else:
+        acc_fn = torchmetrics.classification.BinaryAccuracy()
+        f1_fn = torchmetrics.classification.BinaryF1Score()
+
+    acc_fn = acc_fn.to("cpu")
+    f1_fn = f1_fn.to("cpu")
 
     def metrics_fn(logits, truth_labels):
         # pylint: disable='not-callable'
@@ -107,7 +144,7 @@ def test_custom_probing_task(
 
     probing_factory = curiosidade.ProbingModelFactory(
         probing_model_fn=ProbingModel,
-        optim_fn=functools.partial(torch.optim.Adam, lr=0.005),
+        optim_fn=functools.partial(torch.optim.Adam, lr=0.01),
         task=task,
     )
 
@@ -132,6 +169,6 @@ def test_custom_probing_task(
     ].tolist()
     f1_train = df_train.loc[df_train["metric_name"] == "f1", ("metric", "amax")].tolist()
 
-    assert loss_train[-1] <= loss_train[0] * 0.85
+    assert loss_train[-1] <= loss_train[0] * 0.90
     assert accuracy_train[-1] >= accuracy_train[0] * 1.10
     assert f1_train[-1] >= f1_train[0] * 1.10

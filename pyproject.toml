@@ -34,6 +34,7 @@ dev = [
     "pytest-cov >= 3.0.0",
     "pytest-html >= 3.1.1",
     "pytest-xdist >= 3.0.2",
+    "pytest-env >= 0.8.1",
     "datasets >= 2.1.0",
     "sentence-transformers >= 2.2.0",
 ]
@@ -81,6 +82,9 @@ addopts = """
 testpaths = [
     "tests",
 ]
+env = """
+    D:CUDA_VISIBLE_DEVICES="-1"
+"""
 
 [tool.pylint.messages_control]
 generated-members = "torch.*"

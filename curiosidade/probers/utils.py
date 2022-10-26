@@ -236,6 +236,7 @@ def get_probing_model_for_sequences(
     hidden_layer_dims: t.Sequence[int],
     pooling_strategy: t.Literal["max", "mean", "keep_single_index"] = "max",
     pooling_axis: int = 1,
+    embedding_index_to_keep: int = 0,
     include_batch_norm: bool = False,
     dropout: float = 0.0,
 ) -> ProbingModelType:
@@ -261,6 +262,10 @@ def get_probing_model_for_sequences(
     pooling_axis : int, default=1
         Axis to apply pooling.
 
+    embedding_index_to_keep : int, default=0
+        Embedding index to keep when `pooling_strategy='keep_single_index`'. This argument
+        has no effect for other pooling strategies.
+
     include_batch_norm : bool, default=False
         If True, include Batch Normalization between Linear and ReLU modules.
 
@@ -277,6 +282,7 @@ def get_probing_model_for_sequences(
         hidden_layer_dims=hidden_layer_dims,
         pooling_strategy=pooling_strategy,
         pooling_axis=pooling_axis,
+        embedding_index_to_keep=embedding_index_to_keep,
         include_batch_norm=include_batch_norm,
         dropout=dropout,
     )

@@ -189,8 +189,13 @@ class ProbingModelForSequences(ProbingModelFeedforward):
 
             def pooling_fn(inp: torch.Tensor) -> torch.Tensor:
                 out: torch.Tensor
+
+                if index_tensor.device != inp.device:
+                    index_tensor = index_tensor.to(inp.device)
+
                 out = torch.index_select(inp, dim=pooling_axis, index=index_tensor)
                 out = torch.squeeze(out)
+
                 return out
 
             self.pooling_fn = pooling_fn

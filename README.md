@@ -181,7 +181,7 @@ For convenience, the probing model shown above can be created with a utility fun
 # When probed module output ndim >= 3: Pooling layer -> Feedforward network.
 ProbingModel = curiosidade.probers.utils.get_probing_model_for_sequences(
     hidden_layer_dims=[20],
-    pooling_strategy="mean",  # Also available: "max"
+    pooling_strategy="mean",  # Also available: "max" or "keep_single_index"
     pooling_axis=1, # Probed module output dimension: (batch_dim, sequence_length, embedding_dim)
     include_batch_norm=False,
     dropout=0.0,

@@ -65,15 +65,15 @@ The rationale behind this method is that, since the probing task is related to t
 
 This frameworks provides all resources needed to train and validate your probing task. We support pretrained [PyTorch](https://pytorch.org/) (`torch.nn.Module`) and [Huggingface Transformer](https://huggingface.co/docs/transformers/index) models. In order to properly set up and train your probing tasks, you'll need:
 
-- A custom probing dataset (preconfigured probing tasks is a work in progress);
+- A probing dataset  &mdash; either from a [preconfigured probing task](#preconfigured-probing-tasks) or your own (a probing task is by definition a *simple classification problem with interpretable results*);
 - A pretrained model to probe; and
-- A probing model architecture in mind (we provide some simple suggestions).
+- A probing model architecture in mind (we provide utility functions to create simple ones).
 
 With these basic ingredients, the setup using Curiosity is as follows:
 
 1. Load a pretrained model;
 2. Load a probing dataset in dataloaders (`torch.utils.data.DataLoader`);
-3. Set up a Task (Dataloaders + loss function + validation metrics) with `curiosidade.ProbingTaskCustom`;
+3. Set up a Task (probing dataloaders + loss function + validation metrics) either preconfigured or with `curiosidade.ProbingTaskCustom`;
 4. Set up your Probing Model (any `torch.nn.Module` will do);
 5. Combine your Probing Model and your Task with a `ProbingModelFactory`;
 6. Attach probers into your pretrained model by using `ProbingModelFactory.attach_probers`;
@@ -180,7 +180,21 @@ class ProbingModel(torch.nn.Module):
 For convenience, the probing model shown above can be created with a utility function available in this package:
 
 ```python
-ProbingModel = curiosidade.probers.utils.get_probing_model_feedforward(hidden_layer_dims=[20])
+# When probed module output ndim >= 3: Pooling layer -> Feedforward network.
+ProbingModel = curiosidade.probers.utils.get_probing_model_for_sequences(
+    hidden_layer_dims=[20],
+    pooling_strategy="mean",  # Also available: "max" or "keep_single_index"
+    pooling_axis=1, # Probed module output dimension: (batch_dim, sequence_length, embedding_dim)
+    include_batch_norm=False,
+    dropout=0.0,
+)
+
+# When probed module output ndim <= 2: Feedforward network.
+ProbingModel = curiosidade.probers.utils.get_probing_model_feedforward(
+    hidden_layer_dims=[20]
+    include_batch_norm=False,
+    dropout=0.0,
+)
 ```
 
 The next step is to create a probing task. This step set up aspects regarding the training, such as the train, evaluation, and test dataloaders, the loss function, and the validation metrics collected during training. Note that *evaluation and test dataloaders are optional, but recommended*. The example below show a probing task with 3 classes, using Cross Entropy as loss function, and collecting Accuracy and F1 Scores per batch. *The loss value for every batch is always collected automatically*, and will be the only metric recorded if you don't provide any.
@@ -191,13 +205,17 @@ import torchmetrics
 num_classes = 3
 
 # Note: here we are using 'torchmetrics' as a suggestion, but you can use whatever you like.
-accuracy_fn = torchmetrics.Accuracy(num_classes=num_classes).to("cpu")
-f1_fn = torchmetrics.F1Score(num_classes=num_classes).to("cpu")
+accuracy_fn = torchmetrics.Accuracy(num_classes=num_classes)
+f1_fn = torchmetrics.classification.MulticlassF1Score(num_classes=num_classes, average="macro")
+
+accuracy_fn = accuracy_fn.to("cpu")
+f1_fn = f1_fn.to("cpu")
+
 
 def metrics_fn(logits: torch.Tensor, truth_labels: torch.Tensor) -> dict[str, float]:
     accuracy = accuracy_fn(logits, truth_labels).detach().cpu().item()
     f1 = f1_fn(logits, truth_labels).detach().cpu().item()
-    return {"accuracy": accuracy, "f1": f1}
+    return {"accuracy": float(accuracy), "f1": float(f1)}
 
 
 probing_dataloader_train = torch.utils.data.DataLoader(..., shuffle=True)
@@ -210,10 +228,10 @@ task = curiosidade.ProbingTaskCustom(
     probing_dataloader_train=probing_dataloader_train,
     probing_dataloader_eval=probing_dataloader_eval,
     probing_dataloader_test=probing_dataloader_test,
-    loss_fn=torch.nn.CrossEntropyLoss(),
-    task_name="debug_task",
+    loss_fn=torch.nn.CrossEntropyLoss() if num_classes >= 3 else torch.nn.BCEWithLogitsLoss(),
+    task_name="my_probing_task",
     task_type="classification",
-    output_dim=num_classes,  # Note: set to '1' if binary classification.
+    output_dim=num_classes if num_classes >= 3 else 1,
     metrics_fn=metrics_fn,
 )
 ```
@@ -335,12 +353,14 @@ ProbingModel = curiosidade.probers.utils.get_probing_model_for_sequences(
     hidden_layer_dims=[128],
     pooling_strategy="max",
     pooling_axis=1,
+    include_batch_norm=False,
+    dropout=0.0,
 )
 
 
 def accuracy_fn(logits, target):
     _, cls_ids = logits.max(axis=-1)
-    return {"accuracy": (cls_ids == target).float().mean().item()}
+    return {"accuracy": float((cls_ids == target).float().mean().item())}
 
 
 probing_dataloader_train = torch.utils.data.DataLoader(..., shuffle=True)
@@ -455,6 +475,9 @@ To programatically list all available preconfigured probing tasks:
 ```python
 probing_tasks = curiosidade.get_available_preconfigured_tasks()
 # Return format: sequence of (class name, class) pairs
+
+data_domains = curiosidade.get_available_data_domains()
+# Return format: (domain_1, domain_2, ...)
 ```
 
 The following preconfigured probing tasks are available in this package:
@@ -498,13 +521,13 @@ def fn_text_to_tensor_for_pytorch(
 
 def metrics_fn(logits, target):
     _, cls_ids = logits.max(axis=-1)
-    return {"accuracy": (cls_ids == target).float().mean().item()}
+    return {"accuracy": float((cls_ids == target).float().mean().item())}
 
 
 task = curiosidade.ProbingTaskSentenceLength(
     fn_raw_data_to_tensor=fn_text_to_tensor_for_pytorch,
     metrics_fn=metrics_fn,
-    data_domain="general-pt-br",  # PT-br wikipedia probing dataset
+    data_domain="wikipedia-ptbr",  # PT-br wikipedia probing dataset
     output_dir="probing_datasets",  # Directory to store downloaded probing datasets
     batch_size_train=128,
     batch_size_eval=256,

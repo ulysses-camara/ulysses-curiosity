@@ -53,7 +53,6 @@ autoapi_options = [
 autoapi_ignore = [
     "*migrations*",
     "**/input_handlers*",
-    "**/output_handlers*",
     "**/adapters*",
     "**/helpers*",
     "**/tasks/base*",

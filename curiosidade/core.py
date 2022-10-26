@@ -426,6 +426,7 @@ def attach_probers(
     base_model: torch.nn.Module,
     probing_model_factory: probers.ProbingModelFactory,
     modules_to_attach: t.Union[t.Pattern[str], str, t.Sequence[str]],
+    match_modules_to_attach_as_regex: bool = True,
     modules_input_dim: input_handlers.ModuleInputDimType = None,
     prune_unrelated_modules: t.Optional[t.Union[t.Sequence[str], t.Literal["infer"]]] = None,
     device: t.Union[torch.device, str] = "cpu",
@@ -493,6 +494,7 @@ def attach_probers(
         base_model=base_model,
         probing_model_factory=probing_model_factory,
         modules_to_attach=modules_to_attach,
+        match_modules_to_attach_as_regex=match_modules_to_attach_as_regex,
         modules_input_dim=modules_input_dim,
         prune_unrelated_modules=prune_unrelated_modules,
     )

@@ -109,8 +109,6 @@ def test_preconfigured_probing_task(
         X %= fixture_pretrained_torch_lstm_onedir_1_layer.vocab_size
         X = X.long()
 
-        assert all([item >= 0.0 for item in labels]), labels
-
         y = torch.Tensor(labels)
         y = y.float() if num_classes == 2 else y.long()
 

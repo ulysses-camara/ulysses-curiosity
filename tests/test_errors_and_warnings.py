@@ -10,6 +10,57 @@ import curiosidade
 from . import train_test_models
 
 
+def test_attachment_literal_vs_regex(fixture_pretrained_torch_ff: torch.nn.Module):
+    df_train, _, _, num_labels = train_test_models.gen_random_dataset(
+        train_size=10,
+        eval_size=1,
+        test_size=1,
+    )
+
+    probing_model_fn = curiosidade.probers.utils.get_probing_model_feedforward(
+        hidden_layer_dims=[10],
+    )
+
+    probing_dataloader_train = torch.utils.data.DataLoader(df_train, batch_size=4, shuffle=True)
+
+    task = curiosidade.ProbingTaskCustom(
+        probing_dataloader_train=probing_dataloader_train,
+        loss_fn=torch.nn.CrossEntropyLoss(),
+        task_name="test task (torch, simple)",
+        task_type="classification",
+        output_dim=num_labels,
+    )
+
+    probing_factory = curiosidade.ProbingModelFactory(
+        probing_model_fn=probing_model_fn,
+        optim_fn=torch.optim.Adam,
+        task=task,
+    )
+
+    prober_container = curiosidade.attach_probers(
+        base_model=fixture_pretrained_torch_ff,
+        probing_model_factory=probing_factory,
+        modules_to_attach=r"params.relu\d+",
+        match_modules_to_attach_as_regex=True,
+        random_seed=32,
+        prune_unrelated_modules=None,
+    )
+
+    assert prober_container.probed_modules == ("params.relu1", "params.relu2", "params.relu3")
+
+    with pytest.warns(UserWarning, match="No probing module has been attached."):
+        prober_container = curiosidade.attach_probers(
+            base_model=fixture_pretrained_torch_ff,
+            probing_model_factory=probing_factory,
+            modules_to_attach=r"params.relu\d+",
+            match_modules_to_attach_as_regex=False,
+            random_seed=32,
+            prune_unrelated_modules=None,
+        )
+
+    assert prober_container.probed_modules == tuple()
+
+
 def test_warning_attachment_fail(fixture_pretrained_torch_ff: torch.nn.Module):
     df_train, _, _, num_labels = train_test_models.gen_random_dataset(
         train_size=10,

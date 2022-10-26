@@ -114,7 +114,7 @@ class ProbingModelContainer:
         prune_unrelated_modules: t.Optional[t.Union[t.Sequence[str], t.Literal["infer"]]] = None,
         enable_cuda_in_inspection: bool = True,
     ) -> "ProbingModelContainer":
-        """Attach probing models to specificied `base_model` modules.
+        """Attach probing models to specified `base_model` modules.
 
         Parameters
         ----------
@@ -130,8 +130,8 @@ class ProbingModelContainer:
 
         match_modules_to_attach_as_regex : bool, default=True
             If True, interpret `modules_to_attach` value as a regular expression in the form
-            `^\s*(?:modules_to_attach)\s*$`. This argument only has effect when `modules_to_attach`
-            type is `str`, otherwise it is ignored.
+            `^\\s*(?:modules_to_attach)\\s*$`. This argument only has effect when
+            `type(modules_to_attach)=str`, otherwise it is ignored.
 
         modules_input_dim : t.Sequence[int] or dict[str, int] or None, default=None
             Input dimension of each probing model.
@@ -225,8 +225,13 @@ class ProbingModelContainer:
         if not self.probers:
             warnings.warn(
                 message=(
-                    "No probing modules were attached. One probable cause is format mismatch of "
-                    "values in the parameter 'modules_to_attach' and base model's named weights."
+                    "No probing module has been attached. One probable cause is format mismatch of "
+                    "values in the parameter 'modules_to_attach' and base model's named weights. "
+                    + (
+                        f"Also {match_modules_to_attach_as_regex=}. Is it the expected behaviour? "
+                        if not match_modules_to_attach_as_regex
+                        else ""
+                    )
                 ),
                 category=UserWarning,
             )
@@ -432,7 +437,7 @@ def attach_probers(
     device: t.Union[torch.device, str] = "cpu",
     random_seed: t.Optional[int] = None,
 ) -> ProbingModelContainer:
-    """Attach probing models to specificied `base_model` modules.
+    """Attach probing models to specified `base_model` modules.
 
     Parameters
     ----------
@@ -445,6 +450,11 @@ def attach_probers(
     modules_to_attach : t.Pattern[str] or str or t.Sequence[str]
         A list or regular expression pattern specifying which model modules should be probed.
         Use `base_model.named_modules()` to check available model modules for probing.
+
+    match_modules_to_attach_as_regex : bool, default=True
+        If True, interpret `modules_to_attach` value as a regular expression in the form
+        `^\\s*(?:modules_to_attach)\\s*$`. This argument only has effect when `modules_to_attach`
+        type is `str`, otherwise it is ignored.
 
     modules_input_dim : t.Sequence[int] or dict[str, int] or None, default=None
         Input dimension of each probing model.

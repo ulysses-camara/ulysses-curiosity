@@ -26,7 +26,8 @@ def get_fn_select_modules_to_probe(
         return lambda module_name: module_name == modules_to_attach
 
     if isinstance(modules_to_attach, str):
-        modules_to_attach = f"\s*(?:{modules_to_attach})\s*$"
+        # Note: the parenthesis is necessary to enable use of pipes in the pattern.
+        modules_to_attach = r"\s*(?:" + modules_to_attach + r")\s*$"
 
     compiled_regex: t.Pattern[str] = regex.compile(modules_to_attach)
 

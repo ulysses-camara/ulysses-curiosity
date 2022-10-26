@@ -33,6 +33,7 @@ dev = [
     "black >= 22.3.0",
     "pytest-cov >= 3.0.0",
     "pytest-html >= 3.1.1",
+    "pytest-xdist >= 3.0.2",
     "datasets >= 2.1.0",
     "sentence-transformers >= 2.2.0",
 ]
@@ -73,7 +74,6 @@ install_types = true
 [tool.pytest.ini_options]
 addopts = """
     --cov=curiosidade
-    --last-failed
     --failed-first
     --new-first
     --cov-report=html
@@ -115,7 +115,7 @@ python =
 whitelist_externals = flit
 commands =
     pip install '.[dev,examples]'
-    python -m pytest
+    python -m pytest --numprocesses=auto --maxprocesses=4 --full-trace
     python -m pytest curiosidade/ --doctest-modules --doctest-glob="**/*.py"
 
 [testenv:mypy]
@@ -140,6 +140,6 @@ deps =
     datasets
     buscador @ git+https://github.com/ulysses-camara/ulysses-fetcher@v1.2.1-beta
 commands =
-    python -m pylint curiosidade/
+    python -m pylint --jobs=4 curiosidade/
     python -m pylint --disable='missing-function-docstring,invalid-name' tests/
 """

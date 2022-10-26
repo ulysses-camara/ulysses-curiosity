@@ -10,15 +10,23 @@ ModuleInputDimType = t.Optional[t.Union[dict[str, int], t.Sequence[int]]]
 
 
 def get_fn_select_modules_to_probe(
-    modules_to_attach: t.Union[str, t.Pattern[str], t.Sequence[str]]
+    modules_to_attach: t.Union[str, t.Pattern[str], t.Sequence[str]],
+    literal_string_input: bool = False,
 ) -> t.Callable[[str], bool]:
-    """Return a boolean function that checks if a given module should be probed."""
+    """Return a boolean function that checks if a given module should be probed.
+
+    If `literal_string_input=True` and `type(modules_to_attach)=str`, interpret the
+    `modules_to_attach` value literally (i.e. do not compile as a regex).
+    """
     if not isinstance(modules_to_attach, (str, regex.Pattern, re.Pattern)):
         modules_to_attach_set = frozenset(modules_to_attach)
         return lambda module_name: module_name in modules_to_attach_set
 
+    if isinstance(modules_to_attach, str) and literal_string_input:
+        return lambda module_name: module_name == modules_to_attach
+
     if isinstance(modules_to_attach, str):
-        modules_to_attach = r"\s*" + modules_to_attach + r"\s*$"
+        modules_to_attach = f"\s*(?:{modules_to_attach})\s*$"
 
     compiled_regex: t.Pattern[str] = regex.compile(modules_to_attach)
 

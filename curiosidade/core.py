@@ -109,6 +109,7 @@ class ProbingModelContainer:
         base_model: torch.nn.Module,
         probing_model_factory: probers.ProbingModelFactory,
         modules_to_attach: t.Union[t.Pattern[str], str, t.Sequence[str]],
+        match_modules_to_attach_as_regex: bool = True,
         modules_input_dim: input_handlers.ModuleInputDimType = None,
         prune_unrelated_modules: t.Optional[t.Union[t.Sequence[str], t.Literal["infer"]]] = None,
         enable_cuda_in_inspection: bool = True,
@@ -127,13 +128,18 @@ class ProbingModelContainer:
             A list or regular expression pattern specifying which model modules should be probed.
             Use `base_model.named_modules()` to check available model modules for probing.
 
+        match_modules_to_attach_as_regex : bool, default=True
+            If True, interpret `modules_to_attach` value as a regular expression in the form
+            `^\s*(?:modules_to_attach)\s*$`. This argument only has effect when `modules_to_attach`
+            type is `str`, otherwise it is ignored.
+
         modules_input_dim : t.Sequence[int] or dict[str, int] or None, default=None
             Input dimension of each probing model.
 
             - If list, the dimension in the i-th index should correspond to the input dimension of
-              the i-th probing model.
+              the i-th probing model;
             - If mapping (dict), should map the module name to its corresponding input dimension.
-              Input dimension of modules not present in this mapping will be inferred.
+              Input dimension of modules not present in this mapping will be inferred;
             - If None, the input dimensions will be inferred from the output dimensions sequences
               in `base_model.named_modules()`.
 
@@ -147,8 +153,8 @@ class ProbingModelContainer:
             - If 'infer', attempt to find the first module such that no probing model depends on
               any further module outputs. This heuristics only works properly if the model forward
               flow is deterministic and 'one-dimensional' (no bifurcations). This strategy is
-              expected to work most of the time for any regular pretrained model.
-            - If list, must contain the module names to prune.
+              expected to work most of the time for any regular pretrained model;
+            - If list, must contain the module names to prune;
             - If None, no module will be pruned, and the pretrained forward flow will be computed on
               its entirety.
 
@@ -171,7 +177,11 @@ class ProbingModelContainer:
         pruned_modules: dict[str, torch.nn.Module] = {}
         modules_input_dim = modules_input_dim or {}
 
-        fn_module_is_probed = input_handlers.get_fn_select_modules_to_probe(modules_to_attach)
+        fn_module_is_probed = input_handlers.get_fn_select_modules_to_probe(
+            modules_to_attach=modules_to_attach,
+            literal_string_input=not match_modules_to_attach_as_regex,
+        )
+
         probed_modules = {
             module_name: module
             for module_name, module in base_model.named_modules()

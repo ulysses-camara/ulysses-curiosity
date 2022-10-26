@@ -67,21 +67,29 @@ def fn_fixture_pretrained_distilbert() -> tuple[
     transformers.PreTrainedModel, transformers.DistilBertTokenizer
 ]:
     tokenizer = transformers.DistilBertTokenizer.from_pretrained(
-        "distilbert-base-uncased", cache_dir=model_utils.PRETRAINED_MODEL_DIR
+        "distilbert-base-uncased",
+        cache_dir=model_utils.PRETRAINED_MODEL_DIR,
     )
+
     distilbert = transformers.DistilBertModel.from_pretrained(
-        "distilbert-base-uncased", cache_dir=model_utils.PRETRAINED_MODEL_DIR
+        "distilbert-base-uncased",
+        cache_dir=model_utils.PRETRAINED_MODEL_DIR,
     )
+
     return distilbert, tokenizer
 
 
 @pytest.fixture(scope="session", name="fixture_pretrained_minilmv2")
 def fn_fixture_pretrained_minilmv2():
     minilmv2 = sentence_transformers.SentenceTransformer(
-        "paraphrase-MiniLM-L6-v2", device="cpu", cache_folder=model_utils.PRETRAINED_MODEL_DIR
+        "paraphrase-MiniLM-L6-v2",
+        device="cpu",
+        cache_folder=model_utils.PRETRAINED_MODEL_DIR,
     )
+
     tokenizer = minilmv2.tokenizer
     distilbert = minilmv2.get_submodule("0")
+
     return distilbert, tokenizer
 
 
@@ -91,4 +99,5 @@ def fn_fixture_pretrained_bertimbau_tokenizer():
         "neuralmind/bert-base-portuguese-cased",
         cache_dir=model_utils.PRETRAINED_MODEL_DIR,
     )
+
     return tokenizer

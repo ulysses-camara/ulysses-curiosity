@@ -41,9 +41,10 @@ def gen_random_dataset(
 
     def sum_to_labels(y: torch.Tensor) -> torch.Tensor:
         norm_factor = 1.0 if np.isclose(y_min, y_max) else (y_max - y_min)
-        y = ((y - y_min) / norm_factor * num_labels).floor().long()
-        torch.minimum(y, torch.full_like(y, num_labels), out=y)
+        y = ((y - y_min) / norm_factor * num_labels - 1e-8).floor()
+        torch.minimum(y, torch.full_like(y, num_labels - 1), out=y)
         torch.maximum(y, torch.zeros_like(y), out=y)
+        y = y.long()
         return y
 
     y_train = sum_to_labels(y_train)

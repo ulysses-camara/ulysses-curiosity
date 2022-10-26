@@ -18,11 +18,11 @@ from . import architectures
 
 def standard_result_validation(
     probing_results,
-    scale_loss: float = 0.4,
-    scale_accuracy: float = 0.5,
-    scale_f1: float = 0.5,
-    min_f1_test: float = 0.6,
-    min_accuracy_test: float = 0.65,
+    scale_loss: float = 0.85,
+    scale_accuracy: float = 0.40,
+    scale_f1: float = 0.30,
+    min_f1_test: float = 0.1,
+    min_accuracy_test: float = 0.2,
 ):
     df_train, df_eval, df_test = probing_results.to_pandas(
         aggregate_by=["batch_index"],
@@ -58,22 +58,30 @@ def standard_result_validation(
 def test_probe_torch_lstm_onedir_1_layer(
     fixture_pretrained_torch_lstm_onedir_1_layer: torch.nn.Module,
 ):
-    df_train, df_eval, df_test, num_labels = train_test_models.gen_random_dataset(
+    df_train, df_eval, df_test, num_classes = train_test_models.gen_random_dataset(
         integer_data=True,
         vocab_size=fixture_pretrained_torch_lstm_onedir_1_layer.vocab_size,
     )
 
     probing_model_fn = curiosidade.probers.utils.get_probing_model_for_sequences(
-        hidden_layer_dims=[30],
+        hidden_layer_dims=[128],
     )
 
-    acc_fn = torchmetrics.Accuracy(num_classes=num_labels)
-    f1_fn = torchmetrics.F1Score(num_classes=num_labels)
+    if num_classes >= 3:
+        acc_fn = torchmetrics.classification.MulticlassAccuracy(num_classes=num_classes)
+        f1_fn = torchmetrics.classification.MulticlassF1Score(num_classes=num_classes)
+
+    else:
+        acc_fn = torchmetrics.BinaryAccuracy()
+        f1_fn = torchmetrics.BinaryF1Score()
+
+    acc_fn = acc_fn.to("cpu")
+    f1_fn = f1_fn.to("cpu")
 
     def metrics_fn(logits: torch.Tensor, truth_labels: torch.Tensor) -> dict[str, float]:
         # pylint: disable='not-callable'
-        accuracy = acc_fn(logits, truth_labels).detach().cpu().item()
-        f1 = f1_fn(logits, truth_labels).detach().cpu().item()
+        accuracy = float(acc_fn(logits, truth_labels).detach().cpu().item())
+        f1 = float(f1_fn(logits, truth_labels).detach().cpu().item())
         return {"accuracy": accuracy, "f1": f1}
 
     batch_size = 16
@@ -95,13 +103,13 @@ def test_probe_torch_lstm_onedir_1_layer(
         loss_fn=torch.nn.CrossEntropyLoss(),
         task_name="test task (torch, lstm, onedir, 1 layer)",
         task_type="classification",
-        output_dim=num_labels,
+        output_dim=num_classes,
         metrics_fn=metrics_fn,
     )
 
     probing_factory = curiosidade.ProbingModelFactory(
         probing_model_fn=probing_model_fn,
-        optim_fn=functools.partial(torch.optim.Adam, lr=0.005),
+        optim_fn=functools.partial(torch.optim.Adam, lr=0.001),
         task=task,
     )
 
@@ -118,25 +126,33 @@ def test_probe_torch_lstm_onedir_1_layer(
     assert prober_container.pruned_modules == ("lin_out",)
     assert prober_container.probed_modules == ("lstm",)
 
-    probing_results = prober_container.train(num_epochs=30, show_progress_bar=None)
+    probing_results = prober_container.train(num_epochs=40, show_progress_bar=None)
 
     standard_result_validation(probing_results)
 
 
 def test_probe_torch_ff(fixture_pretrained_torch_ff: torch.nn.Module):
-    df_train, df_eval, df_test, num_labels = train_test_models.gen_random_dataset()
+    df_train, df_eval, df_test, num_classes = train_test_models.gen_random_dataset()
 
     probing_model_fn = curiosidade.probers.utils.get_probing_model_feedforward(
         hidden_layer_dims=[30],
     )
 
-    acc_fn = torchmetrics.Accuracy(num_classes=num_labels)
-    f1_fn = torchmetrics.F1Score(num_classes=num_labels)
+    if num_classes >= 3:
+        acc_fn = torchmetrics.classification.MulticlassAccuracy(num_classes=num_classes)
+        f1_fn = torchmetrics.classification.MulticlassF1Score(num_classes=num_classes)
+
+    else:
+        acc_fn = torchmetrics.BinaryAccuracy()
+        f1_fn = torchmetrics.BinaryF1Score()
+
+    acc_fn = acc_fn.to("cpu")
+    f1_fn = f1_fn.to("cpu")
 
     def metrics_fn(logits: torch.Tensor, truth_labels: torch.Tensor) -> dict[str, float]:
         # pylint: disable='not-callable'
-        accuracy = acc_fn(logits, truth_labels).detach().cpu().item()
-        f1 = f1_fn(logits, truth_labels).detach().cpu().item()
+        accuracy = float(acc_fn(logits, truth_labels).detach().cpu().item())
+        f1 = float(f1_fn(logits, truth_labels).detach().cpu().item())
         return {"accuracy": accuracy, "f1": f1}
 
     batch_size = 16
@@ -158,13 +174,13 @@ def test_probe_torch_ff(fixture_pretrained_torch_ff: torch.nn.Module):
         loss_fn=torch.nn.CrossEntropyLoss(),
         task_name="test task (torch, simple)",
         task_type="classification",
-        output_dim=num_labels,
+        output_dim=num_classes,
         metrics_fn=metrics_fn,
     )
 
     probing_factory = curiosidade.ProbingModelFactory(
         probing_model_fn=probing_model_fn,
-        optim_fn=functools.partial(torch.optim.Adam, lr=0.005),
+        optim_fn=functools.partial(torch.optim.Adam, lr=0.001),
         task=task,
     )
 
@@ -181,23 +197,31 @@ def test_probe_torch_ff(fixture_pretrained_torch_ff: torch.nn.Module):
     assert prober_container.pruned_modules == ("params.lin4",)
     assert prober_container.probed_modules == ("params.relu1", "params.relu3")
 
-    probing_results = prober_container.train(num_epochs=30, show_progress_bar=None)
+    probing_results = prober_container.train(num_epochs=40, show_progress_bar=None)
 
     standard_result_validation(probing_results)
 
 
 def test_probe_torch_bifurcation(fixture_pretrained_torch_bifurcation: torch.nn.Module):
-    df_train, df_eval, df_test, num_labels = train_test_models.gen_random_dataset()
+    df_train, df_eval, df_test, num_classes = train_test_models.gen_random_dataset()
 
     probing_model_fn = architectures.ProbingModelBifurcation
 
-    acc_fn = torchmetrics.Accuracy(num_classes=num_labels)
-    f1_fn = torchmetrics.F1Score(num_classes=num_labels)
+    if num_classes >= 3:
+        acc_fn = torchmetrics.classification.MulticlassAccuracy(num_classes=num_classes)
+        f1_fn = torchmetrics.classification.MulticlassF1Score(num_classes=num_classes)
+
+    else:
+        acc_fn = torchmetrics.BinaryAccuracy()
+        f1_fn = torchmetrics.BinaryF1Score()
+
+    acc_fn = acc_fn.to("cpu")
+    f1_fn = f1_fn.to("cpu")
 
     def metrics_fn(logits: torch.Tensor, truth_labels: torch.Tensor) -> dict[str, float]:
         # pylint: disable='not-callable'
-        accuracy = acc_fn(logits, truth_labels).detach().cpu().item()
-        f1 = f1_fn(logits, truth_labels).detach().cpu().item()
+        accuracy = float(acc_fn(logits, truth_labels).detach().cpu().item())
+        f1 = float(f1_fn(logits, truth_labels).detach().cpu().item())
         return {"accuracy": accuracy, "f1": f1}
 
     batch_size = 16
@@ -219,13 +243,13 @@ def test_probe_torch_bifurcation(fixture_pretrained_torch_bifurcation: torch.nn.
         loss_fn=torch.nn.CrossEntropyLoss(),
         task_name="test task (torch. bifurcation)",
         task_type="classification",
-        output_dim=num_labels,
+        output_dim=num_classes,
         metrics_fn=metrics_fn,
     )
 
     probing_factory = curiosidade.ProbingModelFactory(
         probing_model_fn=probing_model_fn,
-        optim_fn=functools.partial(torch.optim.Adam, lr=0.005),
+        optim_fn=functools.partial(torch.optim.Adam, lr=0.001),
         task=task,
     )
 
@@ -242,7 +266,7 @@ def test_probe_torch_bifurcation(fixture_pretrained_torch_bifurcation: torch.nn.
     assert prober_container.pruned_modules == ("params_b",)
     assert prober_container.probed_modules == ("params_a.bifurcation",)
 
-    probing_results = prober_container.train(num_epochs=30, show_progress_bar=None)
+    probing_results = prober_container.train(num_epochs=40, show_progress_bar=None)
 
     standard_result_validation(probing_results)
 
@@ -254,18 +278,18 @@ def load_dataset_imdb(
 
     def tokenize_fn(item):
         sentlen_label = min(len(tokenizer.encode(item["text"])), 512)
-        sentlen_label = float(max(1, np.ceil(sentlen_label / 64) - 1))
+        sentlen_label = float(max(1, np.ceil(sentlen_label / 128) - 1))
 
         new_item = tokenizer(item["text"], truncation=True, padding="max_length")
         new_item["label"] = sentlen_label
 
         return new_item
 
-    num_classes = 8
+    num_classes = 4
 
-    dataset_train = dataset_train.shard(num_shards=50, index=0)
-    dataset_eval = dataset_test.shard(num_shards=50, index=0)
-    dataset_test = dataset_test.shard(num_shards=50, index=2)
+    dataset_train = dataset_train.shard(num_shards=200, index=0)
+    dataset_eval = dataset_test.shard(num_shards=200, index=0)
+    dataset_test = dataset_test.shard(num_shards=200, index=2)
 
     dataset_train = dataset_train.map(tokenize_fn, remove_columns="text")
     dataset_eval = dataset_eval.map(tokenize_fn, remove_columns="text")
@@ -309,15 +333,23 @@ def test_probe_distilbert(
         pooling_strategy="mean",
     )
 
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    device = "cpu"
 
-    acc_fn = torchmetrics.Accuracy(num_classes=num_classes).to(device)
-    f1_fn = torchmetrics.F1Score(num_classes=num_classes).to(device)
+    if num_classes >= 3:
+        acc_fn = torchmetrics.classification.MulticlassAccuracy(num_classes=num_classes)
+        f1_fn = torchmetrics.classification.MulticlassF1Score(num_classes=num_classes)
+
+    else:
+        acc_fn = torchmetrics.BinaryAccuracy()
+        f1_fn = torchmetrics.BinaryF1Score()
+
+    acc_fn = acc_fn.to("cpu")
+    f1_fn = f1_fn.to("cpu")
 
     def metrics_fn(logits, truth_labels):
         # pylint: disable='not-callable'
-        acc = acc_fn(logits, truth_labels).detach().cpu().item()
-        f1 = f1_fn(logits, truth_labels).detach().cpu().item()
+        acc = float(acc_fn(logits, truth_labels).detach().cpu().item())
+        f1 = float(f1_fn(logits, truth_labels).detach().cpu().item())
         return {"accuracy": acc, "f1": f1}
 
     task = curiosidade.ProbingTaskCustom(
@@ -345,21 +377,24 @@ def test_probe_distilbert(
         prober_container = curiosidade.core.attach_probers(
             base_model=distilbert,
             probing_model_factory=probing_factory,
-            modules_to_attach="transformer.layer.[02]",
+            modules_to_attach="embeddings.LayerNorm|transformer.layer.0.output_layer_norm",
             device=device,
             prune_unrelated_modules="infer",
         )
 
     assert prober_container.pruned_modules
-    assert prober_container.probed_modules == ("transformer.layer.0", "transformer.layer.2")
+    assert prober_container.probed_modules == (
+        "embeddings.LayerNorm",
+        "transformer.layer.0.output_layer_norm",
+    )
 
     probing_results = prober_container.train(
-        num_epochs=4,
+        num_epochs=2,
         show_progress_bar="epoch",
         gradient_accumulation_steps=2,
     )
 
-    standard_result_validation(probing_results, scale_loss=0.8)
+    standard_result_validation(probing_results, scale_loss=0.95)
 
 
 def test_probe_sentence_minilmv2(
@@ -395,13 +430,21 @@ def test_probe_sentence_minilmv2(
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
-    acc_fn = torchmetrics.Accuracy(num_classes=num_classes).to(device)
-    f1_fn = torchmetrics.F1Score(num_classes=num_classes).to(device)
+    if num_classes >= 3:
+        acc_fn = torchmetrics.classification.MulticlassAccuracy(num_classes=num_classes)
+        f1_fn = torchmetrics.classification.MulticlassF1Score(num_classes=num_classes)
+
+    else:
+        acc_fn = torchmetrics.BinaryAccuracy()
+        f1_fn = torchmetrics.BinaryF1Score()
+
+    acc_fn = acc_fn.to("cpu")
+    f1_fn = f1_fn.to("cpu")
 
     def metrics_fn(logits, truth_labels):
         # pylint: disable='not-callable'
-        acc = acc_fn(logits, truth_labels).detach().cpu().item()
-        f1 = f1_fn(logits, truth_labels).detach().cpu().item()
+        acc = float(acc_fn(logits, truth_labels).detach().cpu().item())
+        f1 = float(f1_fn(logits, truth_labels).detach().cpu().item())
         return {"accuracy": acc, "f1": f1}
 
     task = curiosidade.ProbingTaskCustom(
@@ -414,8 +457,8 @@ def test_probe_sentence_minilmv2(
         metrics_fn=metrics_fn,
     )
 
-    optim_fn = functools.partial(torch.optim.Adam, lr=0.05)
-    lr_scheduler_fn = functools.partial(torch.optim.lr_scheduler.ExponentialLR, gamma=0.8)
+    optim_fn = functools.partial(torch.optim.Adam, lr=0.001)
+    lr_scheduler_fn = functools.partial(torch.optim.lr_scheduler.ExponentialLR, gamma=0.9)
 
     probing_factory = curiosidade.ProbingModelFactory(
         task=task,
@@ -441,9 +484,9 @@ def test_probe_sentence_minilmv2(
     )
 
     probing_results = prober_container.train(
-        num_epochs=4,
+        num_epochs=2,
         show_progress_bar="epoch",
         gradient_accumulation_steps=2,
     )
 
-    standard_result_validation(probing_results, scale_loss=0.8)
+    standard_result_validation(probing_results, scale_loss=0.95)

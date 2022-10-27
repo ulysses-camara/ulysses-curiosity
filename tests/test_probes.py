@@ -500,13 +500,15 @@ def test_standard_prober_for_sequences_pooling_strategies(
         embedding_index_to_keep=embedding_index_to_keep,
     )
 
-    prober = fn_prober(input_dim=3, output_dim=1)
+    device = "cpu"
+
+    prober = fn_prober(input_dim=3, output_dim=1).to(device)
     assert prober.embedding_index_to_keep == embedding_index_to_keep
 
     pooling_fn = prober.pooling_fn
-    input_tensor = torch.arange(0, 2 * 5 * 3).view(2, 5, 3).float()
+    input_tensor = torch.arange(0, 2 * 5 * 3).view(2, 5, 3).float().to(device)
 
-    output_tensor = pooling_fn(input_tensor)
+    output_tensor = pooling_fn(input_tensor).detach().to("cpu")
     assert output_tensor.allclose(torch.tensor(expected_tensor, dtype=torch.float))
 
 

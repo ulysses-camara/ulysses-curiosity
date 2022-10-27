@@ -167,6 +167,8 @@ class ProbingModelForSequences(ProbingModelFeedforward):
             dropout=dropout,
         )
 
+        self._embedding_index_to_keep = embedding_index_to_keep
+
         if pooling_strategy == "max":
 
             def pooling_fn(inp: torch.Tensor) -> torch.Tensor:
@@ -181,24 +183,27 @@ class ProbingModelForSequences(ProbingModelFeedforward):
 
         else:
             # Note: torch.index_select(..., 'index') argument must be a tensor.
-            index_tensor = torch.tensor(
-                embedding_index_to_keep,
-                requires_grad=False,
-                dtype=torch.long,
+            self.register_buffer(
+                "index_tensor",
+                torch.tensor(
+                    self.embedding_index_to_keep,
+                    requires_grad=False,
+                    dtype=torch.long,
+                ),
             )
 
             def pooling_fn(inp: torch.Tensor) -> torch.Tensor:
                 out: torch.Tensor
-
-                if index_tensor.device != inp.device:
-                    index_tensor = index_tensor.to(inp.device)
-
-                out = torch.index_select(inp, dim=pooling_axis, index=index_tensor)
+                out = torch.index_select(inp, dim=pooling_axis, index=self.index_tensor)
                 out = torch.squeeze(out)
-
                 return out
 
             self.pooling_fn = pooling_fn
+
+    @property
+    def embedding_index_to_keep(self):
+        """Return `embedding_index_to_keep` attribute."""
+        return self._embedding_index_to_keep
 
     def forward(self, *args: torch.Tensor) -> torch.Tensor:
         out = args[0]  # shape: (batch_size, max_sequence_length, embed_dim) when pooling_axis=1

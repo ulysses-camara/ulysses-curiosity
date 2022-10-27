@@ -2,6 +2,7 @@
 import functools
 import warnings
 
+import pytest
 import torchmetrics
 import numpy as np
 import torch
@@ -476,3 +477,44 @@ def test_probe_sentence_minilmv2(
     )
 
     standard_result_validation(probing_results)
+
+
+@pytest.mark.parametrize(
+    "pooling_strategy,embedding_index_to_keep,expected_tensor",
+    (
+        ("mean", 0, [[6.0, 7.0, 8.0], [21.0, 22.0, 23.0]]),
+        ("mean", -1, [[6.0, 7.0, 8.0], [21.0, 22.0, 23.0]]),
+        ("max", 0, [[12.0, 13.0, 14.0], [27.0, 28.0, 29.0]]),
+        ("max", 3, [[12.0, 13.0, 14.0], [27.0, 28.0, 29.0]]),
+        ("keep_single_index", 0, [[0.0, 1.0, 2.0], [15.0, 16.0, 17.0]]),
+        ("keep_single_index", 2, [[6.0, 7.0, 8.0], [21.0, 22.0, 23.0]]),
+    ),
+)
+def test_standard_prober_for_sequences_pooling_strategies(
+    pooling_strategy: str, embedding_index_to_keep: int, expected_tensor: list[list[float]]
+):
+    fn_prober = curiosidade.probers.utils.get_probing_model_for_sequences(
+        hidden_layer_dims=[6],
+        pooling_strategy=pooling_strategy,
+        pooling_axis=1,
+        embedding_index_to_keep=embedding_index_to_keep,
+    )
+
+    prober = fn_prober(input_dim=3, output_dim=1)
+    assert prober.embedding_index_to_keep == embedding_index_to_keep
+
+    pooling_fn = prober.pooling_fn
+    input_tensor = torch.arange(0, 2 * 5 * 3).view(2, 5, 3).float()
+
+    output_tensor = pooling_fn(input_tensor)
+    assert output_tensor.allclose(torch.tensor(expected_tensor, dtype=torch.float))
+
+
+def test_invalid_pooling_strategy():
+    with pytest.raises(ValueError):
+        fn_prober = curiosidade.probers.utils.get_probing_model_for_sequences(
+            hidden_layer_dims=[10],
+            pooling_strategy="invalid",
+        )
+
+        prober = fn_prober(1, 1)

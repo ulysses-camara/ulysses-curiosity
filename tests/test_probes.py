@@ -519,4 +519,4 @@ def test_invalid_pooling_strategy():
             pooling_strategy="invalid",
         )
 
-        prober = fn_prober(1, 1)
+        fn_prober(1, 1)

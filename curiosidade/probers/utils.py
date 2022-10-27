@@ -168,6 +168,17 @@ class ProbingModelForSequences(ProbingModelFeedforward):
         )
 
         self._embedding_index_to_keep = embedding_index_to_keep
+        self.index_tensor: torch.Tensor
+
+        # Note: torch.index_select(..., 'index') argument must be a tensor.
+        self.register_buffer(
+            "index_tensor",
+            torch.tensor(
+                self.embedding_index_to_keep,
+                requires_grad=False,
+                dtype=torch.long,
+            ),
+        )
 
         if pooling_strategy == "max":
 
@@ -182,15 +193,6 @@ class ProbingModelForSequences(ProbingModelFeedforward):
             self.pooling_fn = functools.partial(torch.mean, axis=pooling_axis)
 
         else:
-            # Note: torch.index_select(..., 'index') argument must be a tensor.
-            self.register_buffer(
-                "index_tensor",
-                torch.tensor(
-                    self.embedding_index_to_keep,
-                    requires_grad=False,
-                    dtype=torch.long,
-                ),
-            )
 
             def pooling_fn(inp: torch.Tensor) -> torch.Tensor:
                 out: torch.Tensor
@@ -201,7 +203,7 @@ class ProbingModelForSequences(ProbingModelFeedforward):
             self.pooling_fn = pooling_fn
 
     @property
-    def embedding_index_to_keep(self):
+    def embedding_index_to_keep(self) -> int:
         """Return `embedding_index_to_keep` attribute."""
         return self._embedding_index_to_keep
 

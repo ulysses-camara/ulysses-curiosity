@@ -193,6 +193,7 @@ class ProbingModelContainer:
             sample_batches=[next(iter(self.task.probing_dataloader_train))],
             base_model=self.base_model,
             probed_modules=probed_modules.keys(),
+            known_output_dims=modules_input_dim.keys(),
         )
 
         unnecessary_modules = inspection_result["unnecessary_modules"]

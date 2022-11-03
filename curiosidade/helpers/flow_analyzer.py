@@ -49,7 +49,9 @@ class _AnalyzerContainer:
 
 @contextlib.contextmanager
 def analyze_modules(
-    base_model: adapters_base.BaseAdapter, probed_modules: t.Set[str]
+    base_model: adapters_base.BaseAdapter,
+    probed_modules: t.Set[str],
+    known_output_dims: t.FrozenSet[str],
 ) -> t.Iterator[_AnalyzerContainer]:
     """Insert temporary hooks in pretrained model to collect information."""
     pre_hooks: list[torch.utils.hooks.RemovableHandle] = []
@@ -77,12 +79,24 @@ def analyze_modules(
         m_input: TensorType,
         m_output: TensorType,
         module_name: str,
-        **kwargs: t.Any
+        **kwargs: t.Any,
     ) -> None:
         # pylint: disable='unused-argument'
         # Probed module ended now, therefore nothing can be ignored up to this point.
         channel_container.dismiss_unnecessary_cand()
-        channel_container.register_output_shape(module_name, m_output)
+
+        if module_name not in known_output_dims:
+            channel_container.register_output_shape(module_name, m_output)
+
+        elif issubclass(type(m_output), dict):
+            info_keys = tuple(m_output.keys())  # type: ignore
+            warnings.warn(
+                f"Module '{module}' output is a dictionary with keys {info_keys}. "
+                "Every dictionary item is going to be an input argument for your probing model's "
+                "forward method. Please take this into consideration while specifying its "
+                "method signature.",
+                RuntimeWarning,
+            )
 
     for module_name, module in base_model.named_modules():
         fn_module = functools.partial(hook_pre_fn, module_name=module_name)
@@ -107,6 +121,7 @@ def run_inspection_batches(
     sample_batches: t.Sequence[t.Any],
     base_model: adapters_base.BaseAdapter,
     probed_modules: t.Collection[str],
+    known_output_dims: t.Optional[t.Collection[str]] = None,
 ) -> dict[str, t.Any]:
     """Gather information about pretrained model by forwaring sample batches.
 
@@ -127,6 +142,10 @@ def run_inspection_batches(
     probed_modules : t.Collection[str]
         Names of all modules that will be probed.
 
+    known_output_dims : t.Collection[str] or None, default=None
+        Known output dimensions of probed layers. Used to avoid throwing exceptions when an
+        output dimension has not been successfully inferred.
+
     Returns
     -------
     inspection_results : dict[str, t.Any]
@@ -139,6 +158,9 @@ def run_inspection_batches(
     """
     base_model.eval()
 
+    known_output_dims = known_output_dims or frozenset()
+    known_output_dims = frozenset(known_output_dims)
+
     unnecessary_modules: tuple[tuple[str, torch.nn.Module], ...] = tuple()
     probing_input_dims: dict[str, tuple[int, ...]] = {}
 
@@ -147,7 +169,9 @@ def run_inspection_batches(
     if torch.is_tensor(sample_batches):
         sample_batches = [sample_batches]
 
-    with torch.no_grad(), analyze_modules(base_model, probed_set) as channel_container:
+    with torch.no_grad(), analyze_modules(
+        base_model, probed_set, known_output_dims
+    ) as channel_container:
         for sample_batch in sample_batches:
             input_feats, _ = base_model.break_batch(sample_batch)
             base_model(input_feats)

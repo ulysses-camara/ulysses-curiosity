@@ -133,11 +133,9 @@ class ProbingModelContainer:
             `^\\s*(?:modules_to_attach)\\s*$`. This argument only has effect when
             `type(modules_to_attach)=str`, otherwise it is ignored.
 
-        modules_input_dim : t.Sequence[int] or dict[str, int] or None, default=None
+        modules_input_dim : dict[str, int] or None, default=None
             Input dimension of each probing model.
 
-            - If list, the dimension in the i-th index should correspond to the input dimension of
-              the i-th probing model;
             - If mapping (dict), should map the module name to its corresponding input dimension.
               Input dimension of modules not present in this mapping will be inferred;
             - If None, the input dimensions will be inferred from the output dimensions sequences
@@ -456,11 +454,9 @@ def attach_probers(
         `^\\s*(?:modules_to_attach)\\s*$`. This argument only has effect when `modules_to_attach`
         type is `str`, otherwise it is ignored.
 
-    modules_input_dim : t.Sequence[int] or dict[str, int] or None, default=None
+    modules_input_dim : dict[str, int] or None, default=None
         Input dimension of each probing model.
 
-        - If sequence, the dimension in the i-th index should correspond to the input dimension of
-          the i-th probing model.
         - If mapping (dict), should map the module name to its corresponding input dimension.
           Input dimension of modules not present in this mapping will be inferred.
         - If None, the input dimensions will be inferred from the output dimensions sequences

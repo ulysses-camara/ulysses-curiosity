@@ -148,7 +148,7 @@ class FullSentenceTransformersAdapter(base.BaseAdapter):
         """
         out: torch.Tensor = self.model.encode(  # type: ignore
             sentences=input_feats,
-            batch_size=2048,  # Note: it is assumed that 'input_feats' is a mini-batch.
+            batch_size=len(input_feats),  # Note: we assume that 'input_feats' is a mini-batch.
             show_progress_bar=False,
             convert_to_numpy=False,
             convert_to_tensor=True,

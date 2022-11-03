@@ -14,7 +14,7 @@ __all__ = [
 ]
 
 
-TensorType = t.Union[torch.Tensor, tuple[torch.Tensor, ...]]
+TensorType = t.Union[torch.Tensor, tuple[torch.Tensor, ...], dict[str, t.Any]]
 
 
 class _AnalyzerContainer:
@@ -40,8 +40,26 @@ class _AnalyzerContainer:
             m_output = (m_output,)  # type: ignore
 
         out_shapes: tuple[int, ...] = tuple(
-            item.shape[-1] for item in m_output if hasattr(item, "shape")
+            item.shape[-1] for item in m_output if hasattr(item, "shape")  # type: ignore
         )
+
+        if not out_shapes:
+            info_types = tuple(map(type, m_output))
+            info_keys = (
+                f" and keys {tuple(m_output.keys())}"  # type: ignore
+                if issubclass(type(m_output), dict)
+                else ""
+            )
+
+            raise TypeError(
+                f"Could not infer output shape from probed module '{module_name}' (with outputs "
+                f"of type {info_types}{info_keys}). If type seems correct, you can "
+                "provide the probing input dimensions as:\n\n    curiosidade.attach_probers(..., "
+                f"modules_input_dim={{'{module_name}': INPUT_DIM)}}.\n"
+                "In case the output types are incorrect, please make sure you are probing the "
+                "correct module."
+            )
+
         self.probing_input_dims[module_name] = out_shapes
 
         return self

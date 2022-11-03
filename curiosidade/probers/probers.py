@@ -37,7 +37,9 @@ class ProbingModelWrapper:
         self.probing_model = probing_model
         self.task = task
 
-        self.input_tensors: tuple[torch.Tensor, ...] = (torch.empty(0, dtype=torch.float64),)
+        self.input_tensors: t.Union[dict[str, t.Any], tuple[torch.Tensor, ...]]
+        self.input_tensors = (torch.empty(0, dtype=torch.float64),)
+
         self.output_tensor = torch.empty(0, dtype=torch.float64)
         self.loss = torch.empty(0)
 
@@ -76,14 +78,23 @@ class ProbingModelWrapper:
         def fn_hook_forward(
             layer: torch.nn.Module,
             l_input: torch.Tensor,
-            l_output: t.Union[tuple[torch.Tensor, ...], torch.Tensor],
+            l_output: t.Union[tuple[torch.Tensor, ...], torch.Tensor, dict[str, t.Any]],
         ) -> None:
             # pylint: disable='unused-argument'
             if torch.is_tensor(l_output):
                 self.input_tensors = (l_output.detach(),)  # type: ignore
+
+            elif issubclass(type(l_output), dict):
+                self.input_tensors = {
+                    key: item.detach() if torch.is_tensor(item) else item
+                    for key, item in l_output.items()  # type: ignore
+                }
+
             else:
                 self.input_tensors = tuple(
-                    tensor.detach() for tensor in l_output if torch.is_tensor(tensor)
+                    tensor.detach()  # type: ignore
+                    for tensor in l_output
+                    if torch.is_tensor(tensor)
                 )
 
         self.attached_module = module
@@ -130,7 +141,11 @@ class ProbingModelWrapper:
         should_backward = not is_test
         should_optim_step = not accumulate_grad and not is_test
 
-        self.output_tensor = self.probing_model(*self.input_tensors)
+        if isinstance(self.input_tensors, dict):
+            self.output_tensor = self.probing_model(**self.input_tensors)
+        else:
+            self.output_tensor = self.probing_model(*self.input_tensors)
+
         self.loss = self.task.loss_fn(self.output_tensor, input_labels)
 
         if should_backward:

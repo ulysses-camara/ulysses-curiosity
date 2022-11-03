@@ -203,11 +203,18 @@ class ProbingModelContainer:
         self.base_model.to("cpu")
 
         for module_name, module in probed_modules.items():
-            self.probers[module_name] = probing_model_factory.create_and_attach(
-                module=module,
-                probing_input_dim=probing_input_dims[module_name],
-                random_seed=self.random_seed,
-            )
+            try:
+                self.probers[module_name] = probing_model_factory.create_and_attach(
+                    module=module,
+                    probing_input_dim=probing_input_dims[module_name],
+                    random_seed=self.random_seed,
+                )
+
+            except Exception as err:
+                raise RuntimeError(
+                    f"Could not attach prober in module '{module_name}' "
+                    f"(input_dim: {probing_input_dims[module_name]})."
+                ) from err
 
         if prune_unrelated_modules == "infer":
             pruned_modules = dict(unnecessary_modules)

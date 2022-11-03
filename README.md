@@ -62,7 +62,7 @@ The rationale behind this method is that, since the probing task is related to t
 
 ### About this framework
 
-This frameworks provides all resources needed to train and validate your probing task. We support pretrained [PyTorch](https://pytorch.org/) (`torch.nn.Module`) and [Huggingface Transformer](https://huggingface.co/docs/transformers/index) models. In order to properly set up and train your probing tasks, you'll need:
+This frameworks provides all resources needed to train and validate your probing task. We support pretrained [PyTorch](https://pytorch.org/) (`torch.nn.Module`), [Huggingface Transformer](https://huggingface.co/docs/transformers/index), and [SentenceTransformer](https://www.sbert.net/) models. To properly setup and train your probing tasks, you'll need:
 
 - A probing dataset  &mdash; either from a [preconfigured probing task](#preconfigured-probing-tasks) or your own (a probing task is by definition a *simple classification problem with interpretable results*);
 - A pretrained model to probe; and

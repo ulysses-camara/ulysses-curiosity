@@ -33,7 +33,7 @@ class BaseAdapter(abc.ABC):
 
     def encode(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         """Call underlying model 'encode' method."""
-        return self.model.encode(*args, **kwargs)
+        return self.model.encode(*args, **kwargs)  # type: ignore
 
     def eval(self) -> "BaseAdapter":
         """Set model to eval model."""

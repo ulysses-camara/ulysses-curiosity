@@ -299,7 +299,7 @@ def get_resource_from_ulysses_fetcher(
 
     if not has_succeed:
         raise FileNotFoundError(
-            "Could not find or download the necessary resource '{resource_name}' using the "
+            f"Could not find or download the necessary resource '{resource_name}' using the "
             "Ulysses Fetcher. Please check write permissions or connectivity issues."
         )
 

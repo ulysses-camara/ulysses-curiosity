@@ -146,7 +146,7 @@ class FullSentenceTransformersAdapter(base.BaseAdapter):
         out : torch.Tensor
             Forward pass output.
         """
-        out: torch.Tensor = self.model.encode(
+        out: torch.Tensor = self.model.encode(  # type: ignore
             sentences=input_feats,
             batch_size=2048,  # Note: it is assumed that 'input_feats' is a mini-batch.
             show_progress_bar=False,

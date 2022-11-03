@@ -31,6 +31,10 @@ class BaseAdapter(abc.ABC):
         self.model.to(self.device)
         return self
 
+    def encode(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
+        """Call underlying model 'encode' method."""
+        return self.model.encode(*args, **kwargs)
+
     def eval(self) -> "BaseAdapter":
         """Set model to eval model."""
         self.model.eval()

@@ -106,6 +106,63 @@ class HuggingfaceAdapter(base.BaseAdapter, _HuggingfaceDeviceHandler):
         return self.model.named_modules()
 
 
+class FullSentenceTransformersAdapter(base.BaseAdapter):
+    """Adapter for Full Sentence Transformers (`sentence-transformers` package) models."""
+
+    @classmethod
+    def break_batch(cls, batch: tuple[list[str], torch.Tensor]) -> tuple[list[str], torch.Tensor]:
+        """Break batch in inputs `input_feats` and input labels `input_labels` appropriately.
+
+        Parameters
+        ----------
+        batch : tuple[list[str], torch.Tensor]
+            Mapping from model inference argument names to corresponding PyTorch Tensors.
+            If is expected that `batch` has the key `labels`, and every other entry in
+            `batch` has a matching keyword argument in `model` call.
+
+        Returns
+        -------
+        input_feats : list[str]
+            Input sentences.
+
+        input_labels : torch.Tensor
+            Sequence label.
+        """
+        input_feats, input_labels = batch
+        return input_feats, input_labels
+
+    def forward(
+        self, input_feats: t.Union[transformers.BatchEncoding, dict[str, torch.Tensor]]
+    ) -> torch.Tensor:
+        """Model forward pass.
+
+        Parameters
+        ----------
+        input_feats : list[str]
+            Input pack for sentence transformer model.
+
+        Returns
+        -------
+        out : torch.Tensor
+            Forward pass output.
+        """
+        out: torch.Tensor = self.model.encode(
+            sentences=input_feats,
+            batch_size=2048,  # Note: it is assumed that 'input_feats' is a mini-batch.
+            show_progress_bar=False,
+            convert_to_numpy=False,
+            convert_to_tensor=True,
+            normalize_embeddings=False,
+            device=self.device,
+        )
+
+        return torch.as_tensor(out)
+
+    def named_modules(self) -> t.Iterator[tuple[str, torch.nn.Module]]:
+        """Return Torch module .named_modules() iterator."""
+        return self.model.named_modules()
+
+
 class SentenceTransformersAdapter(base.BaseAdapter, _HuggingfaceDeviceHandler):
     """Adapter for Sentence Transformers (`sentence-transformers` package) models."""
 
@@ -225,6 +282,11 @@ def get_model_adapter(model: t.Any, *args: t.Any, **kwargs: t.Any) -> base.BaseA
     """
     if IS_TRANSFORMERS_AVAILABLE and isinstance(model, transformers.PreTrainedModel):
         return HuggingfaceAdapter(model, *args, **kwargs)
+
+    if IS_SENTENCE_TRANSFORMERS_AVAILABLE and isinstance(
+        model, sentence_transformers.SentenceTransformer
+    ):
+        return FullSentenceTransformersAdapter(model, *args, **kwargs)
 
     if IS_SENTENCE_TRANSFORMERS_AVAILABLE and isinstance(
         model, sentence_transformers.models.Transformer

@@ -6,7 +6,7 @@ import regex
 import torch.nn
 
 
-ModuleInputDimType = t.Optional[t.Union[dict[str, int], t.Sequence[int]]]
+ModuleInputDimType = t.Optional[dict[str, int]]
 
 
 def get_fn_select_modules_to_probe(

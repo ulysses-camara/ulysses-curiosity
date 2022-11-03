@@ -133,11 +133,9 @@ class ProbingModelContainer:
             `^\\s*(?:modules_to_attach)\\s*$`. This argument only has effect when
             `type(modules_to_attach)=str`, otherwise it is ignored.
 
-        modules_input_dim : t.Sequence[int] or dict[str, int] or None, default=None
+        modules_input_dim : dict[str, int] or None, default=None
             Input dimension of each probing model.
 
-            - If list, the dimension in the i-th index should correspond to the input dimension of
-              the i-th probing model;
             - If mapping (dict), should map the module name to its corresponding input dimension.
               Input dimension of modules not present in this mapping will be inferred;
             - If None, the input dimensions will be inferred from the output dimensions sequences
@@ -195,6 +193,7 @@ class ProbingModelContainer:
             sample_batches=[next(iter(self.task.probing_dataloader_train))],
             base_model=self.base_model,
             probed_modules=probed_modules.keys(),
+            known_output_dims=modules_input_dim.keys(),
         )
 
         unnecessary_modules = inspection_result["unnecessary_modules"]
@@ -204,11 +203,18 @@ class ProbingModelContainer:
         self.base_model.to("cpu")
 
         for module_name, module in probed_modules.items():
-            self.probers[module_name] = probing_model_factory.create_and_attach(
-                module=module,
-                probing_input_dim=probing_input_dims[module_name],
-                random_seed=self.random_seed,
-            )
+            try:
+                self.probers[module_name] = probing_model_factory.create_and_attach(
+                    module=module,
+                    probing_input_dim=probing_input_dims[module_name],
+                    random_seed=self.random_seed,
+                )
+
+            except Exception as err:
+                raise RuntimeError(
+                    f"Could not attach prober in module '{module_name}' "
+                    f"(input_dim: {probing_input_dims[module_name]})."
+                ) from err
 
         if prune_unrelated_modules == "infer":
             pruned_modules = dict(unnecessary_modules)
@@ -456,11 +462,9 @@ def attach_probers(
         `^\\s*(?:modules_to_attach)\\s*$`. This argument only has effect when `modules_to_attach`
         type is `str`, otherwise it is ignored.
 
-    modules_input_dim : t.Sequence[int] or dict[str, int] or None, default=None
+    modules_input_dim : dict[str, int] or None, default=None
         Input dimension of each probing model.
 
-        - If sequence, the dimension in the i-th index should correspond to the input dimension of
-          the i-th probing model.
         - If mapping (dict), should map the module name to its corresponding input dimension.
           Input dimension of modules not present in this mapping will be inferred.
         - If None, the input dimensions will be inferred from the output dimensions sequences

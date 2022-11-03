@@ -86,11 +86,9 @@ def fn_fixture_pretrained_minilmv2():
         device="cpu",
         cache_folder=model_utils.PRETRAINED_MODEL_DIR,
     )
+    minilmv2.max_seq_length = 32
 
-    tokenizer = minilmv2.tokenizer
-    distilbert = minilmv2.get_submodule("0")
-
-    return distilbert, tokenizer
+    return minilmv2
 
 
 @pytest.fixture(scope="session", name="fixture_pretrained_bertimbau_tokenizer")

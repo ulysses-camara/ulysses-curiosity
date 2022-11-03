@@ -15,6 +15,7 @@ import curiosidade
 
 from . import train_test_models
 from . import architectures
+from . import model_utils
 
 
 def standard_result_validation(probing_results):
@@ -261,7 +262,9 @@ def test_probe_torch_bifurcation(fixture_pretrained_torch_bifurcation: torch.nn.
 def load_dataset_imdb(
     tokenizer,
 ) -> tuple[datasets.Dataset, datasets.Dataset, datasets.Dataset, int]:
-    dataset_train, dataset_test = datasets.load_dataset("imdb", split=["train", "test"])
+    dataset_train, dataset_test = datasets.load_dataset(
+        "imdb", split=["train", "test"], cache_dir="cache"
+    )
 
     def tokenize_fn(item):
         sentlen_label = min(len(tokenizer.encode(item["text"])), 512)
@@ -385,11 +388,11 @@ def test_probe_distilbert(
 
 
 def test_probe_sentence_minilmv2(
-    fixture_pretrained_minilmv2: tuple[
-        sentence_transformers.models.Transformer, transformers.DistilBertTokenizer
-    ],
+    fixture_pretrained_minilmv2: sentence_transformers.SentenceTransformer,
 ):
-    minilmv2, tokenizer = fixture_pretrained_minilmv2
+    minilmv2 = fixture_pretrained_minilmv2.get_submodule("0")
+    tokenizer = fixture_pretrained_minilmv2.tokenizer
+
     dataset_train, dataset_eval, dataset_test, num_classes = load_dataset_imdb(tokenizer)
 
     probing_dataloader_train = torch.utils.data.DataLoader(
@@ -520,3 +523,136 @@ def test_invalid_pooling_strategy():
         )
 
         fn_prober(1, 1)
+
+
+def test_probe_sentence_minilmv2_full_sbert(
+    fixture_pretrained_minilmv2: sentence_transformers.SentenceTransformer,
+):
+    dataset_train, dataset_test = datasets.load_dataset(
+        "imdb", split=["train", "test"], cache_dir="cache"
+    )
+    buckets = np.asfarray([582.0, 987.5, 2685.3])
+
+    def preprocess_fn(item):
+        sentlen_label = len(item["text"])
+        sentlen_label = float(np.digitize(len(item["text"]), buckets))
+
+        new_item = {
+            "sentence": item["text"],
+            "label": sentlen_label,
+        }
+
+        return new_item
+
+    num_classes = 4
+
+    dataset_train = dataset_train.shard(num_shards=1000, index=0)
+    dataset_eval = dataset_test.shard(num_shards=1000, index=0)
+    dataset_test = dataset_test.shard(num_shards=1000, index=2)
+
+    dataset_train = dataset_train.map(preprocess_fn)
+    dataset_eval = dataset_eval.map(preprocess_fn)
+    dataset_test = dataset_test.map(preprocess_fn)
+
+    assert len(dataset_train)
+    assert len(dataset_eval)
+    assert len(dataset_test)
+
+    cols = ["sentence", "label"]
+    dataset_train = dataset_train.to_pandas()[cols].values.tolist()
+    dataset_eval = dataset_eval.to_pandas()[cols].values.tolist()
+    dataset_test = dataset_test.to_pandas()[cols].values.tolist()
+
+    probing_dataloader_train = torch.utils.data.DataLoader(
+        dataset_train,
+        batch_size=32,
+        shuffle=True,
+    )
+
+    probing_dataloader_eval = torch.utils.data.DataLoader(
+        dataset_eval,
+        batch_size=32,
+        shuffle=False,
+    )
+
+    probing_dataloader_test = torch.utils.data.DataLoader(
+        dataset_test,
+        batch_size=32,
+        shuffle=False,
+    )
+
+    probing_model_fn = functools.partial(
+        model_utils.SwitchableProber,
+        hidden_layer_dims=[128],
+    )
+
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+
+    if num_classes >= 3:
+        acc_fn = torchmetrics.classification.MulticlassAccuracy(num_classes=num_classes)
+        f1_fn = torchmetrics.classification.MulticlassF1Score(num_classes=num_classes)
+
+    else:
+        acc_fn = torchmetrics.BinaryAccuracy()
+        f1_fn = torchmetrics.BinaryF1Score()
+
+    acc_fn = acc_fn.to("cpu")
+    f1_fn = f1_fn.to("cpu")
+
+    def metrics_fn(logits, truth_labels):
+        # pylint: disable='not-callable'
+        acc = float(acc_fn(logits, truth_labels).detach().cpu().item())
+        f1 = float(f1_fn(logits, truth_labels).detach().cpu().item())
+        return {"accuracy": acc, "f1": f1}
+
+    task = curiosidade.ProbingTaskCustom(
+        probing_dataloader_train=probing_dataloader_train,
+        probing_dataloader_eval=probing_dataloader_eval,
+        probing_dataloader_test=probing_dataloader_test,
+        loss_fn=torch.nn.CrossEntropyLoss(),
+        task_name="test sentence minilmv2 sentlen",
+        output_dim=num_classes,
+        metrics_fn=metrics_fn,
+    )
+
+    optim_fn = functools.partial(torch.optim.Adam, lr=0.001)
+    lr_scheduler_fn = functools.partial(torch.optim.lr_scheduler.ExponentialLR, gamma=0.9)
+
+    probing_factory = curiosidade.ProbingModelFactory(
+        task=task,
+        probing_model_fn=probing_model_fn,
+        optim_fn=optim_fn,
+        lr_scheduler_fn=lr_scheduler_fn,
+    )
+
+    modules_to_attach = [
+        "0",
+        "1",
+        "0.auto_model.encoder.layer.5.output.LayerNorm",
+        "0.auto_model.encoder",
+        "0.auto_model.embeddings",
+    ]
+
+    with warnings.catch_warnings():
+        warnings.simplefilter(action="error", category=UserWarning)
+        prober_container = curiosidade.core.attach_probers(
+            base_model=fixture_pretrained_minilmv2,
+            probing_model_factory=probing_factory,
+            modules_to_attach=modules_to_attach,
+            device=device,
+            prune_unrelated_modules="infer",
+            modules_input_dim={
+                "0": 384,
+                "1": 384,
+            },
+        )
+
+    assert len(prober_container.pruned_modules) == 0
+    assert sorted(prober_container.probed_modules) == sorted(modules_to_attach)
+
+    probing_results = prober_container.train(
+        num_epochs=1,
+        show_progress_bar="epoch",
+    )
+
+    standard_result_validation(probing_results)

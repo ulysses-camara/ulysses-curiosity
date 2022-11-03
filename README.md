@@ -257,7 +257,7 @@ probing_factory = curiosidade.ProbingModelFactory(
 prober_container = curiosidade.attach_probers(
     base_model=pretrained_model,
     probing_model_factory=probing_factory,
-    modules_to_attach="params.relu\d+",  # or a container like ["name_a", "name_b", ...]
+    modules_to_attach="params.relu\d+",  # regex or a container like ["name_a", "name_b", ...]
     random_seed=16,
     device="cpu",
 )
@@ -389,7 +389,7 @@ probing_factory = curiosidade.ProbingModelFactory(
 prober_container = curiosidade.attach_probers(
     base_model=bert,
     probing_model_factory=probing_factory,
-    modules_to_attach="bert.encoder.layer.\d+.output.dense",
+    modules_to_attach="bert.encoder.layer.\d+",
     device="cuda",
 )
 

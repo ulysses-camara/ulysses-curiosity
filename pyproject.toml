@@ -7,7 +7,7 @@ name = "curiosidade"
 
 [project]
 name = "ulysses-curiosity"
-version = "0.5.1"
+version = "0.5.2"
 description = "Implement probing tasks for models trained on brazilian legal documents."
 authors = [
     {name="felsiq", email= "felipe.siqueira@usp.br"}

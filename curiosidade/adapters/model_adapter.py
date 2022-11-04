@@ -4,6 +4,7 @@ import typing as t
 
 import torch
 import torch.nn
+import numpy as np
 
 from . import base
 
@@ -116,9 +117,7 @@ class FullSentenceTransformersAdapter(base.BaseAdapter):
         Parameters
         ----------
         batch : tuple[list[str], torch.Tensor]
-            Mapping from model inference argument names to corresponding PyTorch Tensors.
-            If is expected that `batch` has the key `labels`, and every other entry in
-            `batch` has a matching keyword argument in `model` call.
+            Tuple with list of sentences as first argument, and labels in a Tensor.
 
         Returns
         -------
@@ -129,11 +128,18 @@ class FullSentenceTransformersAdapter(base.BaseAdapter):
             Sequence label.
         """
         input_feats, input_labels = batch
+
+        # Note: we sort indices now to prevent SBERT 'encode' to change the batch order.
+        # If we don't sort here, then the probers will receive the sentence embeddings
+        # in a 'random' order, and the optimization won't converge.
+        sorted_inds = np.argsort([-len(item) for item in input_feats]).tolist()
+
+        input_feats = [input_feats[i] for i in sorted_inds]
+        input_labels = input_labels[sorted_inds]
+
         return input_feats, input_labels
 
-    def forward(
-        self, input_feats: t.Union[transformers.BatchEncoding, dict[str, torch.Tensor]]
-    ) -> torch.Tensor:
+    def forward(self, input_feats: list[str]) -> torch.Tensor:
         """Model forward pass.
 
         Parameters

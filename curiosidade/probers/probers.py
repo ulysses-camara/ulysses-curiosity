@@ -143,6 +143,7 @@ class ProbingModelWrapper:
 
         if isinstance(self.input_tensors, dict):
             self.output_tensor = self.probing_model(**self.input_tensors)
+
         else:
             self.output_tensor = self.probing_model(*self.input_tensors)
 

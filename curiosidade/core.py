@@ -287,6 +287,7 @@ class ProbingModelContainer:
         gradient_accumulation_steps: int = 1,
         is_test: bool = False,
         show_progress_bar: bool = False,
+        mv_avg_loss_momentum: float = 0.95,
     ) -> output_handlers.MetricPack:
         """Run a full training epoch."""
         self.base_model.eval()
@@ -300,6 +301,10 @@ class ProbingModelContainer:
             else:
                 prober.train()
 
+        mv_avg_loss = -1.0
+        min_loss = float("+inf")
+        max_loss = float("-inf")
+
         for i, batch in enumerate(pbar, 1):
             with torch.no_grad():
                 batch_input_feats, batch_input_labels = self.base_model.break_batch(batch)
@@ -309,13 +314,32 @@ class ProbingModelContainer:
             accumulate_grad = i % gradient_accumulation_steps != 0
 
             with torch.set_grad_enabled(not is_test):
+                cur_avg_loss = 0.0
+
                 for module_name, prober in self.probers.items():
                     metrics = prober.step(
                         input_labels=batch_input_labels,
                         accumulate_grad=accumulate_grad,
                         is_test=is_test,
                     )
+
                     res.append(metrics, module_name, i)
+                    cur_avg_loss += metrics["loss"]
+
+                cur_avg_loss /= len(self.probers)
+
+                if mv_avg_loss < 0.0:
+                    mv_avg_loss = cur_avg_loss
+                else:
+                    mv_avg_loss = (mv_avg_loss - cur_avg_loss) * mv_avg_loss_momentum + cur_avg_loss
+
+                min_loss = min(min_loss, cur_avg_loss)
+                max_loss = max(max_loss, cur_avg_loss)
+
+                pbar.set_description(
+                    f"({'test ' if is_test else 'train'}) "
+                    f"{min_loss=:8.6f} {max_loss=:8.6f} {mv_avg_loss=:8.6f}"
+                )
 
         return res
 
@@ -417,6 +441,7 @@ class ProbingModelContainer:
                     self._run_epoch(
                         dataloader=self.task.probing_dataloader_test,  # type: ignore
                         is_test=True,
+                        show_progress_bar=show_progress_bar_per_epoch,
                     ).expand_key_dim(-1)
                 )
 

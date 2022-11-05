@@ -14,7 +14,7 @@ try:
     __version__ = _importlib_metadata.version(__name__)
 
 except _importlib_metadata.PackageNotFoundError:
-    __version__ = "0.5.2"
+    __version__ = "0.5.3"
 
 
 __all__ = [

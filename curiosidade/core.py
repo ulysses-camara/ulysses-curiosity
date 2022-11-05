@@ -311,7 +311,7 @@ class ProbingModelContainer:
                 self.base_model(batch_input_feats)
 
             batch_input_labels = batch_input_labels.to(self.device)
-            accumulate_grad = i % gradient_accumulation_steps != 0
+            accumulate_grad = (i % gradient_accumulation_steps != 0) and i < len(dataloader)
 
             with torch.set_grad_enabled(not is_test):
                 cur_avg_loss = 0.0

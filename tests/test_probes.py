@@ -656,3 +656,217 @@ def test_probe_sentence_minilmv2_full_sbert(
     )
 
     standard_result_validation(probing_results)
+
+
+@pytest.mark.parametrize(
+    "num_epochs,batch_size,gradient_accumulation_steps,num_probers,"
+    "include_eval,include_test,include_lr_scheduler",
+    (
+        (1, 10, 1, 1, False, False, False),
+        (1, 20, 1, 1, False, False, False),
+        (2, 20, 1, 1, False, False, False),
+        (1, 10, 2, 1, False, False, False),
+        (1, 20, 2, 1, False, False, False),
+        (2, 20, 2, 1, False, False, False),
+        (1, 10, 1, 2, False, False, False),
+        (1, 20, 1, 2, False, False, False),
+        (2, 20, 1, 2, False, False, False),
+        (1, 10, 2, 2, False, False, False),
+        (1, 20, 2, 2, False, False, False),
+        (2, 20, 2, 2, False, False, False),
+        (1, 10, 1, 1, True, False, False),
+        (1, 20, 1, 1, True, False, False),
+        (2, 20, 1, 1, True, False, False),
+        (1, 10, 2, 1, True, False, False),
+        (1, 20, 2, 1, True, False, False),
+        (2, 20, 2, 1, True, False, False),
+        (1, 10, 1, 2, True, False, False),
+        (1, 20, 1, 2, True, False, False),
+        (2, 20, 1, 2, True, False, False),
+        (1, 10, 1, 1, True, True, False),
+        (1, 20, 1, 1, True, True, False),
+        (2, 20, 1, 1, True, True, False),
+        (1, 10, 2, 1, True, True, False),
+        (1, 20, 2, 1, True, True, False),
+        (2, 20, 2, 1, True, True, False),
+        (1, 10, 1, 2, True, True, False),
+        (1, 20, 1, 2, True, True, False),
+        (2, 20, 1, 2, True, True, False),
+        (1, 10, 1, 1, True, True, True),
+        (1, 20, 1, 1, True, True, True),
+        (2, 20, 1, 1, True, True, True),
+        (1, 10, 2, 1, True, True, True),
+        (1, 20, 2, 1, True, True, True),
+        (2, 20, 2, 1, True, True, True),
+        (1, 10, 1, 2, True, True, True),
+        (1, 20, 1, 2, True, True, True),
+        (2, 20, 1, 2, True, True, True),
+        (1, 10, 2, 2, True, True, True),
+        (1, 20, 2, 2, True, True, True),
+        (2, 20, 2, 2, True, True, True),
+        (1, 10, 1, 1, False, False, True),
+        (1, 20, 1, 1, False, False, True),
+        (2, 20, 1, 1, False, False, True),
+        (1, 10, 2, 1, False, False, True),
+        (1, 20, 2, 1, False, False, True),
+        (2, 20, 2, 1, False, False, True),
+        (1, 10, 1, 2, False, False, True),
+        (1, 20, 1, 2, False, False, True),
+        (2, 20, 1, 2, False, False, True),
+        (1, 10, 2, 2, False, False, True),
+        (1, 20, 2, 2, False, False, True),
+        (2, 20, 2, 2, False, False, True),
+        (2, 30, 2, 2, False, False, True),
+        (6, 30, 2, 2, False, False, True),
+        (6, 30, 2, 3, False, False, True),
+        (6, 30, 1, 3, False, False, True),
+        (5, 30, 1, 3, False, True, True),
+        (6, 30, 2, 2, False, False, False),
+        (6, 30, 2, 3, False, False, False),
+        (6, 30, 1, 3, False, False, False),
+        (5, 30, 1, 3, False, True, False),
+        (3, 10, 1, 3, True, False, False),
+        (2, 3, 2, 2, False, False, True),
+        (6, 3, 2, 2, False, False, True),
+        (6, 3, 2, 3, False, False, True),
+        (6, 3, 1, 3, False, False, True),
+        (5, 3, 1, 3, False, True, True),
+        (6, 3, 2, 2, False, False, False),
+        (6, 3, 2, 3, False, False, False),
+        (6, 3, 1, 3, False, False, False),
+        (5, 3, 1, 3, False, True, False),
+        (1, 3, 1, 3, True, False, True),
+        (1, 3, 1, 3, True, True, True),
+        (1, 3, 2, 2, True, False, False),
+    ),
+)
+def test_optimization_and_validation_frequencies(
+    fixture_pretrained_torch_ff: torch.nn.Module,
+    num_epochs: int,
+    batch_size: int,
+    gradient_accumulation_steps: int,
+    num_probers: int,
+    include_eval: bool,
+    include_test: bool,
+    include_lr_scheduler: bool,
+):
+    df_train, df_eval, df_test, num_classes = train_test_models.gen_random_dataset(
+        train_size=20,
+        eval_size=10,
+        test_size=10,
+    )
+
+    num_optim_steps = 0
+    num_scheduler_steps = 0
+    num_metric_computations = 0
+
+    probing_model_fn = curiosidade.probers.utils.get_probing_model_feedforward(
+        hidden_layer_dims=[30],
+    )
+
+    if num_classes >= 3:
+        acc_fn = torchmetrics.classification.MulticlassAccuracy(num_classes=num_classes)
+        f1_fn = torchmetrics.classification.MulticlassF1Score(num_classes=num_classes)
+
+    else:
+        acc_fn = torchmetrics.BinaryAccuracy()
+        f1_fn = torchmetrics.BinaryF1Score()
+
+    acc_fn = acc_fn.to("cpu")
+    f1_fn = f1_fn.to("cpu")
+
+    def metrics_fn(logits: torch.Tensor, truth_labels: torch.Tensor) -> dict[str, float]:
+        # pylint: disable='not-callable'
+        nonlocal num_metric_computations
+        num_metric_computations += 1
+        accuracy = float(acc_fn(logits, truth_labels).detach().cpu().item())
+        f1 = float(f1_fn(logits, truth_labels).detach().cpu().item())
+        return {"accuracy": accuracy, "f1": f1}
+
+    probing_dataloader_train = torch.utils.data.DataLoader(
+        df_train,
+        batch_size=batch_size,
+        shuffle=True,
+    )
+
+    probing_dataloader_eval = None
+    probing_dataloader_test = None
+
+    if include_eval:
+        probing_dataloader_eval = torch.utils.data.DataLoader(
+            df_eval, batch_size=batch_size, shuffle=False
+        )
+
+    if include_test:
+        probing_dataloader_test = torch.utils.data.DataLoader(
+            df_test, batch_size=batch_size, shuffle=False
+        )
+
+    task = curiosidade.ProbingTaskCustom(
+        probing_dataloader_train=probing_dataloader_train,
+        probing_dataloader_eval=probing_dataloader_eval,
+        probing_dataloader_test=probing_dataloader_test,
+        loss_fn=torch.nn.CrossEntropyLoss(),
+        task_name="test task (torch, simple)",
+        task_type="classification",
+        output_dim=num_classes,
+        metrics_fn=metrics_fn,
+    )
+
+    lr_scheduler_fn = None
+
+    if include_lr_scheduler:
+
+        class CustomScheduler(torch.optim.lr_scheduler.ExponentialLR):
+            # pylint: disable='missing-class-docstring'
+            def step(self, *args, **kwargs):
+                nonlocal num_scheduler_steps
+                num_scheduler_steps += 1
+                return super().step(*args, **kwargs)
+
+        lr_scheduler_fn = functools.partial(CustomScheduler, gamma=0.9)
+
+    class CustomOptim(torch.optim.Adam):
+        # pylint: disable='missing-class-docstring'
+        def step(self, *args, **kwargs):
+            nonlocal num_optim_steps
+            num_optim_steps += 1
+            return super().step(*args, **kwargs)
+
+    probing_factory = curiosidade.ProbingModelFactory(
+        probing_model_fn=probing_model_fn,
+        optim_fn=functools.partial(CustomOptim, lr=0.001),
+        lr_scheduler_fn=lr_scheduler_fn,
+        task=task,
+    )
+
+    with warnings.catch_warnings():
+        warnings.simplefilter(action="error", category=UserWarning)
+        prober_container = curiosidade.attach_probers(
+            base_model=fixture_pretrained_torch_ff,
+            probing_model_factory=probing_factory,
+            modules_to_attach=[f"params.relu{i}" for i in range(1, 1 + num_probers)],
+            random_seed=32,
+            prune_unrelated_modules="infer",
+        )
+
+    assert len(prober_container.probed_modules) == num_probers
+
+    prober_container.train(
+        num_epochs=num_epochs,
+        show_progress_bar=None,
+        gradient_accumulation_steps=gradient_accumulation_steps,
+    )
+
+    assert (
+        num_optim_steps
+        == int(np.ceil(len(df_train) / batch_size / gradient_accumulation_steps))
+        * num_epochs
+        * num_probers
+    )
+    assert num_scheduler_steps == int(include_lr_scheduler) * (1 + num_epochs) * num_probers
+    assert num_metric_computations == (
+        int(np.ceil(len(df_train) / batch_size)) * num_epochs * num_probers
+        + int(include_eval) * int(np.ceil(len(df_eval) / batch_size)) * num_epochs * num_probers
+        + int(include_test) * int(np.ceil(len(df_test) / batch_size)) * num_probers
+    )

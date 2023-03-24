@@ -101,7 +101,7 @@ class ProbingTaskSentenceLength(base.BaseProbingTask):
     check_resource_hash : bool, default=True
         If True, verify downloaded probing dataset hash.
 
-    timeout_limit_seconds : int, default=10
+    timeout_limit_seconds : int, default=60
         Maximum time limit, in seconds, to try to download the probing dataset.
     """
 
@@ -117,7 +117,7 @@ class ProbingTaskSentenceLength(base.BaseProbingTask):
         check_cached: bool = True,
         clean_compressed_files: bool = True,
         check_resource_hash: bool = True,
-        timeout_limit_seconds: int = 10,
+        timeout_limit_seconds: int = 60,
     ):
         self.check_if_domain_is_valid(data_domain)
 
@@ -208,7 +208,7 @@ class ProbingTaskWordContent(base.BaseProbingTask):
     check_resource_hash : bool, default=True
         If True, verify downloaded probing dataset hash.
 
-    timeout_limit_seconds : int, default=10
+    timeout_limit_seconds : int, default=60
         Maximum time limit, in seconds, to try to download the probing dataset.
     """
 
@@ -224,7 +224,7 @@ class ProbingTaskWordContent(base.BaseProbingTask):
         check_cached: bool = True,
         clean_compressed_files: bool = True,
         check_resource_hash: bool = True,
-        timeout_limit_seconds: int = 10,
+        timeout_limit_seconds: int = 60,
     ):
         self.check_if_domain_is_valid(data_domain)
 
@@ -315,7 +315,7 @@ class ProbingTaskBigramShift(base.BaseProbingTask):
     check_resource_hash : bool, default=True
         If True, verify downloaded probing dataset hash.
 
-    timeout_limit_seconds : int, default=10
+    timeout_limit_seconds : int, default=60
         Maximum time limit, in seconds, to try to download the probing dataset.
     """
 
@@ -331,7 +331,7 @@ class ProbingTaskBigramShift(base.BaseProbingTask):
         check_cached: bool = True,
         clean_compressed_files: bool = True,
         check_resource_hash: bool = True,
-        timeout_limit_seconds: int = 10,
+        timeout_limit_seconds: int = 60,
     ):
         self.check_if_domain_is_valid(data_domain)
 
@@ -422,7 +422,7 @@ class ProbingTaskTreeDepth(base.BaseProbingTask):
     check_resource_hash : bool, default=True
         If True, verify downloaded probing dataset hash.
 
-    timeout_limit_seconds : int, default=10
+    timeout_limit_seconds : int, default=60
         Maximum time limit, in seconds, to try to download the probing dataset.
     """
 
@@ -438,7 +438,7 @@ class ProbingTaskTreeDepth(base.BaseProbingTask):
         check_cached: bool = True,
         clean_compressed_files: bool = True,
         check_resource_hash: bool = True,
-        timeout_limit_seconds: int = 10,
+        timeout_limit_seconds: int = 60,
     ):
         self.check_if_domain_is_valid(data_domain)
 
@@ -529,7 +529,7 @@ class ProbingTaskTopConstituent(base.BaseProbingTask):
     check_resource_hash : bool, default=True
         If True, verify downloaded probing dataset hash.
 
-    timeout_limit_seconds : int, default=10
+    timeout_limit_seconds : int, default=60
         Maximum time limit, in seconds, to try to download the probing dataset.
     """
 
@@ -545,7 +545,7 @@ class ProbingTaskTopConstituent(base.BaseProbingTask):
         check_cached: bool = True,
         clean_compressed_files: bool = True,
         check_resource_hash: bool = True,
-        timeout_limit_seconds: int = 10,
+        timeout_limit_seconds: int = 60,
     ):
         self.check_if_domain_is_valid(data_domain)
 
@@ -636,7 +636,7 @@ class ProbingTaskPastPresent(base.BaseProbingTask):
     check_resource_hash : bool, default=True
         If True, verify downloaded probing dataset hash.
 
-    timeout_limit_seconds : int, default=10
+    timeout_limit_seconds : int, default=60
         Maximum time limit, in seconds, to try to download the probing dataset.
     """
 
@@ -652,7 +652,7 @@ class ProbingTaskPastPresent(base.BaseProbingTask):
         check_cached: bool = True,
         clean_compressed_files: bool = True,
         check_resource_hash: bool = True,
-        timeout_limit_seconds: int = 10,
+        timeout_limit_seconds: int = 60,
     ):
         self.check_if_domain_is_valid(data_domain)
 
@@ -743,7 +743,7 @@ class ProbingTaskSubjectNumber(base.BaseProbingTask):
     check_resource_hash : bool, default=True
         If True, verify downloaded probing dataset hash.
 
-    timeout_limit_seconds : int, default=10
+    timeout_limit_seconds : int, default=60
         Maximum time limit, in seconds, to try to download the probing dataset.
     """
 
@@ -759,7 +759,7 @@ class ProbingTaskSubjectNumber(base.BaseProbingTask):
         check_cached: bool = True,
         clean_compressed_files: bool = True,
         check_resource_hash: bool = True,
-        timeout_limit_seconds: int = 10,
+        timeout_limit_seconds: int = 60,
     ):
         self.check_if_domain_is_valid(data_domain)
 
@@ -850,7 +850,7 @@ class ProbingTaskObjectNumber(base.BaseProbingTask):
     check_resource_hash : bool, default=True
         If True, verify downloaded probing dataset hash.
 
-    timeout_limit_seconds : int, default=10
+    timeout_limit_seconds : int, default=60
         Maximum time limit, in seconds, to try to download the probing dataset.
     """
 
@@ -866,7 +866,7 @@ class ProbingTaskObjectNumber(base.BaseProbingTask):
         check_cached: bool = True,
         clean_compressed_files: bool = True,
         check_resource_hash: bool = True,
-        timeout_limit_seconds: int = 10,
+        timeout_limit_seconds: int = 60,
     ):
         self.check_if_domain_is_valid(data_domain)
 
@@ -957,7 +957,7 @@ class ProbingTaskSOMO(base.BaseProbingTask):
     check_resource_hash : bool, default=True
         If True, verify downloaded probing dataset hash.
 
-    timeout_limit_seconds : int, default=10
+    timeout_limit_seconds : int, default=60
         Maximum time limit, in seconds, to try to download the probing dataset.
     """
 
@@ -973,7 +973,7 @@ class ProbingTaskSOMO(base.BaseProbingTask):
         check_cached: bool = True,
         clean_compressed_files: bool = True,
         check_resource_hash: bool = True,
-        timeout_limit_seconds: int = 10,
+        timeout_limit_seconds: int = 60,
     ):
         self.check_if_domain_is_valid(data_domain)
 
@@ -1064,7 +1064,7 @@ class ProbingTaskCoordinationInversion(base.BaseProbingTask):
     check_resource_hash : bool, default=True
         If True, verify downloaded probing dataset hash.
 
-    timeout_limit_seconds : int, default=10
+    timeout_limit_seconds : int, default=60
         Maximum time limit, in seconds, to try to download the probing dataset.
     """
 
@@ -1080,7 +1080,7 @@ class ProbingTaskCoordinationInversion(base.BaseProbingTask):
         check_cached: bool = True,
         clean_compressed_files: bool = True,
         check_resource_hash: bool = True,
-        timeout_limit_seconds: int = 10,
+        timeout_limit_seconds: int = 60,
     ):
         self.check_if_domain_is_valid(data_domain)
 

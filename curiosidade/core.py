@@ -348,8 +348,10 @@ class ProbingModelContainer:
         """Run a full validation epoch."""
         self.base_model.eval()
 
+        prober_outputs: t.Dict[str, t.List[t.Tuple[torch.Tensor, torch.Tensor]]]
+        prober_outputs = collections.defaultdict(list)
+
         res = output_handlers.MetricPack()
-        prober_outputs: t.Dict[str, t.List[torch.Tensor]] = collections.defaultdict(list)
         pbar = tqdm.auto.tqdm(dataloader, disable=not show_progress_bar)
 
         for prober in self.probers.values():
@@ -378,10 +380,12 @@ class ProbingModelContainer:
                     cur_avg_loss += metrics["loss"]
 
                     if prober.task.has_metrics:
-                        prober_outputs[module_name].append((
-                            prober.output_tensor.cpu(),
-                            batch_input_labels.cpu(),
-                        ))
+                        prober_outputs[module_name].append(
+                            (
+                                prober.output_tensor.cpu(),
+                                batch_input_labels.cpu(),
+                            )
+                        )
 
                 cur_avg_loss /= len(self.probers)
 
@@ -393,12 +397,10 @@ class ProbingModelContainer:
                 min_loss = min(min_loss, cur_avg_loss)
                 max_loss = max(max_loss, cur_avg_loss)
 
-                pbar.set_description(
-                    f"test: {min_loss=:8.6f} {max_loss=:8.6f} {mv_avg_loss=:8.6f}"
-                )
+                pbar.set_description(f"test: {min_loss=:8.6f} {max_loss=:8.6f} {mv_avg_loss=:8.6f}")
 
             for module_name, prober in self.probers.items():
-                if module_name not in prober_outputs:
+                if module_name not in prober_outputs or not prober.task.has_metrics:
                     continue
 
                 output_tensor = torch.cat([out for out, _ in prober_outputs[module_name]], dim=0)
@@ -407,14 +409,15 @@ class ProbingModelContainer:
                 output_tensor = output_tensor.to(self.device)
                 input_labels = input_labels.to(self.device)
 
-                loss_val = float(prober.task.loss_fn(output_tensor, input_labels).detach().cpu().item())
-                metrics_fn_out = prober.task.metrics_fn(output_tensor, input_labels)
+                loss_val = float(
+                    prober.task.loss_fn(output_tensor, input_labels).detach().cpu().item()
+                )
+                metrics_fn_out = prober.task.metrics_fn(output_tensor, input_labels)  # type: ignore
 
                 metrics_fn_out["loss"] = loss_val
                 res.append(metrics_fn_out, module_name, -1)
 
         return res
-
 
     def train(
         self,

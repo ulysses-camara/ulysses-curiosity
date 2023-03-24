@@ -234,9 +234,14 @@ task = curiosidade.ProbingTaskCustom(
 )
 ```
 
-Now, we need to attach the probing models to the pretrained model modules. This is achieved through a `ProbingModelFactory` and its method `.attach_probers(...)`. In this step you also need to provide the optimizer responsible to updating the probing model weights. The probing model and the optimizer *should not be instantiated* when provided to the ProbingModelFactory. The factory will create brand-new copies for each probed module. The probed modules are specified either explicitly by their names, or by regular expression patterns that matches their names. Note: you can list module names by using PyTorch's built-in `pretrained_model.named_modules()`:
+Now, we need to attach the probing models to the pretrained model modules. This is achieved through a `ProbingModelFactory` and its method `.attach_probers(...)`. In this step you also need to provide the optimizer responsible to updating the probing model weights. The probing model and the optimizer *should not be instantiated* when provided to the ProbingModelFactory. The factory will create brand-new copies for each probed module. The probed modules are specified either explicitly by their names, or by regular expression patterns that match their names.
+
+You can either use the utility function `curiosidade.get_modules(model)` to list module names, or use PyTorch's built-in `model.named_modules()`:
 
 ```python
+print(curiosidade.get_modules(pretrained_model))
+
+# The function above is equivalent to:
 pretrained_modules_available_for_probing = [
     name for name, _ in pretrained_model.named_modules() if name
 ]
@@ -311,6 +316,11 @@ print(df_train)
 # 27     4  params.relu2    accuracy  0.991667  0.028031
 # 28     4  params.relu2          f1  0.991667  0.028031
 # 29     4  params.relu2        loss  0.064271  0.030769
+```
+
+```Python
+# (9): you can detach probers at the end.
+prober_container.detach()
 ```
 
 #### Huggingface transformers example
@@ -401,6 +411,9 @@ df_train, df_eval, df_test = probing_results.to_pandas(
     aggregate_by=["batch_index"],
     aggregate_fn=[np.mean, np.std],
 )
+
+# (9): you can detach probers at the end.
+prober_container.detach()
 ```
 
 #### More examples

@@ -37,6 +37,7 @@ dev = [
     "pytest-env >= 0.8.1",
     "datasets >= 2.1.0",
     "sentence-transformers >= 2.2.0",
+    "torchmetrics >= 0.8.0",
 ]
 
 examples = [

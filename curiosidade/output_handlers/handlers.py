@@ -160,7 +160,7 @@ class MetricPack:
 
             group_by_set = sorted(set(dataframe.columns) - aggregate_by_set - {"metric"})
 
-            dataframe = dataframe.groupby(group_by_set).agg(dict(metric=aggregate_fn))
+            dataframe = dataframe.groupby(group_by_set).agg({"metric": aggregate_fn})
             dataframe.reset_index(inplace=True)
 
         return dataframe
@@ -216,10 +216,10 @@ class ProbingResults(t.NamedTuple):
             Results casted to pandas DataFrames.
         """
 
-        common_kwargs: dict[str, t.Any] = dict(
-            aggregate_by=aggregate_by,
-            aggregate_fn=aggregate_fn,
-        )
+        common_kwargs: dict[str, t.Any] = {
+            "aggregate_by": aggregate_by,
+            "aggregate_fn": aggregate_fn,
+        }
 
         ret: list[pd.DataFrame] = [self.train.to_pandas(**common_kwargs)]
 

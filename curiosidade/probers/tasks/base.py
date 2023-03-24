@@ -311,11 +311,11 @@ def get_resource_from_ulysses_fetcher(
     dataset_uri_test = os.path.join(input_dir, "test.tsv")
     labels_uri = os.path.join(input_dir, "labels.json")
 
-    resources_uris = dict(
-        dataset_uri_or_dataloader_train=dataset_uri_train,
-        dataset_uri_or_dataloader_eval=dataset_uri_eval,
-        dataset_uri_or_dataloader_test=dataset_uri_test,
-        labels_uri_or_map=labels_uri,
-    )
+    resources_uris = {
+        "dataset_uri_or_dataloader_train": dataset_uri_train,
+        "dataset_uri_or_dataloader_eval": dataset_uri_eval,
+        "dataset_uri_or_dataloader_test": dataset_uri_test,
+        "labels_uri_or_map": labels_uri,
+    }
 
     return resources_uris

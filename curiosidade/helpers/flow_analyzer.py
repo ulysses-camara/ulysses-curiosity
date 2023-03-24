@@ -216,9 +216,9 @@ def run_inspection_batches(
             unnecessary_modules = temp
             probing_input_dims = channel_container.probing_input_dims
 
-    out = dict(
-        probing_input_dims=probing_input_dims,
-        unnecessary_modules=unnecessary_modules,
-    )
+    out = {
+        "probing_input_dims": probing_input_dims,
+        "unnecessary_modules": unnecessary_modules,
+    }
 
     return out

@@ -175,7 +175,7 @@ class ProbingModelWrapper:
         self.output_tensor = self.output_tensor.detach()
         loss_val = float(self.loss.detach().cpu().item())
 
-        metrics = dict(loss=loss_val)
+        metrics = {"loss": loss_val}
 
         if compute_metrics and self.task.has_metrics:
             metrics_fn_out = self.task.metrics_fn(self.output_tensor, input_labels)  # type:ignore

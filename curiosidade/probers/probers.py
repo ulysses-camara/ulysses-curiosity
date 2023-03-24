@@ -74,6 +74,7 @@ class ProbingModelWrapper:
 
     def attach(self, module: torch.nn.Module) -> "ProbingModelWrapper":
         """Attach probing model to `module`."""
+        self.detach()
 
         def fn_hook_forward(
             layer: torch.nn.Module,
@@ -101,6 +102,21 @@ class ProbingModelWrapper:
         self.input_source_hook = module.register_forward_hook(fn_hook_forward)
 
         return self
+
+    def detach(self) -> "ProbingModelWrapper":
+        """Detach attached prober, if any."""
+        if self.attached_module is not None:
+            self.attached_module = None
+
+        if self.input_source_hook is not None:
+            self.input_source_hook.remove()
+            self.input_source_hook = None
+
+        return self
+
+    def remove(self) -> "ProbingModelWrapper":
+        """Alias for 'detach'."""
+        return self.detach()
 
     def to(self, device: t.Union[torch.device, str]) -> "ProbingModelWrapper":
         """Move probing model to `device`."""

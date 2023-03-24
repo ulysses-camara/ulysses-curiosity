@@ -1,6 +1,7 @@
 """Main entry point for probing models."""
 import typing as t
 import warnings
+import collections
 
 import torch
 import torch.nn
@@ -281,11 +282,10 @@ class ProbingModelContainer:
             category=UserWarning,
         )
 
-    def _run_epoch(
+    def _run_epoch_train(
         self,
         dataloader: probers.tasks.base.DataLoaderType,
         gradient_accumulation_steps: int = 1,
-        is_test: bool = False,
         show_progress_bar: bool = False,
         mv_avg_loss_momentum: float = 0.95,
     ) -> output_handlers.MetricPack:
@@ -296,10 +296,7 @@ class ProbingModelContainer:
         pbar = tqdm.auto.tqdm(dataloader, disable=not show_progress_bar)
 
         for prober in self.probers.values():
-            if is_test:
-                prober.eval()
-            else:
-                prober.train()
+            prober.train()
 
         mv_avg_loss = -1.0
         min_loss = float("+inf")
@@ -313,14 +310,14 @@ class ProbingModelContainer:
             batch_input_labels = batch_input_labels.to(self.device)
             accumulate_grad = (i % gradient_accumulation_steps != 0) and i < len(dataloader)
 
-            with torch.set_grad_enabled(not is_test):
+            with torch.set_grad_enabled(True):
                 cur_avg_loss = 0.0
 
                 for module_name, prober in self.probers.items():
                     metrics = prober.step(
                         input_labels=batch_input_labels,
                         accumulate_grad=accumulate_grad,
-                        is_test=is_test,
+                        is_test=False,
                     )
 
                     res.append(metrics, module_name, i)
@@ -337,11 +334,87 @@ class ProbingModelContainer:
                 max_loss = max(max_loss, cur_avg_loss)
 
                 pbar.set_description(
-                    f"({'test ' if is_test else 'train'}) "
-                    f"{min_loss=:8.6f} {max_loss=:8.6f} {mv_avg_loss=:8.6f}"
+                    f"train: {min_loss=:8.6f} {max_loss=:8.6f} {mv_avg_loss=:8.6f}"
                 )
 
         return res
+
+    def _run_epoch_eval(
+        self,
+        dataloader: probers.tasks.base.DataLoaderType,
+        show_progress_bar: bool = False,
+        mv_avg_loss_momentum: float = 0.95,
+    ) -> output_handlers.MetricPack:
+        """Run a full validation epoch."""
+        self.base_model.eval()
+
+        res = output_handlers.MetricPack()
+        prober_outputs: t.Dict[str, t.List[torch.Tensor]] = collections.defaultdict(list)
+        pbar = tqdm.auto.tqdm(dataloader, disable=not show_progress_bar)
+
+        for prober in self.probers.values():
+            prober.eval()
+
+        mv_avg_loss = -1.0
+        min_loss = float("+inf")
+        max_loss = float("-inf")
+
+        with torch.no_grad():
+            for batch in pbar:
+                batch_input_feats, batch_input_labels = self.base_model.break_batch(batch)
+                self.base_model(batch_input_feats)
+
+                batch_input_labels = batch_input_labels.to(self.device)
+
+                cur_avg_loss = 0.0
+
+                for module_name, prober in self.probers.items():
+                    metrics = prober.step(
+                        input_labels=batch_input_labels,
+                        is_test=True,
+                        compute_metrics=False,
+                    )
+
+                    cur_avg_loss += metrics["loss"]
+
+                    if prober.task.has_metrics:
+                        prober_outputs[module_name].append((
+                            prober.output_tensor.cpu(),
+                            batch_input_labels.cpu(),
+                        ))
+
+                cur_avg_loss /= len(self.probers)
+
+                if mv_avg_loss < 0.0:
+                    mv_avg_loss = cur_avg_loss
+                else:
+                    mv_avg_loss = (mv_avg_loss - cur_avg_loss) * mv_avg_loss_momentum + cur_avg_loss
+
+                min_loss = min(min_loss, cur_avg_loss)
+                max_loss = max(max_loss, cur_avg_loss)
+
+                pbar.set_description(
+                    f"test: {min_loss=:8.6f} {max_loss=:8.6f} {mv_avg_loss=:8.6f}"
+                )
+
+            for module_name, prober in self.probers.items():
+                if module_name not in prober_outputs:
+                    continue
+
+                output_tensor = torch.cat([out for out, _ in prober_outputs[module_name]], dim=0)
+                input_labels = torch.cat([lab for _, lab in prober_outputs[module_name]], dim=0)
+
+                output_tensor = output_tensor.to(self.device)
+                input_labels = input_labels.to(self.device)
+
+                loss_val = float(prober.task.loss_fn(output_tensor, input_labels).detach().cpu().item())
+                metrics_fn_out = prober.task.metrics_fn(output_tensor, input_labels)
+
+                metrics_fn_out["loss"] = loss_val
+                res.append(metrics_fn_out, module_name, -1)
+
+        return res
+
 
     def train(
         self,
@@ -417,7 +490,7 @@ class ProbingModelContainer:
 
             for epoch in pbar:
                 metrics_train.combine(
-                    self._run_epoch(
+                    self._run_epoch_train(
                         dataloader=self.task.probing_dataloader_train,
                         gradient_accumulation_steps=gradient_accumulation_steps,
                         show_progress_bar=show_progress_bar_per_epoch,
@@ -426,9 +499,8 @@ class ProbingModelContainer:
 
                 if self.task.has_eval:
                     metrics_eval.combine(
-                        self._run_epoch(
+                        self._run_epoch_eval(
                             dataloader=self.task.probing_dataloader_eval,  # type: ignore
-                            is_test=True,
                         ).expand_key_dim(epoch)
                     )
 
@@ -438,9 +510,8 @@ class ProbingModelContainer:
 
             if self.task.has_test:
                 metrics_test.combine(
-                    self._run_epoch(
+                    self._run_epoch_eval(
                         dataloader=self.task.probing_dataloader_test,  # type: ignore
-                        is_test=True,
                         show_progress_bar=show_progress_bar_per_epoch,
                     ).expand_key_dim(-1)
                 )

@@ -157,7 +157,7 @@ class ProbingModelWrapper:
             self.optim.zero_grad()
 
         self.output_tensor = self.output_tensor.detach()
-        loss_val = float(self.loss.cpu().detach().item())
+        loss_val = float(self.loss.detach().cpu().item())
 
         metrics = dict(loss=loss_val)
 

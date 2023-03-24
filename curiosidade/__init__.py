@@ -1,5 +1,5 @@
 # pylint: disable='missing-module-docstring'
-from .core import attach_probers
+from .core import attach_probers, get_modules
 from .probers import ProbingModelFactory
 from .probers.tasks.tasks import *
 

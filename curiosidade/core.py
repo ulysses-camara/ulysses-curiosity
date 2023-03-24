@@ -621,3 +621,12 @@ def attach_probers(
     )
 
     return prober_container
+
+
+def get_modules(pretrained_model: torch.Tensor) -> t.List[str]:
+    """Return a list of module names available for probing from ``pretrained model``.
+
+    This is a utility function equivalent to:
+    >>> modules = [name for name, _ in pretrained_model.named_modules() if name] # doctest: +SKIP
+    """
+    return [name for name, _ in pretrained_model.named_modules() if name]

@@ -63,9 +63,9 @@ def fn_fixture_pretrained_torch_lstm_onedir_1_layer() -> torch.nn.Module:
 
 
 @pytest.fixture(scope="session", name="fixture_pretrained_distilbert")
-def fn_fixture_pretrained_distilbert() -> tuple[
-    transformers.PreTrainedModel, transformers.DistilBertTokenizer
-]:
+def fn_fixture_pretrained_distilbert() -> (
+    tuple[transformers.PreTrainedModel, transformers.DistilBertTokenizer]
+):
     tokenizer = transformers.DistilBertTokenizer.from_pretrained(
         "distilbert-base-uncased",
         cache_dir=model_utils.PRETRAINED_MODEL_DIR,

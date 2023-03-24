@@ -118,6 +118,9 @@ def test_probe_torch_lstm_onedir_1_layer(
 
     standard_result_validation(probing_results)
 
+    prober_container.detach()
+    prober_container.detach()  # Double detach to make sure no warning will be raised.
+
 
 def test_probe_torch_ff(fixture_pretrained_torch_ff: torch.nn.Module):
     df_train, df_eval, df_test, num_classes = train_test_models.gen_random_dataset()
@@ -189,6 +192,9 @@ def test_probe_torch_ff(fixture_pretrained_torch_ff: torch.nn.Module):
 
     standard_result_validation(probing_results)
 
+    prober_container.detach()
+    prober_container.detach()  # Double detach to make sure no warning will be raised.
+
 
 def test_probe_torch_bifurcation(fixture_pretrained_torch_bifurcation: torch.nn.Module):
     df_train, df_eval, df_test, num_classes = train_test_models.gen_random_dataset()
@@ -257,6 +263,9 @@ def test_probe_torch_bifurcation(fixture_pretrained_torch_bifurcation: torch.nn.
     probing_results = prober_container.train(num_epochs=40, show_progress_bar=None)
 
     standard_result_validation(probing_results)
+
+    prober_container.detach()
+    prober_container.detach()  # Double detach to make sure no warning will be raised.
 
 
 def load_dataset_imdb(
@@ -386,6 +395,9 @@ def test_probe_distilbert(
 
     standard_result_validation(probing_results)
 
+    prober_container.detach()
+    prober_container.detach()  # Double detach to make sure no warning will be raised.
+
 
 def test_probe_sentence_minilmv2(
     fixture_pretrained_minilmv2: sentence_transformers.SentenceTransformer,
@@ -480,6 +492,9 @@ def test_probe_sentence_minilmv2(
     )
 
     standard_result_validation(probing_results)
+
+    prober_container.detach()
+    prober_container.detach()  # Double detach to make sure no warning will be raised.
 
 
 @pytest.mark.parametrize(
@@ -656,6 +671,9 @@ def test_probe_sentence_minilmv2_full_sbert(
     )
 
     standard_result_validation(probing_results)
+
+    prober_container.detach()
+    prober_container.detach()  # Double detach to make sure no warning will be raised.
 
 
 @pytest.mark.parametrize(
@@ -867,6 +885,9 @@ def test_optimization_and_validation_frequencies(
     assert num_scheduler_steps == int(include_lr_scheduler) * (1 + num_epochs) * num_probers
     assert num_metric_computations == (
         int(np.ceil(len(df_train) / batch_size)) * num_epochs * num_probers
-        + int(include_eval) * int(np.ceil(len(df_eval) / batch_size)) * num_epochs * num_probers
-        + int(include_test) * int(np.ceil(len(df_test) / batch_size)) * num_probers
+        + int(include_eval) * num_epochs * num_probers
+        + int(include_test) * num_probers
     )
+
+    prober_container.detach()
+    prober_container.detach()  # Double detach to make sure no warning will be raised.

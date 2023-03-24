@@ -78,7 +78,7 @@ class ProbingModelWrapper:
 
         def fn_hook_forward(
             layer: torch.nn.Module,
-            l_input: torch.Tensor,
+            l_input: t.Any,
             l_output: t.Union[tuple[torch.Tensor, ...], torch.Tensor, dict[str, t.Any]],
         ) -> None:
             # pylint: disable='unused-argument'

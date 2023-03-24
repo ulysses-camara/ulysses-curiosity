@@ -27,7 +27,7 @@ def standard_result_validation(probing_results):
         aggregate_fn=[np.min, np.mean, np.max, lambda _: 5, fn_test],
     )
 
-    kwargs = dict(n=1, axis=-1)
+    kwargs = {"n": 1, "axis": -1}
     cols = [("metric", "amin"), ("metric", "amin"), ("metric", "amax")]
 
     assert np.all(np.diff(df_train[cols], **kwargs) >= 0.0)
@@ -299,6 +299,20 @@ def load_dataset_imdb(
     dataset_test.set_format("torch")
 
     return dataset_train, dataset_eval, dataset_test, num_classes
+
+
+def test_get_modules_lstm(
+    fixture_pretrained_torch_lstm_onedir_1_layer: torch.nn.Module,
+):
+    assert curiosidade.get_modules(fixture_pretrained_torch_lstm_onedir_1_layer)
+
+
+def test_get_modules_distilbert(
+    fixture_pretrained_distilbert: tuple[
+        transformers.PreTrainedModel, transformers.DistilBertTokenizer
+    ],
+):
+    assert curiosidade.get_modules(fixture_pretrained_distilbert[0])
 
 
 def test_probe_distilbert(

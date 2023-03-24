@@ -257,6 +257,14 @@ class ProbingModelContainer:
 
         return self
 
+    def detach(self) -> "ProbingModelContainer":
+        """Detach and remove all attached probers, if any."""
+        for _, item in self.probers.items():
+            item.detach()
+
+        self.probers.clear()
+        return self
+
     @staticmethod
     def _check_container_length_match(
         current_container: t.Collection[t.Any], expected_container: t.Any, message: str

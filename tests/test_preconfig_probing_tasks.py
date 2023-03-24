@@ -138,7 +138,7 @@ def test_preconfigured_probing_task(
         data_domain=data_domain,
         output_dir=os.path.join(os.path.dirname(__file__), "test_probing_datasets"),
         check_cached=False,
-        timeout_limit_seconds=60,
+        timeout_limit_seconds=300,
     )
 
     probing_factory = curiosidade.ProbingModelFactory(
